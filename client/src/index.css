@@ -65,3 +65,37 @@
     stroke-dashoffset: 0 !important;
   }
 }
+
+/* ========================================================
+   SƠ ĐỒ RÚT GỌN MOBILE: đường chỉ dẫn chảy, mũi tên nhấp nhẹ, hiện dần
+   Chỉ dùng transform/opacity (GPU), tắt hết khi prefers-reduced-motion
+   ======================================================== */
+@keyframes aisleFlow {
+  from { transform: translateY(0); }
+  to { transform: translateY(-16px); }
+}
+.aisle-flow { animation: aisleFlow 0.8s linear infinite; }
+
+@keyframes arrowNudgeL {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-3px); }
+}
+@keyframes arrowNudgeR {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+.arrow-nudge-l { animation: arrowNudgeL 1s ease-in-out infinite; }
+.arrow-nudge-r { animation: arrowNudgeR 1s ease-in-out infinite; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+.fade-in-up {
+  animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aisle-flow, .arrow-nudge-l, .arrow-nudge-r, .fade-in-up { animation: none !important; }
+}
