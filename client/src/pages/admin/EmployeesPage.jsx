@@ -11,7 +11,7 @@ import { ImportExcelModal } from '../../components/employees/ImportExcelModal.js
 export function EmployeesPage() {
   const { staff } = useAuth();
   const { employees, addEmployee, updateEmployee, deleteEmployee, importEmployees } = useEmployees();
-  const { blocks, departments } = useOrg();
+  const { blocks, departments, addBlock, addDepartment } = useOrg();
   const toast = useToast();
   const { confirm } = useConfirm();
 
@@ -91,6 +91,16 @@ export function EmployeesPage() {
         initialData={editingEmployee}
         blocks={blocks}
         departments={departments}
+        onAddBlock={async (data) => {
+          const b = await addBlock(data);
+          toast.success(`Đã thêm Khối "${b.name}".`);
+          return b;
+        }}
+        onAddDepartment={async (data) => {
+          const d = await addDepartment(data);
+          toast.success(`Đã thêm Phòng ban "${d.name}".`);
+          return d;
+        }}
         onSubmit={handleFormSubmit}
         currentStaffCode={staff?.code || ''}
       />
