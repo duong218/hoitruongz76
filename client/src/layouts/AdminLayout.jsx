@@ -1,6 +1,6 @@
 import React from 'react';
 import { Logo } from '../components/ui/Logo.jsx';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROLES, ROLE_LABELS } from '../constants/roles.js';
 import {
@@ -8,7 +8,7 @@ import {
   ADMIN_NAV_ITEMS,
   MANAGER_NAV_ITEMS,
 } from '../constants/navConfig.js';
-import { LogOut, ExternalLink } from 'lucide-react';
+import { LogOut, ExternalLink, ArrowLeftRight } from 'lucide-react';
 
 export function AdminLayout() {
   const { staff, logoutStaff } = useAuth();

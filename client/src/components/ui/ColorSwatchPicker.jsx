@@ -41,7 +41,7 @@ export function ColorSwatchPicker({
         })}
       </div>
       <p className="text-[14px] text-[#64748B]">
-        Chọn 1 trong 8 màu chuẩn quy định. Màu này sẽ hiển thị trên sơ đồ hội trường.
+        Chọn màu đại diện quy định. Màu này sẽ hiển thị trực quan trên sơ đồ ghế hội trường.
       </p>
     </div>
   );

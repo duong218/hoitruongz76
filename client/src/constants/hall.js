@@ -5,14 +5,24 @@ export const TOTAL_SEATS = TOTAL_ROWS * TOTAL_SEATS_PER_ROW; // 200
 export const VIP_ROWS = [1, 2];
 
 export const GROUP_COLOR_PALETTE = [
-  { id: 'red', hex: '#E53E3E', label: 'Đỏ' },
-  { id: 'yellow-orange', hex: '#F6AD37', label: 'Vàng cam' },
-  { id: 'blue', hex: '#008BC5', label: 'Xanh dương' },
-  { id: 'green', hex: '#22C55E', label: 'Xanh lá' },
-  { id: 'purple', hex: '#7C3AED', label: 'Tím' },
-  { id: 'pink', hex: '#DB2777', label: 'Hồng' },
-  { id: 'teal', hex: '#0F766E', label: 'Xanh ngọc' },
-  { id: 'dark-gray', hex: '#475569', label: 'Xám đậm' },
+  { id: 'red', hex: '#DC2626', label: 'Đỏ cờ' },
+  { id: 'crimson', hex: '#E11D48', label: 'Đỏ hồng' },
+  { id: 'orange', hex: '#EA580C', label: 'Cam đậm' },
+  { id: 'amber', hex: '#D97706', label: 'Vàng hổ phách' },
+  { id: 'yellow-orange', hex: '#F59E0B', label: 'Vàng cam' },
+  { id: 'lime', hex: '#65A30D', label: 'Xanh chanh' },
+  { id: 'green', hex: '#16A34A', label: 'Xanh lá cây' },
+  { id: 'emerald', hex: '#059669', label: 'Xanh ngọc bích' },
+  { id: 'teal', hex: '#0D9488', label: 'Xanh mòng két' },
+  { id: 'cyan', hex: '#0891B2', label: 'Xanh lơ biển' },
+  { id: 'blue', hex: '#0284C7', label: 'Xanh dương' },
+  { id: 'indigo', hex: '#4F46E5', label: 'Xanh chàm' },
+  { id: 'purple', hex: '#7C3AED', label: 'Tím đậm' },
+  { id: 'fuchsia', hex: '#C026D3', label: 'Tím hoa cà' },
+  { id: 'pink', hex: '#DB2777', label: 'Hồng sen' },
+  { id: 'rose', hex: '#BE123C', label: 'Đỏ mận' },
+  { id: 'slate', hex: '#475569', label: 'Xám đá phiến' },
+  { id: 'zinc', hex: '#71717A', label: 'Ghi titan' },
 ];
 
 /**
