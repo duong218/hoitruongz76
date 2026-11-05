@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useSeatAssignments } from '../../hooks/useSeatAssignments.js';
@@ -10,6 +10,7 @@ import { GroupBadge } from '../../components/ui/GroupBadge.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { HallMap } from '../../components/hall/HallMap.jsx';
+import { HallSchematic } from '../../components/hall/HallSchematic.jsx';
 import { ScannerModal } from '../../components/attendance/ScannerModal.jsx';
 import { summarizeSeats } from '../../utils/seatSummary.js';
 import { seatLabel } from '../../utils/seatLabel.js';
@@ -23,6 +24,7 @@ import {
   QrCode,
   CheckCircle2,
   Clock,
+  Map as MapIcon,
 } from 'lucide-react';
 
 export function SeatPage() {
@@ -35,6 +37,7 @@ export function SeatPage() {
   const toast = useToast();
 
   const [scannerOpen, setScannerOpen] = useState(false);
+  const mapRef = useRef(null);
 
   // Nhóm của người dùng được xác định theo Khối (hoặc Khách mời)
   const group = useMemo(() => {
@@ -61,6 +64,15 @@ export function SeatPage() {
   const seatDescription = useMemo(() => {
     return summarizeSeats(myGroupSeatIds);
   }, [myGroupSeatIds]);
+
+  // Tách "Hàng 3 (cả hàng), Hàng 8 (bên trái, ghế 6-10)" thành từng dòng dễ đọc
+  const seatRows = useMemo(() => {
+    const parts = seatDescription.match(/Hàng \d+ \([^)]*\)/g) || [];
+    return parts.map((p) => {
+      const m = p.match(/^(Hàng \d+) \((.*)\)$/);
+      return { title: m[1], detail: m[2] };
+    });
+  }, [seatDescription]);
 
   const handleBack = async () => {
     await logout();
@@ -104,13 +116,13 @@ export function SeatPage() {
   const needCheckIn = group && group.checkInRequired && !myAttendance;
 
   return (
-    <div className="space-y-5 max-w-3xl mx-auto w-full pb-20">
+    <div className={`space-y-5 max-w-3xl mx-auto w-full ${needCheckIn ? 'pb-32' : 'pb-6'}`}>
       {/* Nút Quay lại */}
       <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-2 text-[16px] font-semibold text-[#008BC5] hover:text-[#0072A3] transition-colors py-2 px-1 min-h-[44px] cursor-pointer"
+          className="inline-flex items-center gap-2 text-[16px] font-medium underline text-[#008BC5] hover:text-[#006BA1] transition-colors py-2 px-1 min-h-[44px] cursor-pointer"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Quay lại đăng nhập</span>
@@ -119,21 +131,12 @@ export function SeatPage() {
 
       {/* Card thông tin chỗ ngồi */}
       <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 sm:p-6 space-y-4">
-        {/* Hàng trên: Họ tên & GroupBadge */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
-          <div>
-            <span className="text-[13px] font-bold text-[#64748B] uppercase tracking-wider block">
-              Người tham dự
-            </span>
-            <h2 className="text-[22px] sm:text-[24px] font-extrabold text-[#0F172A] leading-tight">
-              {user.name}
-            </h2>
-            <span className="text-[14px] text-[#64748B] font-mono">
-              Mã: {user.code}
-            </span>
-          </div>
-
-          <div>
+        {/* Họ tên, mã và nhóm */}
+        <div className="pb-4 border-b border-[#E2E8F0] space-y-2">
+          <span className="text-[14px] font-semibold text-[#64748B] block">Người tham dự</span>
+          <h2 className="text-[24px] font-bold text-[#0F172A] leading-8">{user.name}</h2>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[16px] text-[#334155] font-mono">Mã: {user.code}</span>
             {group ? (
               <GroupBadge name={group.name} color={group.color} size="lg" />
             ) : (
@@ -143,6 +146,27 @@ export function SeatPage() {
             )}
           </div>
         </div>
+
+        {/* Trạng thái điểm danh luôn ở trên cùng để biết ngay đã xong chưa */}
+        {myAttendance && (
+          <div className="p-4 bg-[#F0FDF4] border-2 border-[#22C55E] rounded-xl flex items-start gap-3">
+            <CheckCircle2 className="w-7 h-7 text-[#22C55E] shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h4 className="text-[18px] font-bold text-[#166534] leading-6">
+                Bạn đã điểm danh thành công
+              </h4>
+              <p className="text-[16px] font-semibold text-[#0F172A] mt-1">
+                Vị trí: {seatLabel(myAttendance.seatId)}
+              </p>
+              <div className="flex items-center gap-1.5 text-[16px] text-[#166534] mt-1">
+                <Clock className="w-4 h-4" />
+                <span>
+                  Lúc {new Date(myAttendance.checkedInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TH1: Người dùng không khớp nhóm nào */}
         {!group ? (
@@ -159,34 +183,48 @@ export function SeatPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-[#008BC5]">
               <Navigation className="w-5 h-5 shrink-0" />
-              <span className="text-[15px] font-bold uppercase tracking-wider">
-                Vị trí được sắp xếp
-              </span>
+              <span className="text-[16px] font-semibold">Vị trí chỗ ngồi của bạn</span>
             </div>
 
-            <p className="text-[20px] sm:text-[22px] font-bold text-[#0F172A] leading-snug">
-              Bạn thuộc{' '}
-              <span style={{ color: group.color }}>
-                [{group.name}]
-              </span>
-              . Hãy tới vị trí này ngồi:
+            <p className="text-[17px] leading-7 text-[#0F172A]">
+              Bạn thuộc <strong style={{ color: group.color }}>{group.name}</strong>. Hãy tới đây ngồi:
             </p>
 
-            <div className="p-4 bg-[#F8FAFC] border-l-4 border-l-[#008BC5] border-y border-r border-[#E2E8F0] rounded-r-lg">
-              <div className="flex items-start gap-2">
-                <MapPin className="w-5 h-5 text-[#008BC5] shrink-0 mt-0.5" />
-                <p className="text-[18px] sm:text-[20px] font-extrabold text-[#0F172A]">
-                  {seatDescription}
-                </p>
-              </div>
-              <p className="text-[14px] text-[#64748B] mt-1 pl-7">
-                Quan sát các ghế nhấp nháy màu{' '}
-                <strong style={{ color: group.color }}>
-                  {group.name}
-                </strong>{' '}
-                và đi theo đường nét đứt dẫn từ Cửa vào.
+            {seatRows.length > 0 ? (
+              <ul className="space-y-2 list-none p-0">
+                {seatRows.map((r) => (
+                  <li
+                    key={r.title}
+                    className="flex items-start gap-3 min-h-[48px] p-3 bg-[#F6F8FA] border border-[#E2E8F0] border-l-4 border-l-[#008BC5] rounded-lg"
+                  >
+                    <MapPin className="w-5 h-5 text-[#008BC5] shrink-0 mt-0.5" />
+                    <div>
+                      <span className="block text-[20px] font-bold leading-7 text-[#0F172A]">{r.title}</span>
+                      <span className="block text-[16px] leading-6 text-[#334155]">{r.detail}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="p-3 bg-[#F6F8FA] border border-[#E2E8F0] border-l-4 border-l-[#008BC5] rounded-lg text-[18px] font-bold text-[#0F172A]">
+                {seatDescription}
               </p>
-            </div>
+            )}
+
+            <p className="hidden sm:block text-[16px] leading-6 text-[#334155]">
+              Tìm các ghế nhấp nháy màu <strong style={{ color: group.color }}>{group.name}</strong> và đi theo đường nét đứt từ Cửa vào.
+            </p>
+
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              icon={MapIcon}
+              className="!text-[#008BC5] !border-[#008BC5] !border-[1.5px]"
+              onClick={() => mapRef.current?.scrollIntoView({ block: 'start' })}
+            >
+              Xem đường đi trên sơ đồ
+            </Button>
           </div>
         ) : (
           /* TH3: Nhóm chưa có ghế nào */
@@ -206,51 +244,36 @@ export function SeatPage() {
             </div>
           </div>
         )}
-
-        {/* THÀNH CÔNG: Nếu đã điểm danh xong, hiện Card xác nhận điểm danh */}
-        {myAttendance && (
-          <div className="p-4 bg-[#F0FDF4] border-2 border-[#22C55E] rounded-xl flex items-start gap-3 shadow-[0_1px_3px_rgba(34,197,94,0.15)] animate-in fade-in">
-            <CheckCircle2 className="w-7 h-7 text-[#22C55E] shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <h4 className="text-[18px] font-bold text-[#15803D] leading-tight">
-                Bạn đã điểm danh thành công
-              </h4>
-              <p className="text-[16px] font-extrabold text-[#0F172A] mt-1">
-                Vị trí: {seatLabel(myAttendance.seatId)}
-              </p>
-              <div className="flex items-center gap-1.5 text-[14px] text-[#15803D] mt-1 font-medium">
-                <Clock className="w-4 h-4" />
-                <span>
-                  Thời gian ghi nhận: {new Date(myAttendance.checkedInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Sơ đồ hội trường 2D */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-[16px] font-bold text-[#0F172A]">
+      <div ref={mapRef} className="space-y-2 scroll-mt-20">
+        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-[18px] font-semibold text-[#0F172A]">
             Sơ đồ định vị hội trường 2D
           </h3>
-          <span className="text-[14px] text-[#64748B]">
+          <span className="text-[14px] text-[#334155]">
             {hasSeats ? 'Theo dõi đường đi từ Cửa vào' : 'Hiện chưa phân bổ chỗ'}
           </span>
         </div>
 
-        <HallMap
-          mode="view"
-          seatGroups={seatGroups}
-          groups={groups}
-          highlightGroupId={hasSeats ? group?.id : null}
-        />
+        {/* Điện thoại: sơ đồ rút gọn chữ to. Màn hình lớn: sơ đồ 2D đầy đủ. */}
+        <div className="sm:hidden">
+          <HallSchematic seatGroups={seatGroups} highlightGroupId={hasSeats ? group?.id : null} color={group?.color} />
+        </div>
+        <div className="hidden sm:block">
+          <HallMap
+            mode="view"
+            seatGroups={seatGroups}
+            groups={groups}
+            highlightGroupId={hasSeats ? group?.id : null}
+          />
+        </div>
       </div>
 
       {/* Thanh hành động điểm danh cố định đáy màn hình (chỉ hiện khi nhân viên cần điểm danh và chưa điểm danh) */}
       {needCheckIn && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F0] shadow-[0_-2px_10px_rgba(15,23,42,0.1)] p-4 pb-[env(safe-area-inset-bottom,16px)] z-40">
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F0] shadow-[0_-2px_10px_rgba(15,23,42,0.1)] px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] z-40">
           <div className="max-w-md mx-auto space-y-1 text-center">
             <Button
               variant="primary"
@@ -263,7 +286,7 @@ export function SeatPage() {
               Điểm danh tại ghế ngồi
             </Button>
             {!event.checkInOpen && (
-              <p className="text-[13px] font-bold text-[#E53E3E]">
+              <p className="text-[14px] font-semibold text-[#C53030]">
                 Ban tổ chức chưa mở điểm danh
               </p>
             )}

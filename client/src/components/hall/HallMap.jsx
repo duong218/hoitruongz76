@@ -76,25 +76,17 @@ export function HallMap({
       }
     });
 
-    // Hàng gần cửa nhất là hàng có số lớn nhất
-    let nearest = null;
-    let paths = [];
-    if (rowsSet.size > 0) {
-      nearest = Math.max(...Array.from(rowsSet));
-      const nearSides = rowSideSeats[nearest];
-      const hasL = nearSides.L && nearSides.L.length > 0;
-      const hasR = nearSides.R && nearSides.R.length > 0;
-      const leftHalo = nearSides.L ? getSegmentHalo(nearest, 'L', nearSides.L) : null;
-      const rightHalo = nearSides.R ? getSegmentHalo(nearest, 'R', nearSides.R) : null;
-
-      paths = getEntrancePathData(
-        nearest,
-        hasL,
-        hasR,
-        leftHalo ? leftHalo.midX : null,
-        rightHalo ? rightHalo.midX : null
-      );
-    }
+    // Đường nét đứt tới TỪNG cụm ghế của nhóm (cùng đi từ Cửa vào theo lối đi giữa)
+    const nearest = rowsSet.size > 0 ? Math.max(...Array.from(rowsSet)) : null;
+    const paths = haloList.flatMap((h) =>
+      getEntrancePathData(
+        h.row,
+        h.side === 'L',
+        h.side === 'R',
+        h.side === 'L' ? h.midX : null,
+        h.side === 'R' ? h.midX : null
+      )
+    );
 
     return {
       highlightedRows: rowsSet,

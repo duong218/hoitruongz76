@@ -32,18 +32,17 @@ export function AttendeeLayout() {
                 <span className="block text-[14px] font-bold text-[#0F172A] leading-tight">
                   {attendee.name}
                 </span>
-                <span className="block text-[12px] text-[#64748B]">
+                <span className="block text-[14px] leading-5 text-[#334155]">
                   {attendee.groupName || 'Khách mời'}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={handleLogout}
-                aria-label="Đăng xuất"
-                title="Đăng xuất"
-                className="min-h-[44px] min-w-[44px] flex items-center justify-center text-[#64748B] hover:text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg transition-colors cursor-pointer"
+                className="min-h-[44px] min-w-[44px] px-2 flex flex-col items-center justify-center text-[14px] leading-4 font-medium text-[#334155] hover:text-[#C53030] hover:bg-[#FEECEC] rounded-lg transition-colors cursor-pointer"
               >
                 <LogOut className="w-5 h-5" />
+                <span>Thoát</span>
               </button>
             </div>
           </div>
