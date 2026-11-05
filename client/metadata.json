@@ -1,0 +1,6 @@
+{
+  "name": "Sơ đồ hội trường Z176",
+  "description": "Ứng dụng sơ đồ hội trường 2D Z176, hỗ trợ phân nhóm, định hướng chỗ ngồi và quản lý sự kiện.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
