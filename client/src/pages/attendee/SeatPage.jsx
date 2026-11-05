@@ -17,7 +17,6 @@ import { seatLabel } from '../../utils/seatLabel.js';
 import { resolveGroup } from '../../utils/resolveGroup.js';
 import { validateCheckIn, CHECKIN_CODES } from '../../utils/checkIn.js';
 import {
-  ArrowLeft,
   AlertTriangle,
   Navigation,
   MapPin,
@@ -29,7 +28,7 @@ import {
 
 export function SeatPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { seatGroups } = useSeatAssignments();
   const { groups } = useGroups();
   const { attendance, checkIn } = useAttendance();
@@ -74,11 +73,6 @@ export function SeatPage() {
     });
   }, [seatDescription]);
 
-  const handleBack = async () => {
-    await logout();
-    navigate('/login');
-  };
-
   // Xử lý kết quả quét từ ScannerModal
   const handleScanResult = async ({ seat, token, error: scanError }) => {
     if (scanError) {
@@ -116,29 +110,15 @@ export function SeatPage() {
   const needCheckIn = group && group.checkInRequired && !myAttendance;
 
   return (
-    <div className={`space-y-5 max-w-3xl mx-auto w-full ${needCheckIn ? 'pb-32' : 'pb-6'}`}>
-      {/* Nút Quay lại */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={handleBack}
-          className="inline-flex items-center gap-2 text-[16px] font-medium underline text-[#008BC5] hover:text-[#006BA1] transition-colors py-2 px-1 min-h-[44px] cursor-pointer"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          <span>Quay lại đăng nhập</span>
-        </button>
-      </div>
-
+    <div className={`space-y-3 sm:space-y-5 max-w-3xl mx-auto w-full ${needCheckIn ? 'pb-32' : 'pb-6'}`}>
       {/* Card thông tin chỗ ngồi */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 sm:p-6 space-y-4">
+      <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-4 sm:p-6 space-y-3">
         {/* Họ tên, mã và nhóm */}
-        <div className="pb-4 border-b border-[#E2E8F0] space-y-2">
-          <span className="text-[14px] font-semibold text-[#64748B] block">Người tham dự</span>
-          <h2 className="text-[24px] font-bold text-[#0F172A] leading-8">{user.name}</h2>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="text-[16px] text-[#334155] font-mono">Mã: {user.code}</span>
+        <div className="pb-3 border-b border-[#E2E8F0] flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="text-[14px] text-[#334155] font-mono">{user.code}</span>
+          <div>
             {group ? (
-              <GroupBadge name={group.name} color={group.color} size="lg" />
+              <GroupBadge name={group.name} color={group.color} />
             ) : (
               <Badge variant="warning" icon={AlertTriangle}>
                 Chưa có nhóm
@@ -181,27 +161,21 @@ export function SeatPage() {
         ) : hasSeats ? (
           /* TH2: Có nhóm và đã có ghế được sắp */
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-[#008BC5]">
-              <Navigation className="w-5 h-5 shrink-0" />
-              <span className="text-[16px] font-semibold">Vị trí chỗ ngồi của bạn</span>
-            </div>
-
-            <p className="text-[17px] leading-7 text-[#0F172A]">
-              Bạn thuộc <strong style={{ color: group.color }}>{group.name}</strong>. Hãy tới đây ngồi:
+            <p className="flex items-center gap-2 text-[16px] leading-6 text-[#0F172A]">
+              <Navigation className="w-5 h-5 shrink-0 text-[#008BC5]" />
+              <span>Bạn thuộc <strong style={{ color: group.color }}>{group.name}</strong>. Hãy tới đây ngồi:</span>
             </p>
 
             {seatRows.length > 0 ? (
-              <ul className="space-y-2 list-none p-0">
+              <ul className="flex flex-wrap gap-2 list-none p-0">
                 {seatRows.map((r) => (
                   <li
                     key={r.title}
-                    className="flex items-start gap-3 min-h-[48px] p-3 bg-[#F6F8FA] border border-[#E2E8F0] border-l-4 border-l-[#008BC5] rounded-lg"
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#F6F8FA] border border-[#E2E8F0] border-l-4 border-l-[#008BC5] rounded-lg"
                   >
-                    <MapPin className="w-5 h-5 text-[#008BC5] shrink-0 mt-0.5" />
-                    <div>
-                      <span className="block text-[20px] font-bold leading-7 text-[#0F172A]">{r.title}</span>
-                      <span className="block text-[16px] leading-6 text-[#334155]">{r.detail}</span>
-                    </div>
+                    <MapPin className="w-4 h-4 text-[#008BC5] shrink-0" />
+                    <span className="text-[18px] font-bold leading-6 text-[#0F172A]">{r.title}</span>
+                    <span className="text-[15px] text-[#334155]">{r.detail}</span>
                   </li>
                 ))}
               </ul>
@@ -220,10 +194,10 @@ export function SeatPage() {
               variant="secondary"
               fullWidth
               icon={MapIcon}
-              className="!text-[#008BC5] !border-[#008BC5] !border-[1.5px]"
-              onClick={() => mapRef.current?.scrollIntoView({ block: 'start' })}
+              className="sm:!hidden !text-[#008BC5] !border-[#008BC5] !border-[1.5px]"
+              onClick={() => mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
-              Xem đường đi trên sơ đồ
+              Định vị chỗ ngồi trên sơ đồ
             </Button>
           </div>
         ) : (
@@ -247,9 +221,9 @@ export function SeatPage() {
       </div>
 
       {/* Sơ đồ hội trường 2D */}
-      <div ref={mapRef} className="space-y-2 scroll-mt-20">
-        <div className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="text-[18px] font-semibold text-[#0F172A]">
+      <div ref={mapRef} className="space-y-2 scroll-mt-[72px]">
+        <div className="hidden sm:flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-[16px] font-semibold text-[#0F172A]">
             Sơ đồ định vị hội trường 2D
           </h3>
           <span className="text-[14px] text-[#334155]">

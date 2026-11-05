@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowUp, Armchair, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TOTAL_ROWS, isVipRow } from '../../constants/hall.js';
 import { formatSeatRanges } from '../../utils/seatSummary.js';
 
@@ -12,7 +12,7 @@ function Block({ nums, color, side, delay = 0 }) {
   const mine = nums.length > 0;
   return (
     <div
-      className={`h-full rounded-lg px-2 py-1.5 flex flex-col justify-center gap-1.5 ${
+      className={`h-full rounded-lg px-2 py-1 flex flex-col justify-center gap-1 ${
         mine ? 'border-2 bg-white fade-in-up' : 'border border-[#E2E8F0] bg-[#F6F8FA]'
       }`}
       style={mine ? { borderColor: color, background: `color-mix(in srgb, ${color} 10%, white)`, '--stagger-delay': `${delay}ms` } : undefined}
@@ -54,26 +54,9 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
   let order = 0; // thứ tự hiện dần các khung
 
   return (
-    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-3 space-y-3">
-      {rowCount > 0 && (
-        <div className="rounded-lg bg-[#EAF6FF] p-3 space-y-2 text-[17px] leading-7 text-[#0F172A] fade-in-up">
-          <p className="flex items-start gap-2">
-            <ArrowUp className="w-6 h-6 shrink-0 mt-0.5 text-[#008BC5]" />
-            <span>
-              Từ <strong>Cửa vào</strong>, đi thẳng lên theo <strong>lối đi giữa</strong>, rồi rẽ vào hàng của bạn.
-            </span>
-          </p>
-          <p className="flex items-start gap-2">
-            <Armchair className="w-6 h-6 shrink-0 mt-0.5 text-[#008BC5]" />
-            <span>
-              Khối của bạn có chỗ ở <strong>{rowCount} hàng</strong> (khung màu bên dưới). Bạn ngồi <strong>ghế trống bất kỳ</strong> trong các khung này.
-            </span>
-          </p>
-        </div>
-      )}
-
+    <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-2.5 space-y-2">
       <div className="grid grid-cols-[3.75rem_1fr_2rem_1fr]">
-        <div className="col-span-4 mb-2 rounded-lg bg-[#0F172A] py-2.5 text-center text-[16px] font-bold text-white">
+        <div className="col-span-4 mb-1 rounded-lg bg-[#0F172A] py-1.5 text-center text-[16px] font-bold text-white">
           SÂN KHẤU
         </div>
 
@@ -89,15 +72,15 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
           const hasR = !!row?.R.length;
           return (
             <React.Fragment key={r}>
-              <div className="flex h-16 flex-col justify-center">
+              <div className="flex h-12 flex-col justify-center">
                 <span className={`text-[16px] leading-5 ${row ? 'font-bold text-[#0F172A]' : 'font-semibold text-[#334155]'}`}>
                   Hàng {r}
                 </span>
                 {isVipRow(r) && <span className="text-[14px] leading-4 font-semibold text-[#B45309]">VIP</span>}
               </div>
-              <div className="h-16 py-1"><Block nums={row?.L || []} color={color} side="L" delay={hasL ? 150 + 90 * order++ : 0} /></div>
+              <div className="h-12 py-0.5"><Block nums={row?.L || []} color={color} side="L" delay={hasL ? 150 + 90 * order++ : 0} /></div>
               {/* Lối đi giữa: đường nét đứt chảy lên tới hàng của nhóm, mũi tên chỉ vào khung */}
-              <div className="relative h-16 overflow-hidden" aria-hidden="true">
+              <div className="relative h-12 overflow-hidden" aria-hidden="true">
                 {flowing ? (
                   <span
                     className="aisle-flow absolute left-1/2 top-0 -ml-0.5 h-[calc(100%+16px)] w-1 rounded-full"
@@ -121,15 +104,22 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
                   />
                 )}
               </div>
-              <div className="h-16 py-1"><Block nums={row?.R || []} color={color} side="R" delay={hasR ? 150 + 90 * order++ : 0} /></div>
+              <div className="h-12 py-0.5"><Block nums={row?.R || []} color={color} side="R" delay={hasR ? 150 + 90 * order++ : 0} /></div>
             </React.Fragment>
           );
         })}
 
-        <div className="col-span-4 mt-2 rounded-lg bg-[#334155] py-2.5 text-center text-[16px] font-bold text-white">
+        <div className="col-span-4 mt-1 rounded-lg bg-[#334155] py-1.5 text-center text-[16px] font-bold text-white">
           CỬA VÀO ↑
         </div>
       </div>
+
+      {rowCount > 0 && (
+        <p className="flex items-center gap-2 rounded-lg bg-[#EAF6FF] px-3 py-2 text-[15px] leading-5 text-[#0F172A] fade-in-up">
+          <ArrowUp className="w-5 h-5 shrink-0 text-[#008BC5]" />
+          <span>Từ <strong>Cửa vào</strong> đi thẳng lên lối giữa, rẽ vào <strong>khung màu</strong> của bạn ({rowCount} hàng), ngồi ghế trống bất kỳ.</span>
+        </p>
+      )}
     </div>
   );
 }
