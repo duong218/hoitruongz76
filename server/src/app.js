@@ -3,7 +3,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
-import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import employeeRoutes from './routes/employees.routes.js';
 import orgRoutes from './routes/org.routes.js';
@@ -21,7 +20,6 @@ app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
 // Đăng ký API Routes
-app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/employees', employeeRoutes);
 app.use('/api/org', orgRoutes);

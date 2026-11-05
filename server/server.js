@@ -12,7 +12,6 @@ async function start() {
 
   const server = app.listen(env.PORT, () => {
     console.log(`🚀 Server đang chạy tại http://localhost:${env.PORT}`);
-    console.log(`Kiểm tra nhanh: http://localhost:${env.PORT}/api/health`);
   });
 
   const shutdown = async (signal) => {
