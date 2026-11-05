@@ -26,8 +26,8 @@ import { MaintenancePage } from './pages/admin/MaintenancePage.jsx';
 
 // Manager Pages (Chỉ MANAGER)
 import { ManagerDashboardPage } from './pages/manager/ManagerDashboardPage.jsx';
-import { SeatingPage } from './pages/admin/SeatingPage.jsx';
-import { GroupsPage } from './pages/admin/GroupsPage.jsx';
+import { SeatingPage } from './pages/manager/SeatingPage.jsx';
+import { GroupsPage } from './pages/manager/GroupsPage.jsx';
 import { AttendancePage } from './pages/manager/AttendancePage.jsx';
 import { ManagerEventPage } from './pages/manager/ManagerEventPage.jsx';
 

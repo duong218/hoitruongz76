@@ -82,10 +82,8 @@ hoitruongz76-main/
         │   ├── admin/
         │   │   ├── AdminDashboardPage.jsx
         │   │   ├── EmployeesPage.jsx
-        │   │   ├── GroupsPage.jsx
         │   │   ├── MaintenancePage.jsx
-        │   │   ├── OrgPage.jsx
-        │   │   └── SeatingPage.jsx
+        │   │   └── OrgPage.jsx
         │   ├── attendee/
         │   │   ├── DirectCheckInPage.jsx
         │   │   ├── LoginPage.jsx
@@ -94,8 +92,10 @@ hoitruongz76-main/
         │   │   └── StaffLoginPage.jsx
         │   └── manager/
         │       ├── AttendancePage.jsx
+        │       ├── GroupsPage.jsx
         │       ├── ManagerDashboardPage.jsx
-        │       └── ManagerEventPage.jsx
+        │       ├── ManagerEventPage.jsx
+        │       └── SeatingPage.jsx
         ├── routes/
         │   └── RequireRole.jsx
         ├── services/
@@ -156,8 +156,8 @@ hoitruongz76-main/
 | `client/src/pages/admin/EmployeesPage.jsx` | Trang quản lý danh sách nhân sự và phân quyền tài khoản | `useEmployees.js`, `useOrg.js`, `EmployeeTable.jsx` | localStorage |
 | `client/src/pages/admin/OrgPage.jsx` | Trang quản lý cơ cấu tổ chức gồm Khối và Phòng ban | `useOrg.js`, `useEmployees.js`, `Modal.jsx` | localStorage |
 | `client/src/pages/admin/MaintenancePage.jsx` | Trang sao lưu và khôi phục toàn bộ dữ liệu ứng dụng | `backupService.js`, `ToastContext.jsx`, `ConfirmContext.jsx` | localStorage |
-| `client/src/pages/admin/GroupsPage.jsx` | Trang quản lý nhóm hội trường và liên kết khối | `useGroups.js`, `useEmployees.js`, `useSeatAssignments.js` | localStorage |
-| `client/src/pages/admin/SeatingPage.jsx` | Trang thao tác gán nhóm cho các hàng ghế và từng ghế | `useGroups.js`, `useSeatAssignments.js`, `HallMap.jsx` | localStorage |
+| `client/src/pages/manager/GroupsPage.jsx` | Trang quản lý nhóm hội trường và liên kết khối | `useGroups.js`, `useEmployees.js`, `useSeatAssignments.js` | localStorage |
+| `client/src/pages/manager/SeatingPage.jsx` | Trang thao tác gán nhóm cho các hàng ghế và từng ghế | `useGroups.js`, `useSeatAssignments.js`, `HallMap.jsx` | localStorage |
 | `client/src/pages/manager/ManagerDashboardPage.jsx` | Trang theo dõi tổng quan sắp chỗ và tỷ lệ điểm danh | `useGroups.js`, `useSeatAssignments.js`, `useAttendance.js` | localStorage |
 | `client/src/pages/manager/AttendancePage.jsx` | Bảng theo dõi điểm danh, lọc dữ liệu và xuất Excel | `useAttendance.js`, `useEmployees.js`, `useOrg.js`, `xlsx` | localStorage |
 | `client/src/pages/manager/ManagerEventPage.jsx` | Trang cài đặt sự kiện và in tem dán mã QR ghế ngồi | `useEventSettings.js`, `qrcode.react`, `printQr.css` | localStorage |
