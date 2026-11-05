@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../ui/Modal.jsx';
 import { Input } from '../ui/Input.jsx';
 import { Button } from '../ui/Button.jsx';
+import { Select } from '../ui/Select.jsx';
 import { ROLES, ROLE_LABELS } from '../../constants/roles.js';
 import { Lock } from 'lucide-react';
 
@@ -157,23 +158,19 @@ export function EmployeeFormModal({
         </div>
 
         {!isBlock && (
-          <div className="space-y-1.5">
-            <label htmlFor="new-dept-block" className="block text-[15px] font-semibold text-[#0F172A]">
-              Thuộc Khối (mặc định)
-            </label>
-            <select
-              id="new-dept-block"
-              value={newDeptBlockId}
-              onChange={(e) => setNewDeptBlockId(e.target.value)}
-              disabled={addLoading}
-              className={selectCls}
-            >
-              <option value="">-- Chọn khối --</option>
-              {blocks.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Thuộc Khối (mặc định)"
+            id="new-dept-block"
+            value={newDeptBlockId}
+            onChange={(e) => setNewDeptBlockId(e.target.value)}
+            disabled={addLoading}
+            size="sm"
+          >
+            <option value="">-- Chọn khối --</option>
+            {blocks.map((b) => (
+              <option key={b.id} value={b.id}>{b.name}</option>
+            ))}
+          </Select>
         )}
 
         {addError && <p className="text-[14px] text-[#B91C1C] font-medium">{addError}</p>}
@@ -305,35 +302,25 @@ export function EmployeeFormModal({
         />
 
         {/* Vai trò */}
-        <div className="space-y-1.5">
-          <label htmlFor="employee-role" className="block text-[16px] font-semibold text-[#0F172A]">
-            Vai trò hệ thống <span className="text-[#E53E3E]">*</span>
-          </label>
-          <select
-            id="employee-role"
-            value={role}
-            onChange={(e) => {
-              setRole(e.target.value);
-              setPassword('');
-              setConfirmPassword('');
-              setPasswordError('');
-              setConfirmPasswordError('');
-            }}
-            disabled={isSelf || loading}
-            className={`w-full min-h-[48px] px-4 py-2.5 text-[16px] text-[#0F172A] bg-white border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5] ${
-              isSelf ? 'opacity-60 cursor-not-allowed bg-[#F8FAFC]' : ''
-            }`}
-          >
-            <option value={ROLES.EMPLOYEE}>{ROLE_LABELS[ROLES.EMPLOYEE]}</option>
-            <option value={ROLES.MANAGER}>{ROLE_LABELS[ROLES.MANAGER]}</option>
-            <option value={ROLES.ADMIN}>{ROLE_LABELS[ROLES.ADMIN]}</option>
-          </select>
-          {isSelf && (
-            <p className="text-[13px] text-[#B45309] font-medium">
-              Bạn không thể tự thay đổi vai trò tài khoản của chính mình.
-            </p>
-          )}
-        </div>
+        <Select
+          label="Vai trò hệ thống"
+          id="employee-role"
+          value={role}
+          onChange={(e) => {
+            setRole(e.target.value);
+            setPassword('');
+            setConfirmPassword('');
+            setPasswordError('');
+            setConfirmPasswordError('');
+          }}
+          disabled={isSelf || loading}
+          required
+          helperText={isSelf ? 'Bạn không thể tự thay đổi vai trò tài khoản của chính mình.' : ''}
+        >
+          <option value={ROLES.EMPLOYEE}>{ROLE_LABELS[ROLES.EMPLOYEE]}</option>
+          <option value={ROLES.MANAGER}>{ROLE_LABELS[ROLES.MANAGER]}</option>
+          <option value={ROLES.ADMIN}>{ROLE_LABELS[ROLES.ADMIN]}</option>
+        </Select>
 
         {/* Khối nhập Mật khẩu (chỉ hiện khi vai trò là Quản trị hoặc Quản lý) */}
         {isStaffRole && (
@@ -410,15 +397,13 @@ export function EmployeeFormModal({
 
         {/* Phòng ban */}
         <div className="space-y-1.5">
-          <label htmlFor="employee-dept" className="block text-[16px] font-semibold text-[#0F172A]">
-            Phòng ban / Phân xưởng {role === ROLES.EMPLOYEE && <span className="text-[#E53E3E]">*</span>}
-          </label>
-          <select
+          <Select
+            label="Phòng ban / Phân xưởng"
             id="employee-dept"
             value={departmentId}
             onChange={(e) => (e.target.value === NEW ? openAdd('dept') : handleDepartmentChange(e.target.value))}
             disabled={loading}
-            className={selectCls}
+            required={role === ROLES.EMPLOYEE}
           >
             <option value="">-- {role === ROLES.EMPLOYEE ? 'Chọn phòng ban' : 'Không thuộc phòng ban (Tùy chọn)'} --</option>
             {departments.map((d) => (
@@ -427,21 +412,20 @@ export function EmployeeFormModal({
               </option>
             ))}
             {onAddDepartment && <option value={NEW}>+ Thêm phòng ban / phân xưởng mới...</option>}
-          </select>
+          </Select>
           {adding === 'dept' && renderAddRow()}
         </div>
 
         {/* Khối */}
         <div className="space-y-1.5">
-          <label htmlFor="employee-block" className="block text-[16px] font-semibold text-[#0F172A]">
-            Khối trực thuộc {role === ROLES.EMPLOYEE && <span className="text-[#E53E3E]">*</span>}
-          </label>
-          <select
+          <Select
+            label="Khối trực thuộc"
             id="employee-block"
             value={blockId}
             onChange={(e) => (e.target.value === NEW ? openAdd('block') : setBlockId(e.target.value))}
             disabled={loading}
-            className={selectCls}
+            required={role === ROLES.EMPLOYEE}
+            helperText="Mặc định theo phòng ban, quản trị viên có thể đổi sang Khối khác độc lập."
           >
             <option value="">-- {role === ROLES.EMPLOYEE ? 'Chọn khối trực thuộc' : 'Không thuộc khối (Tùy chọn)'} --</option>
             {blocks.map((b) => (
@@ -450,11 +434,8 @@ export function EmployeeFormModal({
               </option>
             ))}
             {onAddBlock && <option value={NEW}>+ Thêm khối mới...</option>}
-          </select>
+          </Select>
           {adding === 'block' && renderAddRow()}
-          <p className="text-[13px] text-[#64748B]">
-            Mặc định theo phòng ban, quản trị viên có thể đổi sang Khối khác độc lập.
-          </p>
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3">

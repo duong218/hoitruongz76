@@ -3,6 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { DEMO_MODE } from '../../constants/app.js';
 import { seatBadgeText } from '../../utils/seatLabel.js';
 import { Button } from '../ui/Button.jsx';
+import { Select } from '../ui/Select.jsx';
 import { X, Camera, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function ScannerModal({
@@ -204,32 +205,33 @@ export function ScannerModal({
 
             {showDemoSelector && (
               <div className="space-y-2 pt-1 border-t border-white/10">
-                <label htmlFor="demo-seat-select" className="block text-[13px] text-white/80">
-                  Chọn ghế muốn thử quét:
-                </label>
-                <div className="flex gap-2">
-                  <select
-                    id="demo-seat-select"
-                    value={selectedDemoSeat}
-                    onChange={(e) => setSelectedDemoSeat(e.target.value)}
-                    className="flex-1 min-h-[44px] px-3 py-1.5 text-[15px] bg-black/60 border border-white/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
-                  >
-                    <optgroup label="Ghế thuộc nhóm của bạn (Đúng)">
-                      {userGroupSeats.map((sId) => (
-                        <option key={sId} value={sId}>
-                          {seatBadgeText(sId)} ({sId})
-                        </option>
-                      ))}
-                    </optgroup>
-                    <optgroup label="Ghế thử sai (Nhóm khác)">
-                      <option value="1-L-1">Hàng 1 - Trái - Ghế 1 (VIP)</option>
-                      <option value="9-R-5">Hàng 9 - Phải - Ghế 5 (Khách mời)</option>
-                    </optgroup>
-                  </select>
+                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+                  <div className="flex-1">
+                    <Select
+                      label="Chọn ghế muốn thử quét:"
+                      id="demo-seat-select"
+                      value={selectedDemoSeat}
+                      onChange={(e) => setSelectedDemoSeat(e.target.value)}
+                      size="sm"
+                      className="bg-black/80 border-white/30 text-white"
+                    >
+                      <optgroup label="Ghế thuộc nhóm của bạn (Đúng)" className="bg-[#0F172A] text-white">
+                        {userGroupSeats.map((sId) => (
+                          <option key={sId} value={sId}>
+                            {seatBadgeText(sId)} ({sId})
+                          </option>
+                        ))}
+                      </optgroup>
+                      <optgroup label="Ghế thử sai (Nhóm khác)" className="bg-[#0F172A] text-white">
+                        <option value="1-L-1">Hàng 1 - Trái - Ghế 1 (VIP)</option>
+                        <option value="9-R-5">Hàng 9 - Phải - Ghế 5 (Khách mời)</option>
+                      </optgroup>
+                    </Select>
+                  </div>
                   <button
                     type="button"
                     onClick={handleSimulateScan}
-                    className="px-4 py-2 min-h-[44px] bg-[#008BC5] hover:bg-[#0072A3] active:bg-[#005C85] text-white font-bold text-[14px] rounded-lg transition-colors cursor-pointer shrink-0"
+                    className="px-4 py-2 min-h-[40px] bg-[#008BC5] hover:bg-[#0072A3] active:bg-[#005C85] text-white font-bold text-[14px] rounded-lg transition-colors cursor-pointer shrink-0"
                   >
                     Quét ghế này
                   </button>

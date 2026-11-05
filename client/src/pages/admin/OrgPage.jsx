@@ -6,6 +6,7 @@ import { useConfirm } from '../../context/ConfirmContext.jsx';
 import { Modal } from '../../components/ui/Modal.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { Select } from '../../components/ui/Select.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Plus, Edit2, Trash2, Users, Building2, GitFork } from 'lucide-react';
 
@@ -339,27 +340,20 @@ export function OrgPage() {
             autoFocus
           />
 
-          <div className="space-y-1.5">
-            <label htmlFor="dept-block-select" className="block text-[16px] font-semibold text-[#0F172A]">
-              Khối mặc định <span className="text-[#E53E3E]">*</span>
-            </label>
-            <select
-              id="dept-block-select"
-              value={deptBlockId}
-              onChange={(e) => setDeptBlockId(e.target.value)}
-              className="w-full min-h-[48px] px-4 py-2.5 text-[16px] text-[#0F172A] bg-white border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
-              required
-            >
-              {blocks.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
-            <p className="text-[13px] text-[#64748B]">
-              Khi nhân viên được chọn phòng ban này, Khối của họ sẽ được tự động điền theo Khối mặc định.
-            </p>
-          </div>
+          <Select
+            label="Khối mặc định"
+            id="dept-block-select"
+            value={deptBlockId}
+            onChange={(e) => setDeptBlockId(e.target.value)}
+            required
+            helperText="Khi nhân viên được chọn phòng ban này, Khối của họ sẽ được tự động điền theo Khối mặc định."
+          >
+            {blocks.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </Select>
 
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3">
             <Button variant="secondary" onClick={() => setDeptModalOpen(false)}>

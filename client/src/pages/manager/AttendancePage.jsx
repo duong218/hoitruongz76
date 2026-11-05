@@ -12,6 +12,7 @@ import { seatBadgeText } from '../../utils/seatLabel.js';
 import { GroupBadge } from '../../components/ui/GroupBadge.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { Select } from '../../components/ui/Select.jsx';
 import {
   RotateCcw,
   Download,
@@ -378,72 +379,56 @@ export function AttendancePage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
-              <label htmlFor="filter-att-block" className="block text-[13px] font-semibold text-[#64748B] mb-1">
-                Khối:
-              </label>
-              <select
-                id="filter-att-block"
-                value={filterBlockId}
-                onChange={(e) => setFilterBlockId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 text-[15px] border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
-              >
-                <option value="ALL">Tất cả các Khối</option>
-                {blocks.map((b) => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Khối:"
+              id="filter-att-block"
+              value={filterBlockId}
+              onChange={(e) => setFilterBlockId(e.target.value)}
+              size="sm"
+            >
+              <option value="ALL">Tất cả các Khối</option>
+              {blocks.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </Select>
 
-            <div>
-              <label htmlFor="filter-att-dept" className="block text-[13px] font-semibold text-[#64748B] mb-1">
-                Phòng ban:
-              </label>
-              <select
-                id="filter-att-dept"
-                value={filterDeptId}
-                onChange={(e) => setFilterDeptId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 text-[15px] border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
-              >
-                <option value="ALL">Tất cả Phòng ban</option>
-                {departments.map((d) => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Phòng ban:"
+              id="filter-att-dept"
+              value={filterDeptId}
+              onChange={(e) => setFilterDeptId(e.target.value)}
+              size="sm"
+            >
+              <option value="ALL">Tất cả Phòng ban</option>
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>{d.name}</option>
+              ))}
+            </Select>
 
-            <div>
-              <label htmlFor="filter-att-group" className="block text-[13px] font-semibold text-[#64748B] mb-1">
-                Nhóm ghế:
-              </label>
-              <select
-                id="filter-att-group"
-                value={filterGroupId}
-                onChange={(e) => setFilterGroupId(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 text-[15px] border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
-              >
-                <option value="ALL">Tất cả Nhóm ghế</option>
-                {groups.map((g) => (
-                  <option key={g.id} value={g.id}>{g.name}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              label="Nhóm ghế:"
+              id="filter-att-group"
+              value={filterGroupId}
+              onChange={(e) => setFilterGroupId(e.target.value)}
+              size="sm"
+            >
+              <option value="ALL">Tất cả Nhóm ghế</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </Select>
 
-            <div>
-              <label htmlFor="filter-att-status" className="block text-[13px] font-semibold text-[#64748B] mb-1">
-                Trạng thái:
-              </label>
-              <select
-                id="filter-att-status"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 text-[15px] border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
-              >
-                <option value="ALL">Tất cả trạng thái</option>
-                <option value="CHECKED">Đã điểm danh</option>
-                <option value="UNCHECKED">Chưa điểm danh</option>
-              </select>
-            </div>
+            <Select
+              label="Trạng thái:"
+              id="filter-att-status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              size="sm"
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="CHECKED">Đã điểm danh</option>
+              <option value="UNCHECKED">Chưa điểm danh</option>
+            </Select>
           </div>
         </div>
 

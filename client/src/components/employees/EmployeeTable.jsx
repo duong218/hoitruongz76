@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Edit2, Trash2, UserPlus, FileSpreadsheet } from 'lucide-react';
 import { Badge } from '../ui/Badge.jsx';
 import { Button } from '../ui/Button.jsx';
+import { Select } from '../ui/Select.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
 import { ROLE_LABELS, ROLES } from '../../constants/roles.js';
 
@@ -88,47 +89,37 @@ export function EmployeeTable({
           </div>
         </div>
 
-        {/* Lọc theo Khối và Phòng ban */}
+        {/* Lọc theo Khối và Phòng ban sử dụng Select dùng chung */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="filter-block" className="block text-[14px] font-semibold text-[#64748B] mb-1">
-              Lọc theo Khối:
-            </label>
-            <select
-              id="filter-block"
-              value={selectedBlockId}
-              onChange={(e) => setSelectedBlockId(e.target.value)}
-              className="w-full min-h-[48px] px-3 py-2 text-[16px] text-[#0F172A] bg-white border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5] cursor-pointer"
-            >
-              <option value="ALL">Tất cả các Khối</option>
-              {blocks.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-              <option value="UNASSIGNED">Chưa thuộc Khối nào</option>
-            </select>
-          </div>
+          <Select
+            label="Lọc theo Khối:"
+            id="filter-block"
+            value={selectedBlockId}
+            onChange={(e) => setSelectedBlockId(e.target.value)}
+          >
+            <option value="ALL">Tất cả các Khối</option>
+            {blocks.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
+              </option>
+            ))}
+            <option value="UNASSIGNED">Chưa thuộc Khối nào</option>
+          </Select>
 
-          <div>
-            <label htmlFor="filter-dept" className="block text-[14px] font-semibold text-[#64748B] mb-1">
-              Lọc theo Phòng ban:
-            </label>
-            <select
-              id="filter-dept"
-              value={selectedDeptId}
-              onChange={(e) => setSelectedDeptId(e.target.value)}
-              className="w-full min-h-[48px] px-3 py-2 text-[16px] text-[#0F172A] bg-white border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5] cursor-pointer"
-            >
-              <option value="ALL">Tất cả Phòng ban / Phân xưởng</option>
-              {departments.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-              <option value="UNASSIGNED">Chưa thuộc Phòng ban</option>
-            </select>
-          </div>
+          <Select
+            label="Lọc theo Phòng ban:"
+            id="filter-dept"
+            value={selectedDeptId}
+            onChange={(e) => setSelectedDeptId(e.target.value)}
+          >
+            <option value="ALL">Tất cả Phòng ban / Phân xưởng</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name}
+              </option>
+            ))}
+            <option value="UNASSIGNED">Chưa thuộc Phòng ban</option>
+          </Select>
         </div>
       </div>
 
