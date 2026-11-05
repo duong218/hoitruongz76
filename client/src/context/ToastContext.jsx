@@ -64,7 +64,7 @@ export function ToastProvider({ children }) {
       {/* Toast container */}
       <aside
         aria-label="Thông báo hệ thống"
-        className="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-[100] flex flex-col gap-2 pointer-events-none"
+        className="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-[200] flex flex-col gap-2 pointer-events-none"
       >
         {toasts.map((t) => {
           const style = getToastStyle(t.type);

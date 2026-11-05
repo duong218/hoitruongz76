@@ -26,6 +26,7 @@ export function ScannerModal({
   const [manualMode, setManualMode] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [manualError, setManualError] = useState('');
+  const [manualSubmitting, setManualSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -148,7 +149,7 @@ export function ScannerModal({
     onScanResult({ seat: selectedDemoSeat, token });
   };
 
-  const handleManualSubmit = (e) => {
+  const handleManualSubmit = async (e) => {
     e.preventDefault();
     setManualError('');
     const trimmedCode = manualCode.trim().toUpperCase();
@@ -156,8 +157,20 @@ export function ScannerModal({
       setManualError('Vui lòng nhập 6 ký tự mã ghế in trên tem.');
       return;
     }
-    // Gửi trực tiếp token mã ghế, server tự tra cứu ghế tương ứng và kiểm tra vị trí
-    onScanResult({ seat: '', token: trimmedCode });
+    if (trimmedCode.length < 6) {
+      setManualError('Mã ghế gồm đúng 6 ký tự. Vui lòng nhập đủ 6 ký tự.');
+      return;
+    }
+    try {
+      setManualSubmitting(true);
+      // Gửi trực tiếp token mã ghế, server tự tra cứu ghế tương ứng và kiểm tra vị trí
+      await onScanResult({ seat: '', token: trimmedCode });
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Mã ghế không đúng hoặc bạn ngồi không đúng vị trí.';
+      setManualError(msg);
+    } finally {
+      setManualSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -280,10 +293,10 @@ export function ScannerModal({
               </button>
               <button
                 type="submit"
-                disabled={!manualCode.trim()}
+                disabled={!manualCode.trim() || manualSubmitting}
                 className="flex-1 py-3.5 bg-[#008BC5] hover:bg-[#0072A3] active:bg-[#005C85] disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-[15px] rounded-xl transition-all shadow-lg cursor-pointer"
               >
-                Xác nhận điểm danh
+                {manualSubmitting ? 'Đang kiểm tra...' : 'Xác nhận điểm danh'}
               </button>
             </div>
           </form>

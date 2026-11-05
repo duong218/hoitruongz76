@@ -93,13 +93,14 @@ export function SeatPage() {
           : 'Điểm danh thành công!'
       );
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Lỗi khi lưu kết quả điểm danh.';
+      const msg = err.response?.data?.message || err.message || 'Mã ghế không hợp lệ hoặc sai vị trí.';
       if (msg.includes('đã điểm danh rồi')) {
         setScannerOpen(false);
         toast.info(msg);
       } else {
         toast.error(msg);
       }
+      throw err; // Ném tiếp để ScannerModal hiển thị lỗi trực tiếp trong modal
     }
   };
 
