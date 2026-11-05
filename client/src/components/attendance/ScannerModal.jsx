@@ -4,7 +4,7 @@ import { DEMO_MODE } from '../../constants/app.js';
 import { seatBadgeText } from '../../utils/seatLabel.js';
 import { Button } from '../ui/Button.jsx';
 import { Select } from '../ui/Select.jsx';
-import { X, Camera, AlertTriangle, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Camera, AlertTriangle, Sparkles, ChevronDown, ChevronUp, Keyboard, CheckCircle2 } from 'lucide-react';
 
 export function ScannerModal({
   isOpen,
@@ -15,24 +15,33 @@ export function ScannerModal({
   seatTokens = {},
 }) {
   const [cameraError, setCameraError] = useState('');
-  const [showDemoSelector, setShowDemoSelector] = useState(true);
+  const [showDemoSelector, setShowDemoSelector] = useState(false);
   const [selectedDemoSeat, setSelectedDemoSeat] = useState('');
   const scannerRef = useRef(null);
   const readerId = 'qr-reader-container';
 
   const [scanningLocked, setScanningLocked] = useState(false);
 
+  // Chế độ nhập mã bằng tay khi hỏng camera hoặc không quét được
+  const [manualMode, setManualMode] = useState(false);
+  const [manualCode, setManualCode] = useState('');
+  const [manualError, setManualError] = useState('');
+
   useEffect(() => {
     if (!isOpen) {
       setScanningLocked(false);
+      setManualMode(false);
+      setManualCode('');
+      setManualError('');
       return;
     }
 
     setCameraError('');
     let isRunning = false;
 
-    // Khởi tạo camera
+    // Khởi tạo camera nếu không ở manualMode
     const timer = setTimeout(() => {
+      if (manualMode) return;
       try {
         const scanner = new Html5Qrcode(readerId);
         scannerRef.current = scanner;
@@ -80,9 +89,9 @@ export function ScannerModal({
         }
       }
     };
-  }, [isOpen]);
+  }, [isOpen, manualMode]);
 
-  // Set default demo seat
+  // Đặt giá trị ghế mặc định từ danh sách ghế của nhóm cho demo
   useEffect(() => {
     if (userGroupSeats.length > 0) {
       setSelectedDemoSeat(userGroupSeats[0]);
@@ -139,54 +148,146 @@ export function ScannerModal({
     onScanResult({ seat: selectedDemoSeat, token });
   };
 
+  const handleManualSubmit = (e) => {
+    e.preventDefault();
+    setManualError('');
+    const trimmedCode = manualCode.trim().toUpperCase();
+    if (!trimmedCode) {
+      setManualError('Vui lòng nhập 6 ký tự mã ghế in trên tem.');
+      return;
+    }
+    // Gửi trực tiếp token mã ghế, server tự tra cứu ghế tương ứng và kiểm tra vị trí
+    onScanResult({ seat: '', token: trimmedCode });
+  };
+
   if (!isOpen) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[120] bg-black/90 flex flex-col justify-between text-white p-4 pb-[env(safe-area-inset-bottom,20px)]"
+      className="fixed inset-0 z-[120] bg-black/95 flex flex-col justify-between text-white p-4 pb-[env(safe-area-inset-bottom,20px)] overflow-y-auto"
     >
       {/* Top bar */}
-      <div className="flex items-center justify-between pt-2">
-        <span className="text-[17px] font-bold tracking-wide">Điểm danh tại chỗ</span>
+      <div className="flex items-center justify-between pt-2 max-w-md mx-auto w-full">
+        <span className="text-[17px] font-bold tracking-wide flex items-center gap-2">
+          {manualMode ? <Keyboard className="w-5 h-5 text-[#38BDF8]" /> : <Camera className="w-5 h-5 text-[#38BDF8]" />}
+          <span>{manualMode ? 'Nhập mã ghế thủ công' : 'Điểm danh tại chỗ'}</span>
+        </span>
         <button
           type="button"
           onClick={onClose}
-          className="min-w-[48px] min-h-[48px] flex items-center justify-center text-white/80 hover:text-white rounded-full bg-white/10 cursor-pointer"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center text-white/80 hover:text-white rounded-full bg-white/10 cursor-pointer"
           aria-label="Đóng máy quét"
         >
           <X className="w-6 h-6" />
         </button>
       </div>
 
-      {/* Main scanner view */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center my-4 space-y-4 max-w-md mx-auto w-full">
-        <div className="text-center px-4">
-          <p className="text-[20px] font-extrabold text-white leading-tight">
-            Hướng camera vào mã QR dán trên ghế của bạn
-          </p>
-          <p className="text-[14px] text-white/70 mt-1">
-            Mã QR được in và dán ngay phía trước thành tựa hoặc tay vịn của ghế.
-          </p>
-        </div>
-
-        {/* Khung camera */}
-        <div className="w-full aspect-square max-w-[320px] bg-black rounded-2xl border-2 border-white/30 overflow-hidden relative shadow-2xl flex items-center justify-center">
-          <div id={readerId} className="w-full h-full" />
-
-          {cameraError && (
-            <div className="absolute inset-0 bg-[#0F172A]/95 p-6 flex flex-col items-center justify-center text-center space-y-3">
-              <AlertTriangle className="w-10 h-10 text-[#F6AD37]" />
-              <p className="text-[15px] font-medium text-white leading-snug">
-                {cameraError}
+        {!manualMode ? (
+          /* ================= GIAO DIỆN QUÉT CAMERA ================= */
+          <>
+            <div className="text-center px-4">
+              <p className="text-[19px] sm:text-[20px] font-extrabold text-white leading-tight">
+                Hướng camera vào mã QR dán trên ghế của bạn
               </p>
-              <p className="text-[13px] text-white/70">
-                Gợi ý: Quý vị cũng có thể mở camera điện thoại quét trực tiếp mã QR trên ghế để vào đường dẫn.
+              <p className="text-[13px] text-white/70 mt-1">
+                Mã QR được in và dán ngay phía trước thành tựa hoặc tay vịn của ghế.
               </p>
             </div>
-          )}
-        </div>
+
+            {/* Khung camera */}
+            <div className="w-full aspect-square max-w-[300px] bg-black rounded-2xl border-2 border-white/30 overflow-hidden relative shadow-2xl flex items-center justify-center">
+              <div id={readerId} className="w-full h-full" />
+
+              {cameraError && (
+                <div className="absolute inset-0 bg-[#0F172A]/95 p-6 flex flex-col items-center justify-center text-center space-y-3">
+                  <AlertTriangle className="w-10 h-10 text-[#F6AD37]" />
+                  <p className="text-[14px] font-medium text-white leading-snug">
+                    {cameraError}
+                  </p>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={() => setManualMode(true)}
+                    icon={Keyboard}
+                  >
+                    Chuyển sang nhập mã bằng tay
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* NÚT LỚN: KHÔNG QUÉT ĐƯỢC? NHẬP MÃ GHẾ */}
+            <button
+              type="button"
+              onClick={() => setManualMode(true)}
+              className="w-full py-3.5 px-4 bg-white/15 hover:bg-white/25 active:bg-white/30 border border-white/30 rounded-xl text-white font-bold text-[15px] flex items-center justify-center gap-2.5 transition-all shadow-lg cursor-pointer"
+            >
+              <Keyboard className="w-5 h-5 text-[#38BDF8]" />
+              <span>Không quét được? Nhập mã ghế</span>
+            </button>
+          </>
+        ) : (
+          /* ================= GIAO DIỆN NHẬP TAY (KHÔNG QUÉT ĐƯỢC) ================= */
+          <form onSubmit={handleManualSubmit} className="w-full bg-[#1E293B] border border-white/20 rounded-2xl p-6 space-y-5 shadow-2xl">
+            <div className="text-center pb-2 border-b border-white/10 space-y-1">
+              <h3 className="text-[20px] font-extrabold text-white">
+                Nhập mã tem dán trên ghế
+              </h3>
+              <p className="text-[13px] text-white/70">
+                Xem dòng chữ in <strong className="text-[#38BDF8]">"Mã: ......"</strong> ngay dưới mã QR trên ghế bạn đang ngồi.
+              </p>
+            </div>
+
+            {manualError && (
+              <div className="p-3 bg-[#EF4444]/20 border border-[#EF4444]/50 rounded-xl text-[14px] text-[#FCA5A5] font-semibold text-center">
+                {manualError}
+              </div>
+            )}
+
+            {/* Nhập mã 6 ký tự */}
+            <div className="space-y-2 py-2">
+              <label className="block text-[14px] font-bold text-white text-center">
+                Mã bảo mật 6 ký tự:
+              </label>
+              <input
+                type="text"
+                maxLength={6}
+                value={manualCode}
+                onChange={(e) => {
+                  setManualCode(e.target.value.toUpperCase());
+                  setManualError('');
+                }}
+                placeholder="Ví dụ: K7M2QX"
+                className="w-full text-center tracking-[6px] sm:tracking-[8px] font-mono text-[28px] sm:text-[32px] font-black uppercase py-3.5 px-4 bg-black/60 border-2 border-white/30 rounded-2xl text-white placeholder:text-white/20 focus:outline-none focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/20 transition-all shadow-inner"
+                autoFocus
+              />
+              <p className="text-[12px] text-white/50 text-center">
+                (Bảng mã đã loại bỏ ký tự I, O, 0, 1 để tránh nhầm lẫn)
+              </p>
+            </div>
+
+            <div className="flex gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => setManualMode(false)}
+                className="flex-1 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[14px] rounded-xl transition-all cursor-pointer"
+              >
+                ← Quét camera
+              </button>
+              <button
+                type="submit"
+                disabled={!manualCode.trim()}
+                className="flex-1 py-3.5 bg-[#008BC5] hover:bg-[#0072A3] active:bg-[#005C85] disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-[15px] rounded-xl transition-all shadow-lg cursor-pointer"
+              >
+                Xác nhận điểm danh
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* Chế độ thử (DEMO_MODE) */}
         {DEMO_MODE && (
@@ -198,7 +299,7 @@ export function ScannerModal({
             >
               <div className="flex items-center gap-1.5">
                 <Sparkles className="w-4 h-4 text-[#F6AD37]" />
-                <span>Chế độ thử nghiệm (không cần camera)</span>
+                <span>Chế độ thử nghiệm (Simulate)</span>
               </div>
               {showDemoSelector ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
@@ -242,15 +343,15 @@ export function ScannerModal({
         )}
       </div>
 
-      {/* Nút Hủy */}
-      <div className="max-w-md mx-auto w-full">
+      {/* Nút Đóng */}
+      <div className="max-w-md mx-auto w-full pt-2">
         <Button
           variant="secondary"
           fullWidth
           size="lg"
           onClick={onClose}
         >
-          Hủy bỏ
+          Đóng
         </Button>
       </div>
     </div>

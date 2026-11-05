@@ -57,33 +57,47 @@ export function validateCheckIn({
   }
 
   // 3. Kiểm tra mã ghế và token hợp lệ
-  const parsedSeat = parseSeatId(seatId);
-  const expectedToken = event.seatTokens ? event.seatTokens[seatId] : null;
+  let targetSeatId = seatId;
+  const upperToken = (token || '').trim().toUpperCase();
+
+  // Nếu không truyền seatId nhưng có token, tìm seatId từ event.seatTokens
+  if (!targetSeatId && upperToken && event.seatTokens) {
+    const foundSeat = Object.entries(event.seatTokens).find(
+      ([_, t]) => (t || '').trim().toUpperCase() === upperToken
+    );
+    if (foundSeat) {
+      targetSeatId = foundSeat[0];
+    }
+  }
+
+  const parsedSeat = targetSeatId ? parseSeatId(targetSeatId) : null;
+  const expectedToken = targetSeatId && event.seatTokens ? event.seatTokens[targetSeatId] : null;
 
   if (
+    !targetSeatId ||
     !parsedSeat ||
     parsedSeat.row < 1 ||
     parsedSeat.row > 10 ||
     parsedSeat.n < 1 ||
     parsedSeat.n > 10 ||
-    !token ||
+    !upperToken ||
     !expectedToken ||
-    token !== expectedToken
+    upperToken !== expectedToken.trim().toUpperCase()
   ) {
     return {
       ok: false,
       code: CHECKIN_CODES.INVALID_QR,
-      message: 'Mã QR không hợp lệ. Hãy quét mã dán trên ghế.',
+      message: 'Mã tem ghế không hợp lệ. Vui lòng kiểm tra lại 6 ký tự trên ghế.',
     };
   }
 
   // 4. Kiểm tra ghế có thuộc nhóm của người dùng không
-  const assignedGroupId = seatGroups[seatId];
+  const assignedGroupId = seatGroups[targetSeatId];
   if (!assignedGroupId || assignedGroupId !== group.id) {
     return {
       ok: false,
       code: CHECKIN_CODES.WRONG_SEAT,
-      message: 'Đây không phải ghế được sắp cho nhóm của bạn. Hãy tới đúng hàng đang nhấp nháy.',
+      message: `Ghế (${targetSeatId}) không thuộc khu vực của nhóm bạn. Hãy tới đúng hàng ghế được phân bổ.`,
     };
   }
 

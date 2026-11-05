@@ -73,23 +73,27 @@ export function SeatPage() {
     });
   }, [seatDescription]);
 
-  // Xử lý kết quả quét từ ScannerModal
+  // Xử lý kết quả quét hoặc nhập mã từ ScannerModal
   const handleScanResult = async ({ seat, token, error: scanError }) => {
     if (scanError) {
       toast.warning(scanError);
       return;
     }
-    if (!seat) {
-      toast.error('Không tìm thấy thông tin ghế từ mã QR này.');
+    if (!seat && !token) {
+      toast.error('Vui lòng cung cấp mã ghế.');
       return;
     }
     try {
-      const record = await checkIn({ employeeCode: user.code, seatId: seat, token });
+      const record = await checkIn({ employeeCode: user.code, seatId: seat || '', token });
       setScannerOpen(false);
-      toast.success(`Điểm danh thành công tại ${seatLabel(seat)}!`);
-      // Cập nhật ngay lập tức nếu cần
+      const successSeat = record?.seatId || seat;
+      toast.success(
+        successSeat
+          ? `Điểm danh thành công tại ${seatLabel(successSeat)}!`
+          : 'Điểm danh thành công!'
+      );
     } catch (err) {
-      const msg = err.message || 'Lỗi khi lưu kết quả điểm danh.';
+      const msg = err.response?.data?.message || err.message || 'Lỗi khi lưu kết quả điểm danh.';
       if (msg.includes('đã điểm danh rồi')) {
         setScannerOpen(false);
         toast.info(msg);

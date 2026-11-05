@@ -159,6 +159,7 @@ export function ManagerEventPage() {
             row,
             side,
             n,
+            token,
             label: seatBadgeText(sId),
             qrUrl,
           });
@@ -558,6 +559,7 @@ export function ManagerEventPage() {
                   includeMargin={false}
                 />
                 <span className="sticker-title">{item.label}</span>
+                <span className="sticker-code">Mã: {item.token}</span>
                 <span className="sticker-sub">Z176 • Điểm danh</span>
               </div>
             ))}

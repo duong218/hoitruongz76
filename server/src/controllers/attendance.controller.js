@@ -21,15 +21,14 @@ export const attendanceController = {
   // Điểm danh
   async checkIn(req, res, next) {
     try {
-      const { seatId, token } = req.body;
+      let { seatId, token } = req.body;
       // Mã nhân viên lấy từ phiên đăng nhập, không tin dữ liệu client gửi lên
       const code = req.user.code;
 
-      if (typeof seatId !== 'string' || !seatId.trim()) {
-        return res.status(400).json({ message: 'Thiếu thông tin điểm danh.' });
-      }
-      if (typeof token !== 'string' || !token.trim()) {
-        return res.status(400).json({ message: 'Thiếu mã QR trên ghế. Hãy quét mã dán trên ghế của bạn.' });
+      const trimmedToken = typeof token === 'string' ? token.trim().toUpperCase() : '';
+
+      if (!trimmedToken) {
+        return res.status(400).json({ message: 'Thiếu mã tem ghế. Hãy nhập mã 6 ký tự in trên tem hoặc quét QR.' });
       }
 
       // 1. Kiểm tra sự kiện đã mở điểm danh chưa
@@ -54,20 +53,30 @@ export const attendanceController = {
         return res.status(400).json({ message: 'Nhóm của bạn không yêu cầu điểm danh.' });
       }
 
-      // 4. Kiểm tra ghế và token
-      const seat = await Seat.findOne({ seatId }).select('+token');
-      if (!seat) {
-        return res.status(400).json({ message: `Không tìm thấy ghế "${seatId}" trong hội trường.` });
-      }
-
-      if (!seat.token || token.trim().toUpperCase() !== seat.token.trim().toUpperCase()) {
-        return res.status(400).json({ message: 'Mã QR không khớp với ghế này. Hãy quét đúng mã dán trên ghế.' });
+      // 4. Tìm và kiểm tra ghế:
+      // - Nếu có seatId: kiểm tra trực tiếp ghế đó và token khớp không
+      // - Nếu không có seatId (người dùng chỉ gõ mã token): tra cứu ghế theo token
+      let seat;
+      if (typeof seatId === 'string' && seatId.trim()) {
+        seat = await Seat.findOne({ seatId: seatId.trim() }).select('+token');
+        if (!seat) {
+          return res.status(400).json({ message: `Không tìm thấy ghế "${seatId}" trong hội trường.` });
+        }
+        if (!seat.token || trimmedToken !== seat.token.trim().toUpperCase()) {
+          return res.status(400).json({ message: 'Mã QR không khớp với ghế này. Hãy quét đúng mã dán trên ghế.' });
+        }
+      } else {
+        seat = await Seat.findOne({ token: trimmedToken }).select('+token');
+        if (!seat) {
+          return res.status(400).json({ message: 'Mã ghế không hợp lệ hoặc không tồn tại trong hội trường. Vui lòng kiểm tra lại 6 ký tự trên tem.' });
+        }
+        seatId = seat.seatId;
       }
 
       // 5. Kiểm tra ghế có thuộc nhóm của nhân sự không
       if (!seat.groupId || seat.groupId !== group.id) {
         return res.status(400).json({
-          message: `Ghế "${seatId}" không thuộc khu vực của nhóm bạn (${group.name}). Hãy tới đúng hàng được phân bổ.`,
+          message: `Ghế "${seat.seatId}" không thuộc khu vực của nhóm bạn (${group.name}). Hãy tới đúng hàng ghế được phân bổ.`,
         });
       }
 
@@ -85,7 +94,7 @@ export const attendanceController = {
       try {
         newRecord = await Attendance.create({
           employeeCode: code,
-          seatId,
+          seatId: seat.seatId,
           checkedInAt: new Date(),
         });
       } catch (err) {
@@ -98,6 +107,80 @@ export const attendanceController = {
 
       res.status(201).json(newRecord);
     } catch (err) {
+      next(err);
+    }
+  },
+
+  // Điểm danh hộ bởi Quản lý/Quản trị viên (dành cho người quên điện thoại, hỏng cam)
+  async manualCheckInByStaff(req, res, next) {
+    try {
+      const { employeeCode, seatId, reason } = req.body;
+      const targetCode = (employeeCode || '').trim().toUpperCase();
+      const targetSeatId = (seatId || '').trim();
+
+      if (!targetCode) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp mã nhân sự cần điểm danh.' });
+      }
+
+      // 1. Tìm thông tin nhân viên
+      const employee = await Employee.findOne({ code: targetCode });
+      if (!employee) {
+        return res.status(404).json({ message: `Không tìm thấy nhân sự có mã "${targetCode}".` });
+      }
+
+      // 2. Kiểm tra đã điểm danh chưa
+      const existing = await Attendance.findOne({ employeeCode: targetCode });
+      if (existing) {
+        return res.status(409).json({
+          message: `Nhân sự "${employee.name}" (${targetCode}) đã được điểm danh trước đó tại ghế ${existing.seatId}.`,
+          checkedInAt: existing.checkedInAt,
+          seatId: existing.seatId,
+        });
+      }
+
+      // 3. Nếu có chỉ định ghế, kiểm tra ghế
+      let assignedSeatId = targetSeatId;
+      if (assignedSeatId) {
+        const seat = await Seat.findOne({ seatId: assignedSeatId });
+        if (!seat) {
+          return res.status(400).json({ message: `Ghế "${assignedSeatId}" không tồn tại trong hội trường.` });
+        }
+      } else {
+        // Tự động tìm ghế thuộc nhóm của nhân sự nếu không gõ ghế
+        const groups = await Group.find();
+        const group = employee.blockId
+          ? groups.find((g) => Array.isArray(g.blockIds) && g.blockIds.includes(employee.blockId))
+          : null;
+        if (group) {
+          const firstSeat = await Seat.findOne({ groupId: group.id });
+          assignedSeatId = firstSeat ? firstSeat.seatId : '1-L-1';
+        } else {
+          assignedSeatId = '1-L-1';
+        }
+      }
+
+      const newRecord = await Attendance.create({
+        employeeCode: targetCode,
+        seatId: assignedSeatId,
+        checkedInAt: new Date(),
+      });
+
+      // Ghi nhật ký kiểm toán hành động điểm danh hộ
+      const note = reason ? ` (Lý do: ${reason})` : '';
+      await audit(
+        req,
+        'attendance.manual_checkin',
+        `Điểm danh hộ cho [${targetCode}] ${employee.name} tại ghế ${assignedSeatId}${note}`
+      );
+
+      res.status(201).json({
+        message: `Đã điểm danh hộ thành công cho ${employee.name} (${targetCode}).`,
+        record: newRecord,
+      });
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(409).json({ message: 'Nhân sự này đã được điểm danh rồi.' });
+      }
       next(err);
     }
   },

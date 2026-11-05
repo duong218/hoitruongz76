@@ -51,6 +51,12 @@ export function useAttendance() {
     return res;
   };
 
+  const manualCheckIn = async ({ employeeCode, seatId, reason }) => {
+    const res = await attendanceService.manualCheckInByStaff({ employeeCode, seatId, reason });
+    await fetchAttendance();
+    return res;
+  };
+
   const resetAttendance = async () => {
     await attendanceService.resetAttendance();
     await fetchAttendance();
@@ -62,6 +68,7 @@ export function useAttendance() {
     error,
     refresh: fetchAttendance,
     checkIn,
+    manualCheckIn,
     resetAttendance,
   };
 }

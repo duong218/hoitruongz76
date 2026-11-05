@@ -7,6 +7,7 @@ const router = Router();
 
 router.get('/', optionalAuth, attendanceController.getAll);
 router.post('/checkin', authenticate, authorize(ROLES.EMPLOYEE), attendanceController.checkIn);
+router.post('/manual-checkin', authenticate, authorize(ROLES.ADMIN, ROLES.MANAGER), attendanceController.manualCheckInByStaff);
 router.post('/reset', authenticate, authorize(ROLES.ADMIN, ROLES.MANAGER), attendanceController.reset);
 
 export default router;

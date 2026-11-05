@@ -24,16 +24,26 @@ import {
   AlertCircle,
   Building2,
   GitFork,
+  UserPlus,
+  X,
+  FileText,
 } from 'lucide-react';
 
 export function AttendancePage() {
-  const { attendance, resetAttendance, refresh } = useAttendance();
+  const { attendance, resetAttendance, refresh, manualCheckIn } = useAttendance();
   const { employees } = useEmployees();
   const { groups } = useGroups();
   const { blocks, departments } = useOrg();
   const { event } = useEventSettings();
   const toast = useToast();
   const { confirm } = useConfirm();
+
+  // Modal "Điểm danh hộ"
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualEmpCode, setManualEmpCode] = useState('');
+  const [manualReason, setManualReason] = useState('');
+  const [manualSearchTerm, setManualSearchTerm] = useState('');
+  const [manualLoading, setManualLoading] = useState(false);
 
   // Chế độ xem bảng tổng hợp: "BLOCK" hoặc "DEPT"
   const [summaryMode, setSummaryMode] = useState('BLOCK');
@@ -81,6 +91,65 @@ export function AttendancePage() {
   }, [requiredEmployees, attendanceMap]);
   const totalUnchecked = totalRequired - totalChecked;
   const percentage = totalRequired > 0 ? Math.round((totalChecked / totalRequired) * 100) : 0;
+
+  // Danh sách NV chưa điểm danh (dùng trong modal Điểm danh hộ)
+  const uncheckedEmployees = useMemo(() => {
+    return requiredEmployees.filter((e) => !attendanceMap.has(e.code.toUpperCase()));
+  }, [requiredEmployees, attendanceMap]);
+
+  // Danh sách NV chưa điểm danh được lọc theo từ khóa tìm kiếm trong modal
+  const filteredModalEmployees = useMemo(() => {
+    if (!manualSearchTerm.trim()) return uncheckedEmployees;
+    const q = manualSearchTerm.toLowerCase();
+    return uncheckedEmployees.filter(
+      (e) => e.code.toLowerCase().includes(q) || e.name.toLowerCase().includes(q)
+    );
+  }, [uncheckedEmployees, manualSearchTerm]);
+
+  // Mở modal Điểm danh hộ (có thể pre-fill mã NV)
+  const openManualModal = (empCode = '') => {
+    setManualEmpCode(empCode);
+    setManualReason('');
+    setManualSearchTerm('');
+    setShowManualModal(true);
+  };
+
+  // Gửi điểm danh hộ
+  const handleManualCheckIn = async () => {
+    if (!manualEmpCode.trim()) {
+      toast.error('Vui lòng chọn nhân viên cần điểm danh hộ.');
+      return;
+    }
+    if (!manualReason.trim()) {
+      toast.error('Vui lòng nhập lý do điểm danh hộ (bắt buộc ghi nhật ký).');
+      return;
+    }
+
+    try {
+      setManualLoading(true);
+      await manualCheckIn({
+        employeeCode: manualEmpCode.trim(),
+        reason: manualReason.trim(),
+      });
+      const empName = employees.find(
+        (e) => e.code.toUpperCase() === manualEmpCode.toUpperCase()
+      )?.name || manualEmpCode;
+      toast.success(`Đã điểm danh hộ cho ${empName} thành công.`);
+      setShowManualModal(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Không thể điểm danh hộ.');
+    } finally {
+      setManualLoading(false);
+    }
+  };
+
+  // Lý do nhanh gợi ý
+  const QUICK_REASONS = [
+    'Quên điện thoại',
+    'Camera hỏng',
+    'Điện thoại hết pin',
+    'Không quét được QR',
+  ];
 
   // Dữ liệu tổng hợp theo Khối hoặc Phòng ban
   const summaryList = useMemo(() => {
@@ -214,7 +283,10 @@ export function AttendancePage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="primary" onClick={() => openManualModal()} icon={UserPlus}>
+            Điểm danh hộ
+          </Button>
           <Button variant="secondary" onClick={refresh} icon={RefreshCw}>
             Làm mới
           </Button>
@@ -445,6 +517,7 @@ export function AttendancePage() {
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Vị trí ghế</th>
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Giờ quét</th>
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Trạng thái</th>
+                <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px] text-center">Thao tác</th>
               </tr>
             </thead>
             <tbody>
@@ -489,6 +562,19 @@ export function AttendancePage() {
                         </Badge>
                       )}
                     </td>
+                    <td className="py-3 px-4 text-center">
+                      {!isChecked && (
+                        <button
+                          type="button"
+                          onClick={() => openManualModal(emp.code)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-[13px] font-semibold text-[#008BC5] bg-[#EAF6FF] hover:bg-[#D0EDFF] rounded-lg transition-colors cursor-pointer"
+                          title={`Điểm danh hộ cho ${emp.name}`}
+                        >
+                          <UserPlus className="w-3.5 h-3.5" />
+                          Điểm danh hộ
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 );
               })}
@@ -516,7 +602,17 @@ export function AttendancePage() {
                   {isChecked ? (
                     <Badge variant="success" icon={CheckCircle2}>Đã điểm danh</Badge>
                   ) : (
-                    <Badge variant="warning" icon={Clock}>Chưa điểm danh</Badge>
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Badge variant="warning" icon={Clock}>Chưa điểm danh</Badge>
+                      <button
+                        type="button"
+                        onClick={() => openManualModal(emp.code)}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-[12px] font-semibold text-[#008BC5] bg-[#EAF6FF] hover:bg-[#D0EDFF] rounded-lg transition-colors cursor-pointer"
+                      >
+                        <UserPlus className="w-3 h-3" />
+                        Điểm danh hộ
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -535,6 +631,186 @@ export function AttendancePage() {
           })}
         </div>
       </div>
+
+      {/* MODAL ĐIỂM DANH HỘ */}
+      {showManualModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-[#EAF6FF] rounded-xl flex items-center justify-center">
+                  <UserPlus className="w-5 h-5 text-[#008BC5]" />
+                </div>
+                <div>
+                  <h2 className="text-[18px] font-bold text-[#0F172A]">Điểm danh hộ</h2>
+                  <p className="text-[13px] text-[#64748B]">Dành cho người không quét được QR</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowManualModal(false)}
+                className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#F1F5F9] transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5 text-[#64748B]" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+              {/* Chọn nhân viên */}
+              <div className="space-y-2">
+                <label className="text-[14px] font-bold text-[#0F172A] block">
+                  Chọn nhân viên <span className="text-red-500">*</span>
+                </label>
+
+                {manualEmpCode ? (
+                  /* Đã chọn NV – hiển thị thẻ */
+                  (() => {
+                    const selectedEmp = employees.find(
+                      (e) => e.code.toUpperCase() === manualEmpCode.toUpperCase()
+                    );
+                    return (
+                      <div className="flex items-center justify-between p-3 bg-[#EAF6FF] border border-[#B8DCEF] rounded-xl">
+                        <div>
+                          <span className="text-[13px] font-mono font-bold text-[#008BC5]">
+                            {selectedEmp?.code || manualEmpCode}
+                          </span>
+                          <p className="text-[16px] font-bold text-[#0F172A]">
+                            {selectedEmp?.name || 'Không tìm thấy'}
+                          </p>
+                          {selectedEmp?.blockId && (
+                            <span className="text-[13px] text-[#64748B]">
+                              {blockMap.get(selectedEmp.blockId) || ''}
+                              {selectedEmp.departmentId
+                                ? ` • ${deptMap.get(selectedEmp.departmentId) || ''}`
+                                : ''}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setManualEmpCode('')}
+                          className="text-[13px] font-semibold text-[#64748B] hover:text-[#0F172A] px-2 py-1 rounded cursor-pointer"
+                        >
+                          Đổi
+                        </button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  /* Chưa chọn – hiển thị ô tìm kiếm + danh sách */
+                  <>
+                    <div className="relative">
+                      <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                      <input
+                        type="text"
+                        value={manualSearchTerm}
+                        onChange={(e) => setManualSearchTerm(e.target.value)}
+                        placeholder="Tìm theo mã NV hoặc họ tên..."
+                        className="w-full min-h-[44px] pl-9 pr-4 py-2 text-[15px] border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="max-h-[200px] overflow-y-auto border border-[#E2E8F0] rounded-xl divide-y divide-[#F1F5F9]">
+                      {filteredModalEmployees.length === 0 ? (
+                        <div className="p-4 text-center text-[14px] text-[#94A3B8]">
+                          {manualSearchTerm
+                            ? 'Không tìm thấy nhân viên phù hợp.'
+                            : 'Tất cả nhân viên đã điểm danh.'}
+                        </div>
+                      ) : (
+                        filteredModalEmployees.slice(0, 50).map((emp) => (
+                          <button
+                            key={emp.code}
+                            type="button"
+                            onClick={() => setManualEmpCode(emp.code)}
+                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#F8FAFC] transition-colors cursor-pointer text-left"
+                          >
+                            <div>
+                              <span className="text-[13px] font-mono font-bold text-[#008BC5]">
+                                {emp.code}
+                              </span>
+                              <p className="text-[15px] font-medium text-[#0F172A]">{emp.name}</p>
+                            </div>
+                            <span className="text-[12px] text-[#94A3B8]">
+                              {emp.blockId ? blockMap.get(emp.blockId) : ''}
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                    {filteredModalEmployees.length > 50 && (
+                      <p className="text-[12px] text-[#94A3B8] text-center">
+                        Hiển thị 50 / {filteredModalEmployees.length} kết quả — hãy gõ tìm chính xác hơn.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Lý do */}
+              <div className="space-y-2">
+                <label className="text-[14px] font-bold text-[#0F172A] block">
+                  Lý do điểm danh hộ <span className="text-red-500">*</span>
+                </label>
+                {/* Lý do nhanh */}
+                <div className="flex flex-wrap gap-1.5">
+                  {QUICK_REASONS.map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setManualReason(r)}
+                      className={`px-3 py-1.5 text-[13px] font-medium rounded-full border transition-colors cursor-pointer ${
+                        manualReason === r
+                          ? 'bg-[#008BC5] text-white border-[#008BC5]'
+                          : 'bg-[#F8FAFC] text-[#475569] border-[#E2E8F0] hover:bg-[#EAF6FF]'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={manualReason}
+                  onChange={(e) => setManualReason(e.target.value)}
+                  placeholder="Nhập lý do (bắt buộc) — VD: Quên điện thoại, Camera hỏng..."
+                  rows={2}
+                  className="w-full min-h-[60px] px-4 py-2.5 text-[15px] border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#008BC5] resize-none"
+                />
+              </div>
+
+              {/* Thông tin audit */}
+              <div className="flex items-start gap-2 p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl text-[13px] text-[#64748B]">
+                <FileText className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>
+                  Hành động này được ghi nhật ký kiểm toán, bao gồm tên người thực hiện, thời gian và lý do.
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#E2E8F0] bg-[#F8FAFC]">
+              <Button
+                variant="secondary"
+                onClick={() => setShowManualModal(false)}
+                disabled={manualLoading}
+              >
+                Hủy bỏ
+              </Button>
+              <Button
+                variant="primary"
+                onClick={handleManualCheckIn}
+                disabled={manualLoading || !manualEmpCode.trim() || !manualReason.trim()}
+                icon={CheckCircle2}
+              >
+                {manualLoading ? 'Đang xử lý...' : 'Xác nhận điểm danh hộ'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

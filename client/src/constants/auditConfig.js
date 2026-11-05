@@ -42,6 +42,7 @@ export const AUDIT_ACTIONS = {
   'seats.assign_rows': { label: 'Gán hàng ghế', tone: 'info' },
   'event.update': { label: 'Cập nhật sự kiện', tone: 'info' },
   'attendance.reset': { label: 'Đặt lại điểm danh', tone: 'error' },
+  'attendance.manual_checkin': { label: 'Điểm danh hộ', tone: 'warning' },
   'auth.login_failed': { label: 'Đăng nhập sai', tone: 'warning' },
 };
 
