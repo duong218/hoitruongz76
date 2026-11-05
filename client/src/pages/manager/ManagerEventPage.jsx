@@ -40,6 +40,9 @@ export function ManagerEventPage() {
   // Chọn hàng in tem dán ghế (mặc định chọn hàng 3-10, bỏ hàng 1-2 VIP)
   const [selectedPrintRows, setSelectedPrintRows] = useState([3, 4, 5, 6, 7, 8, 9, 10]);
 
+  // Cấu hình kích cỡ tem dán ghế (M: 24 tem/A4, L: 12 tem/A4, XL: 6 tem/A4)
+  const [stickerSize, setStickerSize] = useState('L'); // 'M' | 'L' | 'XL'
+
   useEffect(() => {
     if (event) {
       setEventName(event.eventName || '');
@@ -376,13 +379,75 @@ export function ManagerEventPage() {
                   <span>2. Mã QR Điểm danh dán lên từng ghế</span>
                 </h3>
                 <p className="text-[14px] text-[#64748B] mt-0.5">
-                  In lưới 4 cột x 6 hàng trên giấy A4 (mỗi tem 5x4.5cm kèm nét đứt để cắt kéo), gồm mã bảo mật riêng từng ghế.
+                  Tùy chỉnh kích thước tem in sắc nét trên khổ A4 kèm đường nét đứt hỗ trợ cắt dán lên từng ghế hội trường.
                 </p>
               </div>
 
               <Button variant="primary" onClick={handlePrintSeatStickers} icon={Printer}>
                 In {seatStickersList.length} tem dán ghế
               </Button>
+            </div>
+
+            {/* Chọn kích thước tem in */}
+            <div className="space-y-2 pb-3 border-b border-[#E2E8F0]">
+              <label className="block text-[15px] font-bold text-[#0F172A]">
+                Kích thước tem QR khi in:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStickerSize('M')}
+                  className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                    stickerSize === 'M'
+                      ? 'border-[#008BC5] bg-[#EAF6FF] ring-2 ring-[#008BC5]'
+                      : 'border-[#CBD5E1] bg-white hover:border-[#94A3B8]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[14px] text-[#0F172A]">Tiêu chuẩn (24 tem/A4)</span>
+                    {stickerSize === 'M' && <Check className="w-4 h-4 text-[#008BC5]" />}
+                  </div>
+                  <p className="text-[12px] text-[#64748B] mt-1">
+                    Cỡ ~5 x 4.5 cm (Lưới 4 cột x 6 hàng). Tiết kiệm giấy in.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStickerSize('L')}
+                  className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                    stickerSize === 'L'
+                      ? 'border-[#008BC5] bg-[#EAF6FF] ring-2 ring-[#008BC5]'
+                      : 'border-[#CBD5E1] bg-white hover:border-[#94A3B8]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[14px] text-[#0F172A]">Cỡ Lớn - Rõ nét (12 tem/A4) ★</span>
+                    {stickerSize === 'L' && <Check className="w-4 h-4 text-[#008BC5]" />}
+                  </div>
+                  <p className="text-[12px] text-[#64748B] mt-1">
+                    Cỡ ~6.5 x 6 cm (Lưới 3 cột x 4 hàng). Mã QR to gấp đôi, quét cực nhạy.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStickerSize('XL')}
+                  className={`p-3 rounded-lg border text-left transition-all cursor-pointer ${
+                    stickerSize === 'XL'
+                      ? 'border-[#008BC5] bg-[#EAF6FF] ring-2 ring-[#008BC5]'
+                      : 'border-[#CBD5E1] bg-white hover:border-[#94A3B8]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[14px] text-[#0F172A]">Cực Đại (6 tem/A4)</span>
+                    {stickerSize === 'XL' && <Check className="w-4 h-4 text-[#008BC5]" />}
+                  </div>
+                  <p className="text-[12px] text-[#64748B] mt-1">
+                    Cỡ ~9.5 x 8.5 cm (Lưới 2 cột x 3 hàng). Mã QR cực lớn, quét từ xa.
+                  </p>
+                </button>
+              </div>
             </div>
 
             {/* Chọn hàng cần in */}
@@ -444,7 +509,7 @@ export function ManagerEventPage() {
                   Đã chọn <strong>{selectedPrintRows.length}</strong> hàng • Tổng cộng: <strong>{seatStickersList.length}</strong> ghế
                 </span>
                 <span className="text-[#64748B]">
-                  (Ước tính khoảng {Math.ceil(seatStickersList.length / 24)} trang A4)
+                  (Ước tính khoảng {Math.ceil(seatStickersList.length / (stickerSize === 'XL' ? 6 : stickerSize === 'L' ? 12 : 24))} trang A4)
                 </span>
               </div>
             </div>
@@ -480,14 +545,14 @@ export function ManagerEventPage() {
 
       {/* ================= KHUNG IN TEM DÁN GHẾ (CHỈ HIỆN KHI PRINT SEATS) ================= */}
       {printTarget === 'SEATS' && (
-        <div className="qr-seat-stickers-sheet">
+        <div className={`qr-seat-stickers-sheet size-${stickerSize.toLowerCase()}`}>
           <div className="stickers-grid">
             {seatStickersList.map((item) => (
               <div key={item.seatId} className="sticker-card">
                 <QRCodeCanvas
                   value={item.qrUrl}
-                  size={75}
-                  level="M"
+                  size={stickerSize === 'XL' ? 180 : stickerSize === 'L' ? 130 : 85}
+                  level="H"
                   bgColor="#FFFFFF"
                   fgColor="#000000"
                   includeMargin={false}
