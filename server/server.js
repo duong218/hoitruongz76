@@ -3,17 +3,24 @@ import { env } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
 
 async function start() {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (dbErr) {
+    console.error('⚠️ [CẢNH BÁO MONGODB]:', dbErr.message);
+    console.log('👉 Server vẫn sẽ chạy để phục vụ health-check và các API (khi MongoDB sẵn sàng sẽ kết nối lại).');
+  }
 
   const server = app.listen(env.PORT, () => {
-    console.log(`Server đang chạy tại http://localhost:${env.PORT}`);
+    console.log(`🚀 Server đang chạy tại http://localhost:${env.PORT}`);
     console.log(`Kiểm tra nhanh: http://localhost:${env.PORT}/api/health`);
   });
 
   const shutdown = async (signal) => {
     console.log(`\nNhận ${signal}, đang tắt server...`);
     server.close(async () => {
-      await disconnectDB();
+      try {
+        await disconnectDB();
+      } catch {}
       process.exit(0);
     });
   };
@@ -22,6 +29,5 @@ async function start() {
 }
 
 start().catch((err) => {
-  console.error(err.message);
-  process.exit(1);
+  console.error('❌ Lỗi khởi động server:', err);
 });

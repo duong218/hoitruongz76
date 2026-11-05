@@ -107,6 +107,7 @@ hoitruongz76-main/
         │   ├── employeeService.js
         │   ├── eventService.js
         │   ├── groupService.js
+        │   ├── index.js
         │   ├── orgService.js
         │   ├── seatService.js
         │   └── staffAuthService.js
@@ -167,6 +168,7 @@ hoitruongz76-main/
 | `client/src/services/employeeService.js` | Xử lý thêm, sửa, xóa, import dữ liệu nhân viên | `mockData.js`, `roles.js` | localStorage (fallback Mock) |
 | `client/src/services/orgService.js` | Xử lý thêm, sửa, xóa các Khối và Phòng ban | `mockData.js` | localStorage (fallback Mock) |
 | `client/src/services/groupService.js` | Xử lý thêm, sửa, xóa và đếm tải của các nhóm hội trường | `mockData.js`, `resolveGroup.js` | localStorage (fallback Mock) |
+| `client/src/services/index.js` | Xuất tập trung toàn bộ các service trong thư mục `services` | Toàn bộ service con | Không có |
 | `client/src/services/seatService.js` | Xử lý gán và hủy gán vị trí ghế hội trường | `mockData.js`, `hall.js` | localStorage (fallback Mock) |
 | `client/src/services/attendanceService.js` | Xử lý ghi nhận điểm danh và danh sách điểm danh | `mockData.js` | localStorage (fallback Mock) |
 | `client/src/services/eventService.js` | Quản lý tên sự kiện, mở điểm danh và token dán ghế | `mockData.js` | localStorage (fallback Mock) |

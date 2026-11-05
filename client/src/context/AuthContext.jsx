@@ -24,14 +24,23 @@ export function AuthProvider({ children }) {
         staffAuthService.getStaffSession(),
       ]);
 
-      setAttendee(storedAttendee);
-      setStaff(storedStaff);
+      setAttendee((prev) => {
+        if (!prev && !storedAttendee) return null;
+        if (prev?.code === storedAttendee?.code && prev?.name === storedAttendee?.name) return prev;
+        return storedAttendee;
+      });
+
+      setStaff((prev) => {
+        if (!prev && !storedStaff) return null;
+        if (prev?.code === storedStaff?.code && prev?.token === storedStaff?.token) return prev;
+        return storedStaff;
+      });
 
       if (storedAttendee) {
         try {
           const groups = await groupService.getGroups();
           const matched = resolveGroup(storedAttendee, groups);
-          setAttendeeGroup(matched);
+          setAttendeeGroup((prev) => (prev?.id === matched?.id ? prev : matched));
         } catch {
           setAttendeeGroup(null);
         }
@@ -62,11 +71,13 @@ export function AuthProvider({ children }) {
     window.addEventListener('z176_attendee_session_changed', handleAttendeeChange);
     window.addEventListener('z176_staff_session_changed', handleStaffChange);
 
-    // Kiểm tra định kỳ hết hạn phiên staff 8 giờ
+    // Kiểm tra định kỳ hết hạn phiên staff 8 giờ.
+    // Không đưa `staff` vào dependency: refreshAuth luôn parse object mới từ
+    // localStorage, nếu effect phụ thuộc staff sẽ setState liên tục và đơ UI.
     const interval = setInterval(async () => {
       const currentStaff = await staffAuthService.getStaffSession();
-      if (!currentStaff && staff) {
-        setStaff(null);
+      if (!currentStaff) {
+        setStaff((prev) => (prev ? null : prev));
       }
     }, 30000);
 
@@ -76,7 +87,7 @@ export function AuthProvider({ children }) {
       window.removeEventListener('z176_staff_session_changed', handleStaffChange);
       clearInterval(interval);
     };
-  }, [refreshAuth, staff]);
+  }, []);
 
   // Đăng nhập người tham dự bằng mã nhân viên
   const loginWithCode = async (code) => {

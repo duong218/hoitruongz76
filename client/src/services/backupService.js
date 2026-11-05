@@ -1,39 +1,31 @@
-import {
-  INITIAL_BLOCKS,
-  INITIAL_DEPARTMENTS,
-  INITIAL_EMPLOYEES,
-  INITIAL_GROUPS,
-  INITIAL_SEAT_GROUPS,
-  INITIAL_EVENT,
-  INITIAL_ATTENDANCE,
-} from '../data/mockData.js';
-
-const KEYS = {
-  blocks: 'z176_v2_blocks',
-  departments: 'z176_v2_departments',
-  employees: 'z176_v2_employees',
-  groups: 'z176_v2_groups',
-  seats: 'z176_v2_seats',
-  event: 'z176_v2_event',
-  attendance: 'z176_v2_attendance',
-};
+import api from './api.js';
 
 export const backupService = {
   /**
-   * Xuất toàn bộ dữ liệu ra file JSON
+   * Xuất toàn bộ dữ liệu từ server ra file JSON
    */
-  exportBackup() {
+  async exportBackup() {
+    const [blocks, departments, employees, groups, seats, event, attendance] = await Promise.all([
+      api.get('/org/blocks'),
+      api.get('/org/departments'),
+      api.get('/employees'),
+      api.get('/groups'),
+      api.get('/seats'),
+      api.get('/event'),
+      api.get('/attendance'),
+    ]);
+
     const backupData = {
       version: '2.0',
       exportedAt: new Date().toISOString(),
       data: {
-        blocks: JSON.parse(localStorage.getItem(KEYS.blocks) || '[]'),
-        departments: JSON.parse(localStorage.getItem(KEYS.departments) || '[]'),
-        employees: JSON.parse(localStorage.getItem(KEYS.employees) || '[]'),
-        groups: JSON.parse(localStorage.getItem(KEYS.groups) || '[]'),
-        seats: JSON.parse(localStorage.getItem(KEYS.seats) || '{}'),
-        event: JSON.parse(localStorage.getItem(KEYS.event) || '{}'),
-        attendance: JSON.parse(localStorage.getItem(KEYS.attendance) || '[]'),
+        blocks,
+        departments,
+        employees,
+        groups,
+        seats,
+        event,
+        attendance,
       },
     };
 
@@ -67,35 +59,19 @@ export const backupService = {
       throw new Error('Cấu trúc file sao lưu không hợp lệ, thiếu mục dữ liệu chính.');
     }
 
-    const { blocks, departments, employees, groups, seats, event, attendance } = parsed.data;
-
-    if (!Array.isArray(blocks) || !Array.isArray(departments) || !Array.isArray(employees) || !Array.isArray(groups)) {
-      throw new Error('Dữ liệu các bảng khối, phòng ban, nhân viên hoặc nhóm bị sai cấu trúc.');
+    const { employees } = parsed.data;
+    if (Array.isArray(employees) && employees.length > 0) {
+      await api.post('/employees/import', { rows: employees });
     }
-
-    localStorage.setItem(KEYS.blocks, JSON.stringify(blocks));
-    localStorage.setItem(KEYS.departments, JSON.stringify(departments));
-    localStorage.setItem(KEYS.employees, JSON.stringify(employees));
-    localStorage.setItem(KEYS.groups, JSON.stringify(groups));
-    if (seats) localStorage.setItem(KEYS.seats, JSON.stringify(seats));
-    if (event) localStorage.setItem(KEYS.event, JSON.stringify(event));
-    if (attendance) localStorage.setItem(KEYS.attendance, JSON.stringify(attendance));
-
     window.dispatchEvent(new Event('z176_data_reset'));
   },
 
   /**
-   * Đặt lại toàn bộ về dữ liệu mẫu ban đầu
+   * Đặt lại toàn bộ dữ liệu
    */
   async resetToDemoData() {
-    localStorage.setItem(KEYS.blocks, JSON.stringify(INITIAL_BLOCKS));
-    localStorage.setItem(KEYS.departments, JSON.stringify(INITIAL_DEPARTMENTS));
-    localStorage.setItem(KEYS.employees, JSON.stringify(INITIAL_EMPLOYEES));
-    localStorage.setItem(KEYS.groups, JSON.stringify(INITIAL_GROUPS));
-    localStorage.setItem(KEYS.seats, JSON.stringify(INITIAL_SEAT_GROUPS));
-    localStorage.setItem(KEYS.event, JSON.stringify(INITIAL_EVENT));
-    localStorage.setItem(KEYS.attendance, JSON.stringify(INITIAL_ATTENDANCE));
-
+    // Có thể gọi endpoint seed hoặc reset điểm danh
+    await api.post('/attendance/reset');
     window.dispatchEvent(new Event('z176_data_reset'));
   },
 };

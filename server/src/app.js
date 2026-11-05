@@ -4,17 +4,31 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
 import healthRoutes from './routes/health.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import employeeRoutes from './routes/employees.routes.js';
+import orgRoutes from './routes/org.routes.js';
+import groupRoutes from './routes/groups.routes.js';
+import seatRoutes from './routes/seats.routes.js';
+import eventRoutes from './routes/events.routes.js';
+import attendanceRoutes from './routes/attendance.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '10mb' }));
 app.use(cookieParser());
 
-// Các nhóm route khác (auth, employees, ...) sẽ thêm ở các giai đoạn sau
+// Đăng ký API Routes
 app.use('/api/health', healthRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/employees', employeeRoutes);
+app.use('/api/org', orgRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/api/seats', seatRoutes);
+app.use('/api/event', eventRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 app.use('/api', notFound);
 app.use(errorHandler);

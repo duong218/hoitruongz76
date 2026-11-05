@@ -1,0 +1,13 @@
+{
+  "name": "hoitruongz76",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "seed:server": "npm --prefix server run seed",
+    "seed:force": "npm --prefix server run seed:force"
+  }
+}
+

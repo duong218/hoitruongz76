@@ -34,6 +34,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response.data,
   (error) => {
+    // Nếu token hết hạn hoặc không hợp lệ (401), dọn dẹp session staff
+    if (error.response?.status === 401) {
+      const currentSession = localStorage.getItem('z176_v2_staff_session');
+      if (currentSession) {
+        localStorage.removeItem('z176_v2_staff_session');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('z176_staff_session_changed', { detail: null }));
+        }
+      }
+    }
     const message = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra kết nối máy chủ';
     return Promise.reject(new Error(message));
   }

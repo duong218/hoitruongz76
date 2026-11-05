@@ -9,6 +9,17 @@ export function seatId(row, side, n) {
   return `${row}-${side}-${n}`;
 }
 
+export function parseSeatId(id) {
+  if (!id) return null;
+  const parts = id.split('-');
+  if (parts.length !== 3) return null;
+  return {
+    row: parseInt(parts[0], 10),
+    side: parts[1],
+    n: parseInt(parts[2], 10),
+  };
+}
+
 export function rowSeatIds(row) {
   const ids = [];
   for (let n = 1; n <= SEATS_PER_SIDE; n++) ids.push(seatId(row, 'L', n));

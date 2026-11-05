@@ -180,7 +180,7 @@ export function StaffLoginPage() {
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={() => handleFillDemo('ADMIN01', 'admin@123')}
+                onClick={() => handleFillDemo('ADMIN01', 'admin123')}
                 className="min-h-[48px] px-3 py-2 text-[14px] font-bold bg-[#F8FAFC] hover:bg-[#EAF6FF] text-[#008BC5] border border-[#CBD5E1] rounded-lg transition-colors cursor-pointer text-center flex flex-col justify-center items-center"
               >
                 <span>Điền Admin</span>
@@ -189,7 +189,7 @@ export function StaffLoginPage() {
 
               <button
                 type="button"
-                onClick={() => handleFillDemo('QL01', 'ql@12345')}
+                onClick={() => handleFillDemo('QL01', '12345678')}
                 className="min-h-[48px] px-3 py-2 text-[14px] font-bold bg-[#F8FAFC] hover:bg-[#FEF9EE] text-[#B45309] border border-[#CBD5E1] rounded-lg transition-colors cursor-pointer text-center flex flex-col justify-center items-center"
               >
                 <span>Điền Quản lý</span>
