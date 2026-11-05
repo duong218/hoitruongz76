@@ -28,14 +28,16 @@ export const attendeeService = {
     try {
       const res = await api.post('/auth/attendee/lookup', { code: trimmedCode });
       if (res.ok && res.user) {
-        localStorage.setItem(STORAGE_KEY_ATTENDEE, JSON.stringify(res.user));
+        // Phiên nhân viên kèm token để server biết ai đang điểm danh
+        const session = { ...res.user, token: res.token };
+        localStorage.setItem(STORAGE_KEY_ATTENDEE, JSON.stringify(session));
         if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('z176_attendee_session_changed', { detail: res.user }));
+          window.dispatchEvent(new CustomEvent('z176_attendee_session_changed', { detail: session }));
         }
         return {
           ok: true,
           code: ATTENDEE_LOGIN_CODES.OK,
-          user: res.user,
+          user: session,
           group: res.group,
         };
       }

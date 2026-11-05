@@ -5,7 +5,7 @@ import { ROLES } from '../constants/roles.server.js';
 
 const router = Router();
 
-router.get('/', employeeController.getAll);
+router.get('/', authenticate, authorize(ROLES.ADMIN, ROLES.MANAGER), employeeController.getAll);
 router.post('/', authenticate, authorize(ROLES.ADMIN), employeeController.create);
 router.put('/:code', authenticate, authorize(ROLES.ADMIN), employeeController.update);
 router.delete('/:code', authenticate, authorize(ROLES.ADMIN), employeeController.delete);

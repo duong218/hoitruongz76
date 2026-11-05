@@ -3,9 +3,14 @@ import { ROLES } from '../constants/roles.server.js';
 
 export const attendanceController = {
   // Lấy danh sách điểm danh
+  // Quản trị/quản lý xem tất cả; nhân viên chỉ thấy của mình; khách mời không có gì.
   async getAll(req, res, next) {
     try {
-      const list = await Attendance.find().sort({ checkedInAt: -1 });
+      const { user } = req;
+      const isStaff = user && (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER);
+      if (!user) return res.json([]);
+      const filter = isStaff ? {} : { employeeCode: user.code };
+      const list = await Attendance.find(filter).sort({ checkedInAt: -1 });
       res.json(list);
     } catch (err) {
       next(err);
@@ -15,11 +20,15 @@ export const attendanceController = {
   // Điểm danh
   async checkIn(req, res, next) {
     try {
-      const { employeeCode, seatId, token } = req.body;
-      const code = (employeeCode || '').trim().toUpperCase();
+      const { seatId, token } = req.body;
+      // Mã nhân viên lấy từ phiên đăng nhập, không tin dữ liệu client gửi lên
+      const code = req.user.code;
 
-      if (!code || !seatId) {
+      if (typeof seatId !== 'string' || !seatId.trim()) {
         return res.status(400).json({ message: 'Thiếu thông tin điểm danh.' });
+      }
+      if (typeof token !== 'string' || !token.trim()) {
+        return res.status(400).json({ message: 'Thiếu mã QR trên ghế. Hãy quét mã dán trên ghế của bạn.' });
       }
 
       // 1. Kiểm tra sự kiện đã mở điểm danh chưa
@@ -50,7 +59,7 @@ export const attendanceController = {
         return res.status(400).json({ message: `Không tìm thấy ghế "${seatId}" trong hội trường.` });
       }
 
-      if (token && seat.token && token.trim().toUpperCase() !== seat.token.trim().toUpperCase()) {
+      if (!seat.token || token.trim().toUpperCase() !== seat.token.trim().toUpperCase()) {
         return res.status(400).json({ message: 'Mã QR không khớp với ghế này. Hãy quét đúng mã dán trên ghế.' });
       }
 
@@ -71,11 +80,20 @@ export const attendanceController = {
         });
       }
 
-      const newRecord = await Attendance.create({
-        employeeCode: code,
-        seatId,
-        checkedInAt: new Date(),
-      });
+      let newRecord;
+      try {
+        newRecord = await Attendance.create({
+          employeeCode: code,
+          seatId,
+          checkedInAt: new Date(),
+        });
+      } catch (err) {
+        // Bấm hai lần cùng lúc: bản ghi thứ hai bị chặn bởi chỉ mục unique
+        if (err.code === 11000) {
+          return res.status(409).json({ message: 'Bạn đã điểm danh rồi.' });
+        }
+        throw err;
+      }
 
       res.status(201).json(newRecord);
     } catch (err) {

@@ -1,7 +1,7 @@
 import { EventSetting, Seat } from '../models/index.js';
 
 export const eventController = {
-  // Lấy cài đặt sự kiện & token ghế
+  // Cài đặt sự kiện (công khai). KHÔNG chứa token ghế.
   async getSettings(req, res, next) {
     try {
       let event = await EventSetting.findOne({ key: 'main' });
@@ -14,17 +14,21 @@ export const eventController = {
           appUrl: '',
         });
       }
+      res.json(event.toJSON());
+    } catch (err) {
+      next(err);
+    }
+  },
 
-      const seatsWithTokens = await Seat.find().select('+token');
+  // Token ghế (chỉ ADMIN / MANAGER, dùng để in QR)
+  async getSeatTokens(req, res, next) {
+    try {
+      const seats = await Seat.find().select('+token');
       const seatTokens = {};
-      seatsWithTokens.forEach((s) => {
+      seats.forEach((s) => {
         seatTokens[s.seatId] = s.token;
       });
-
-      res.json({
-        ...event.toJSON(),
-        seatTokens,
-      });
+      res.json({ seatTokens });
     } catch (err) {
       next(err);
     }
@@ -45,20 +49,9 @@ export const eventController = {
       if (appUrl !== undefined) event.appUrl = appUrl.trim();
 
       await event.save();
-
-      const seatsWithTokens = await Seat.find().select('+token');
-      const seatTokens = {};
-      seatsWithTokens.forEach((s) => {
-        seatTokens[s.seatId] = s.token;
-      });
-
-      res.json({
-        ...event.toJSON(),
-        seatTokens,
-      });
+      res.json(event.toJSON());
     } catch (err) {
       next(err);
     }
   },
 };
-

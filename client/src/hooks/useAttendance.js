@@ -45,8 +45,8 @@ export function useAttendance() {
     };
   }, [fetchAttendance]);
 
-  const checkIn = async ({ employeeCode, seatId }) => {
-    const res = await attendanceService.checkIn({ employeeCode, seatId });
+  const checkIn = async ({ seatId, token }) => {
+    const res = await attendanceService.checkIn({ seatId, token });
     await fetchAttendance();
     return res;
   };

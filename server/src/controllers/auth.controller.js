@@ -5,6 +5,7 @@ import { ROLES, GUEST_GROUP_ID, GUEST_GROUP_NAME } from '../constants/roles.serv
 import { Employee, Group } from '../models/index.js';
 
 const SESSION_DURATION_HOURS = 8;
+const ATTENDEE_SESSION_HOURS = 12;
 
 export const authController = {
   // 1. Đăng nhập Staff (ADMIN / MANAGER)
@@ -38,12 +39,6 @@ export const authController = {
 
       const token = jwt.sign(payload, env.JWT_SECRET, {
         expiresIn: `${SESSION_DURATION_HOURS}h`,
-      });
-
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: false,
-        maxAge: SESSION_DURATION_HOURS * 60 * 60 * 1000,
       });
 
       const expiresAt = Date.now() + SESSION_DURATION_HOURS * 60 * 60 * 1000;
@@ -99,10 +94,19 @@ export const authController = {
         isGuest: false,
       };
 
+      // Phiên cho nhân viên: chỉ dùng để điểm danh, hết hạn sau 12 giờ.
+      // Khách mời không cần phiên vì không điểm danh và không lưu gì trên server.
+      const token = jwt.sign(
+        { code: employee.code, name: employee.name, role: employee.role, blockId: employee.blockId || null },
+        env.JWT_SECRET,
+        { expiresIn: `${ATTENDEE_SESSION_HOURS}h` }
+      );
+
       return res.json({
         ok: true,
         user: authUser,
         group: matchedGroup,
+        token,
       });
     } catch (err) {
       next(err);

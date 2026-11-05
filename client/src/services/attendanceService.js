@@ -11,11 +11,12 @@ export const attendanceService = {
 
   /**
    * Ghi nhận điểm danh qua API
-   * @param {{ employeeCode: string, seatId: string, token?: string }} param0
+   * Mã nhân viên do server lấy từ phiên đăng nhập, không gửi từ client.
+   * @param {{ seatId: string, token: string }} param0
    * @returns {Promise<{ employeeCode: string, seatId: string, checkedInAt: string }>}
    */
-  async checkIn({ employeeCode, seatId, token }) {
-    const record = await api.post('/attendance/checkin', { employeeCode, seatId, token });
+  async checkIn({ seatId, token }) {
+    const record = await api.post('/attendance/checkin', { seatId, token });
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('z176_attendance_updated'));
     }
