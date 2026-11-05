@@ -19,11 +19,11 @@ export function Seat({
   stroke = '#CBD5E1',
   textColor,
 }) {
-  // Tự động tính màu chữ tương phản nếu không truyền textColor:
-  // Nếu ghế màu xám nhạt chưa gán (#E2E8F0) thì chữ màu xám đen #64748B
-  // Nếu ghế có màu nhóm (nổi bật) thì chữ màu trắng #FFFFFF
+  // Tự động tính màu chữ tương phản:
+  // Nếu ghế màu xám nhạt (#E2E8F0) -> Chữ màu xanh đen đậm nét (#334155)
+  // Nếu ghế có màu nhóm -> Chữ màu trắng tinh (#FFFFFF)
   const isLight = fill === '#E2E8F0' || fill === 'transparent';
-  const autoTextColor = textColor || (isLight ? '#64748B' : '#FFFFFF');
+  const autoTextColor = textColor || (isLight ? '#334155' : '#FFFFFF');
 
   return (
     <g transform={`translate(${x}, ${y})`}>
@@ -40,8 +40,8 @@ export function Seat({
           textAnchor="middle"
           dominantBaseline="central"
           fill={autoTextColor}
-          fontSize="9"
-          fontWeight="800"
+          fontSize="10"
+          fontWeight="900"
           className="select-none pointer-events-none"
           style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
         >

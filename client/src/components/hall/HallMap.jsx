@@ -164,8 +164,8 @@ export function HallMap({
           x={HALL_LAYOUT.ENTRANCE.centerX}
           y={HALL_LAYOUT.STAGE.y + HALL_LAYOUT.STAGE.height + 17}
           textAnchor="middle"
-          fill="#64748B"
-          fontSize="13"
+          fill="#475569"
+          fontSize="12"
           fontWeight="700"
           letterSpacing="1"
         >
@@ -173,14 +173,52 @@ export function HallMap({
         </text>
         <text
           x={HALL_LAYOUT.ENTRANCE.centerX}
-          y={HALL_LAYOUT.STAGE.y + HALL_LAYOUT.STAGE.height + 31}
+          y={HALL_LAYOUT.STAGE.y + HALL_LAYOUT.STAGE.height + 30}
           textAnchor="middle"
-          fill="#94A3B8"
-          fontSize="11"
-          fontWeight="500"
+          fill="#008BC5"
+          fontSize="10.5"
+          fontWeight="700"
         >
           (Ghế 1 sát lối đi ↔ Ghế 10 sát tường)
         </text>
+
+        {/* Thanh thước kẻ số ghế phía trên Hàng 1 (Header cột ghế) */}
+        <g className="column-headers" opacity="0.85">
+          {/* Bên Trái: Ghế 10 ngoài cùng -> Ghế 1 sát lối đi */}
+          {Array.from({ length: SEATS_PER_SIDE }, (_, i) => 10 - i).map((n) => {
+            const coords = getSeatCoords(1, 'L', n);
+            return (
+              <text
+                key={`header-L-${n}`}
+                x={coords.x + 14}
+                y={HALL_LAYOUT.ROW_START_Y - 8}
+                textAnchor="middle"
+                fontSize="10"
+                fontWeight="800"
+                fill="#64748B"
+              >
+                {n}
+              </text>
+            );
+          })}
+          {/* Bên Phải: Ghế 1 sát lối đi -> Ghế 10 ngoài cùng */}
+          {Array.from({ length: SEATS_PER_SIDE }, (_, i) => i + 1).map((n) => {
+            const coords = getSeatCoords(1, 'R', n);
+            return (
+              <text
+                key={`header-R-${n}`}
+                x={coords.x + 14}
+                y={HALL_LAYOUT.ROW_START_Y - 8}
+                textAnchor="middle"
+                fontSize="10"
+                fontWeight="800"
+                fill="#64748B"
+              >
+                {n}
+              </text>
+            );
+          })}
+        </g>
 
         {/* Vẽ từng hàng ghế */}
         {rows.map((row) => {
