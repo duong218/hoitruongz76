@@ -1,3 +1,3 @@
 // Cấu hình môi trường ứng dụng Z176
-// Tắt khi chạy thật trong môi trường thực tế
+// Bật khi đang phát triển/kiểm thử để hỗ trợ giả lập quét QR, tự động tắt khi đưa vào vận hành
 export const DEMO_MODE = false;

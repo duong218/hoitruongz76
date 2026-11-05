@@ -19,8 +19,13 @@ export function ScannerModal({
   const scannerRef = useRef(null);
   const readerId = 'qr-reader-container';
 
+  const [scanningLocked, setScanningLocked] = useState(false);
+
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setScanningLocked(false);
+      return;
+    }
 
     setCameraError('');
     let isRunning = false;
@@ -84,9 +89,23 @@ export function ScannerModal({
   }, [userGroupSeats]);
 
   const handleDecodedUrl = (text) => {
+    if (scanningLocked) return;
+
     try {
       let seat = '';
       let k = '';
+
+      // Trường hợp 1: Quét trúng QR dán cửa (/login) thay vì QR dán ghế
+      if (text.includes('/login') || !text.includes('seat=')) {
+        setScanningLocked(true);
+        setTimeout(() => setScanningLocked(false), 2000);
+        onScanResult({
+          seat: '',
+          token: '',
+          error: 'Đây là mã QR ở Cửa (dành để mở web). Bạn hãy quét mã tem dán trên Ghế ngồi (có chữ Hàng... Ghế...).',
+        });
+        return;
+      }
 
       if (text.includes('?')) {
         const queryString = text.split('?')[1];
@@ -100,6 +119,11 @@ export function ScannerModal({
           seat = parts[0];
           k = parts[1];
         }
+      }
+
+      if (seat) {
+        setScanningLocked(true);
+        setTimeout(() => setScanningLocked(false), 2500);
       }
 
       onScanResult({ seat, token: k });

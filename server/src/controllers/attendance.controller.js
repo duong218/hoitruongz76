@@ -47,17 +47,17 @@ export const attendanceController = {
       // 4. Kiểm tra ghế và token
       const seat = await Seat.findOne({ seatId }).select('+token');
       if (!seat) {
-        return res.status(400).json({ message: 'Không tìm thấy ghế này.' });
+        return res.status(400).json({ message: `Không tìm thấy ghế "${seatId}" trong hội trường.` });
       }
 
-      if (token && seat.token && token !== seat.token) {
-        return res.status(400).json({ message: 'Mã QR không hợp lệ. Hãy quét mã dán trên ghế.' });
+      if (token && seat.token && token.trim().toUpperCase() !== seat.token.trim().toUpperCase()) {
+        return res.status(400).json({ message: 'Mã QR không khớp với ghế này. Hãy quét đúng mã dán trên ghế.' });
       }
 
       // 5. Kiểm tra ghế có thuộc nhóm của nhân sự không
       if (!seat.groupId || seat.groupId !== group.id) {
         return res.status(400).json({
-          message: 'Đây không phải ghế được sắp cho nhóm của bạn. Hãy tới đúng hàng được phân bổ.',
+          message: `Ghế "${seatId}" không thuộc khu vực của nhóm bạn (${group.name}). Hãy tới đúng hàng được phân bổ.`,
         });
       }
 

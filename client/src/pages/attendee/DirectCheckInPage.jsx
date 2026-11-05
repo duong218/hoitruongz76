@@ -44,55 +44,37 @@ export function DirectCheckInPage() {
 
     if (processed) return;
 
-    // Đã đăng nhập -> thực hiện kiểm tra và điểm danh
-    const check = validateCheckIn({
-      user,
-      group,
-      seatGroups,
-      seatId: seatParam,
-      token: tokenParam,
-      event,
-      attendance,
-    });
-
-    if (check.ok) {
-      checkIn({ employeeCode: user.code, seatId: seatParam })
-        .then(() => {
+    // Đã đăng nhập -> gửi yêu cầu điểm danh lên Server xác thực
+    checkIn({ employeeCode: user.code, seatId: seatParam, token: tokenParam })
+      .then((record) => {
+        setResult({
+          success: true,
+          title: 'Điểm danh thành công!',
+          message: 'Hệ thống đã ghi nhận sự có mặt của bạn tại hội trường.',
+          seat: seatParam,
+          time: record?.checkedInAt || new Date().toISOString(),
+        });
+        setProcessed(true);
+      })
+      .catch((err) => {
+        const msg = err.message || 'Không thể lưu điểm danh.';
+        if (msg.includes('đã điểm danh rồi')) {
           setResult({
             success: true,
-            title: 'Điểm danh thành công!',
-            message: 'Hệ thống đã ghi nhận sự có mặt của bạn tại hội trường.',
+            title: 'Đã điểm danh trước đó',
+            message: msg,
             seat: seatParam,
             time: new Date().toISOString(),
           });
-          setProcessed(true);
-        })
-        .catch((err) => {
+        } else {
           setResult({
             success: false,
-            title: 'Lỗi ghi nhận điểm danh',
-            message: err.message || 'Không thể lưu điểm danh.',
+            title: 'Điểm danh không hợp lệ',
+            message: msg,
           });
-          setProcessed(true);
-        });
-    } else {
-      if (check.code === CHECKIN_CODES.ALREADY) {
-        setResult({
-          success: true,
-          title: 'Đã điểm danh trước đó',
-          message: check.message,
-          seat: check.seatId || seatParam,
-          time: check.checkedInAt || new Date().toISOString(),
-        });
-      } else {
-        setResult({
-          success: false,
-          title: 'Điểm danh không hợp lệ',
-          message: check.message,
-        });
-      }
-      setProcessed(true);
-    }
+        }
+        setProcessed(true);
+      });
   }, [
     authLoading,
     seatLoading,
