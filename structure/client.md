@@ -1,6 +1,11 @@
 # BÁO CÁO KIỂM TRA CẤU TRÚC CLIENT & ĐÁNH GIÁ TIÊU CHUẨN MERN
 
-Báo cáo được lập sau khi quét thực tế từng file trong repository `hoitruongz76-main`.
+Báo cáo được cập nhật sau khi dọn dẹp các thư viện backend và gói thừa khỏi thư mục `client/` của repository `hoitruongz76-main`.
+
+> **Ghi chú hiện trạng repo**: 
+> - Thư mục gốc chứa `client/` (Frontend React + Vite JavaScript thuần), `.gitignore`, tài liệu hướng dẫn và báo cáo cấu trúc. Chưa có thư mục `server/`.
+> - Toàn bộ mã nguồn giao diện trong `client/src` đã chạy bằng JavaScript (`.jsx` / `.js`).
+> - Đã loại bỏ các gói backend (`express`, `dotenv`), TypeScript thừa và gói AI Studio khỏi `client/package.json`.
 
 ---
 
@@ -9,6 +14,7 @@ Báo cáo được lập sau khi quét thực tế từng file trong repository 
 
 ```text
 hoitruongz76-main/
+├── .gitignore
 ├── MERN_MIGRATION_GUIDE.md
 ├── structure/
 │   └── client.md
@@ -120,13 +126,13 @@ hoitruongz76-main/
 
 | Đường dẫn file | Vai trò (1 câu ngắn) | Import chính / Phụ thuộc | Nguồn dữ liệu |
 |---|---|---|---|
-| `client/package.json` | Khai báo các gói thư viện và script quản lý client | react, vite, tailwindcss, express... | Không có |
-| `client/vite.config.js` | Cấu hình bundler Vite thuần JavaScript và đường dẫn alias | `@vitejs/plugin-react`, `@tailwindcss/vite` | Không có |
+| `client/package.json` | Khai báo các gói thư viện và script quản lý client chuẩn ReactJS | react, vite, tailwindcss, axios... | Không có |
+| `client/vite.config.js` | Cấu hình bundler Vite, alias `@` và proxy chuyển tiếp `/api` | `@vitejs/plugin-react`, `@tailwindcss/vite` | Không có |
 | `client/tsconfig.json` | File cấu hình TypeScript còn sót lại từ template ban đầu | Không có | Không có |
 | `client/index.html` | Trang HTML gốc chứa thẻ gắn DOM `#root` | `src/main.jsx` | Không có |
 | `client/metadata.json` | File siêu dữ liệu cấu hình dự án của AI Studio | Không có | Không có |
 | `client/.gitignore` | Khai báo các file và thư mục bỏ qua khi dùng Git | Không có | Không có |
-| `client/.env.example` | Mẫu khai báo biến môi trường mẫu từ template AI Studio | Không có | Không có |
+| `client/.env.example` | Mẫu khai báo biến môi trường API `VITE_API_URL` | Không có | Không có |
 | `client/src/main.jsx` | Điểm khởi đầu mount React ứng dụng vào phần tử DOM | `react-dom/client`, `App.jsx`, `index.css` | Không có |
 | `client/src/App.jsx` | Khai báo bộ định tuyến Router và các tuyến đường | `react-router-dom`, các context providers, các pages | Không có |
 | `client/src/index.css` | File định kiểu Tailwind CSS và các keyframe hiệu ứng đồ họa | `@import "tailwindcss"` | Không có |
@@ -205,66 +211,47 @@ hoitruongz76-main/
 ## MỤC 3: KẾT QUẢ CHECKLIST MERN
 
 - [ ] **Client dùng React + JavaScript thuần: còn file `.ts`, `.tsx`, `tsconfig`, gói `typescript`, `@types/*` không?**
-  - **Kết quả: ❌ Chưa đạt**
+  - **Kết quả: ⚠️ Đã dọn gói npm, còn file config**
   - **Bằng chứng**:
-    - File `client/tsconfig.json` vẫn tồn tại.
-    - Trong `client/package.json` vẫn còn các gói: `"typescript": "^7.0.2"`, `"@types/node": "^22.14.0"`, `"@types/react": "^19.3.0"`, `"@types/react-dom": "^19.3.0"`, `"@types/express": "^4.17.21"`.
-    - *(Toàn bộ code trong `client/src` đều là `.jsx` và `.js`, không còn file `.ts` hay `.tsx` nào).*
+    - Đã gỡ bỏ sạch sẽ các gói khỏi `client/package.json`: `typescript`, `@types/node`, `@types/react`, `@types/react-dom`, `@types/express`.
+    - File `client/tsconfig.json` vẫn còn lưu trữ trên ổ đĩa.
+    - Toàn bộ code trong `client/src` đều là `.jsx` và `.js`.
 
 - [ ] **`package.json` của client còn thư viện thuộc backend hoặc thừa không?**
-  - **Kết quả: ❌ Chưa đạt**
+  - **Kết quả: ✅ Đã đạt (Đã dọn dẹp sạch sẽ)**
   - **Bằng chứng**:
-    - File `client/package.json` đang cài đặt thư viện backend: `"express": "^4.21.2"`, `"dotenv": "^17.2.3"`, `"@types/express": "^4.17.21"`.
-    - Gói thừa từ template AI Studio: `"@google/genai": "^2.4.0"`.
+    - `client/package.json` đã loại bỏ hoàn toàn: `express`, `dotenv`, `@google/genai`, `tsx`, `esbuild`.
+    - Đã bổ sung `axios` chuẩn bị cho kết nối API Backend.
 
 - [ ] **Dữ liệu client đang lấy từ đâu (Mock / localStorage / API)?**
-  - **Kết quả: ❌ Chưa đạt chuẩn MERN**
+  - **Kết quả: ❌ Chưa đạt chuẩn MERN (Đang dùng localStorage)**
   - **Bằng chứng**:
-    - Hiện tại 100% dữ liệu đang đọc/ghi vào `localStorage` của trình duyệt và dùng fallback từ `client/src/data/mockData.js`.
-    - Chi tiết phân loại trong `client/src/services/`:
-      - `employeeService.js`: localStorage (dùng mockData khi khởi tạo)
-      - `orgService.js`: localStorage (dùng mockData khi khởi tạo)
-      - `groupService.js`: localStorage (dùng mockData khi khởi tạo)
-      - `seatService.js`: localStorage (dùng mockData khi khởi tạo)
-      - `attendanceService.js`: localStorage (dùng mockData khi khởi tạo)
-      - `eventService.js`: localStorage (dùng mockData khi khởi tạo)
-      - `attendeeService.js`: localStorage
-      - `staffAuthService.js`: localStorage
-      - `authService.js`: localStorage
-      - `backupService.js`: localStorage
-      - `api.js`: Cấu hình API (đã sẵn sàng nhưng chưa có service nào kết nối tới)
-    - Toàn bộ các hook trong `client/src/hooks/` (`useEmployees.js`, `useOrg.js`, `useGroups.js`, `useSeatAssignments.js`, `useAttendance.js`, `useEventSettings.js`) đều lấy dữ liệu gián tiếp từ `localStorage` thông qua các service trên.
+    - Toàn bộ service trong `client/src/services/` đang lưu trữ vào `localStorage` kèm mock data dự phòng.
+    - Cấu hình API trung tâm [api.js](file:///d:/code%20file/hoitruongz76-main/client/src/services/api.js) đã sẵn sàng để tích hợp khi backend khởi động.
 
 - [ ] **Đăng nhập và phân quyền đang xử lý ở client hay đã gọi server?**
   - **Kết quả: ❌ Đang xử lý hoàn toàn ở Client**
   - **Bằng chứng**:
-    - `client/src/utils/staffAuth.js`: So khớp trực tiếp mật khẩu dạng plain text từ mockData/localStorage.
-    - `client/src/services/staffAuthService.js`: Tạo phiên giả lập và lưu thời hạn `expiresAt` vào `localStorage.setItem('z176_v2_staff_session')`.
-    - `client/src/context/AuthContext.jsx`: Tự đọc session từ `localStorage` mà không xác thực token với server.
-    - `client/src/routes/RequireRole.jsx`: Chỉ kiểm tra role trên bộ nhớ client.
+    - `client/src/utils/staffAuth.js`: So khớp trực tiếp mật khẩu từ `mockData/localStorage`.
+    - `client/src/services/staffAuthService.js`: Lưu phiên trực tiếp vào `localStorage`.
 
 - [ ] **Có `server/` chưa?**
   - **Kết quả: ❌ Chưa có**
-  - **Bằng chứng**: Thư mục gốc `hoitruongz76-main/` hoàn toàn chưa có thư mục `server/`, chưa có Express backend, Mongoose, Models, Routes, Controllers, Middleware hay kết nối MongoDB.
+  - **Bằng chứng**: Repo chưa khởi tạo thư mục `server/` (Node.js/Express + Mongoose).
 
 - [ ] **Có cấu hình proxy hoặc biến môi trường trỏ client tới API chưa?**
-  - **Kết quả: ❌ Chưa hoàn chỉnh**
+  - **Kết quả: ✅ Đã đạt**
   - **Bằng chứng**:
-    - `client/vite.config.js`: Chưa có mục `server.proxy` để trỏ `/api` về cổng của backend.
-    - `client/.env.example`: Vẫn là file mẫu AI Studio chứa `GEMINI_API_KEY`, chưa có cấu hình biến môi trường `VITE_API_URL`.
+    - `client/vite.config.js`: Đã bổ sung mục `server.proxy` chuyển tiếp `/api` về cổng `5000`.
+    - `client/.env.example`: Đã cấu hình `VITE_API_URL=http://localhost:5000/api`.
 
 - [ ] **`.gitignore` có chặn `node_modules`, `.env`, `dist` chưa?**
-  - **Kết quả: ❌ Thiếu ở thư mục gốc**
-  - **Bằng chứng**:
-    - Thư mục gốc repo chưa có file `.gitignore`.
-    - Ở cấp con `client/.gitignore` đã có chặn `node_modules/`, `dist/`, `.env*`. Khi thêm thư mục `server/`, repo cần một `.gitignore` ở thư mục gốc để quản lý cả dự án.
+  - **Kết quả: ✅ Đã đạt**
+  - **Bằng chứng**: Đã tạo file `.gitignore` ở thư mục gốc repo chặn toàn bộ `node_modules/`, `dist/`, `.env*` cho cả client và server sau này.
 
 - [ ] **File thừa từ template AI Studio?**
-  - **Kết quả: ❌ Còn tồn tại**
-  - **Bằng chứng**:
-    - `client/metadata.json` (chứa khai báo AI Studio applet).
-    - `client/.env.example` (chứa `GEMINI_API_KEY`).
-    - Gói `"@google/genai"` trong `client/package.json`.
+  - **Kết quả: ⚠️ Còn file `metadata.json`**
+  - **Bằng chứng**: Gói `@google/genai` và cấu hình env AI Studio đã được dọn, còn lại file `client/metadata.json`.
 
 ---
 
@@ -274,29 +261,18 @@ hoitruongz76-main/
    - Cài đặt `express`, `mongoose`, `dotenv`, `cors`, `jsonwebtoken`, `bcryptjs`.
    - Tạo file `server/server.js`, thư mục `config/db.js` để kết nối MongoDB.
    - Tạo file `server/.env.example` chứa `PORT=5000`, `MONGO_URI`, `JWT_SECRET`.
-   - Bổ sung cấu hình proxy chuyển tiếp `/api` trong `client/vite.config.js`.
 
-2. **Dọn dẹp phụ thuộc thừa trong `client/package.json`**:
-   - Gỡ bỏ các thư viện backend bị cài nhầm ở client: `express`, `dotenv`, `@types/express`.
-   - Xóa `tsconfig.json` và các gói typescript không dùng (`typescript`, `@types/react`, v.v.).
-   - Xóa thư viện không sử dụng: `@google/genai` và file `client/metadata.json`.
-
-3. **Chuyển logic Đăng nhập & Xác thực về Backend (Security)**:
+2. **Chuyển logic Đăng nhập & Xác thực về Backend (Security)**:
    - Viết API `POST /api/auth/staff-login`: Sử dụng `bcrypt` so khớp mật khẩu và phát hành JWT token.
    - Cập nhật `client/src/services/staffAuthService.js` gọi qua `api.post('/auth/staff-login')`.
 
-4. **Chuyển dữ liệu sang Database MongoDB *(ĐỀ XUẤT - CẦN NGƯỜI DÙNG DUYỆT)***:
+3. **Chuyển dữ liệu sang Database MongoDB *(ĐỀ XUẤT - CẦN NGƯỜI DÙNG DUYỆT)***:
    - Xây dựng Mongoose models và viết các REST API tương ứng cho các thực thể.
    - Chuyển mã nguồn trong các file `client/src/services/*Service.js` từ việc đọc `localStorage` sang gọi HTTP request qua `api.js`.
-
-5. **Bổ sung `.gitignore` ở thư mục gốc của dự án**:
-   - Đảm bảo an toàn không commit `node_modules/`, các file `.env` chứa mật khẩu/chuỗi kết nối MongoDB của cả client và server.
 
 ---
 
 ## MỤC 5: GỢI Ý CÁC COLLECTION MONGODB *(CHỈ GỢI Ý, CẦN NGƯỜI DÙNG DUYỆT)*
-
-Dựa trên dữ liệu thực tế đang được sử dụng trong các service và `mockData.js`, đề xuất thiết kế 5 collection MongoDB như sau:
 
 1. **Collection `blocks` (Khối)**:
    - Trường: `_id`, `id` (chuỗi định danh, ví dụ: 'block-agency'), `name` (tên khối), `createdAt`, `updatedAt`.
@@ -321,4 +297,3 @@ Dựa trên dữ liệu thực tế đang được sử dụng trong các servic
 6. **Collection `attendances` (Lịch sử điểm danh)**:
    - Trường: `_id`, `employeeCode` (tham chiếu mã nhân viên), `seatId` (mã ghế), `checkedInAt` (thời gian điểm danh Date/ISO), `eventId` (nếu quản lý đa sự kiện).
    - Tương ứng với `attendanceService.js`.
-
