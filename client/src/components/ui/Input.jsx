@@ -13,6 +13,7 @@ export function Input({
   required = false,
   disabled = false,
   className = '',
+  icon: Icon,
   ...props
 }) {
   const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
@@ -30,6 +31,7 @@ export function Input({
       )}
 
       <div className="relative">
+        {Icon && <Icon className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B] pointer-events-none" />}
         <input
           id={inputId}
           type={type}
@@ -38,7 +40,7 @@ export function Input({
           placeholder={placeholder}
           disabled={disabled}
           required={required}
-          className={`w-full min-h-[48px] px-4 py-3 text-[16px] text-[#0F172A] bg-white border rounded-lg transition-colors placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 disabled:bg-[#F6F8FA] disabled:cursor-not-allowed ${
+          className={`w-full min-h-[52px] py-3 text-[16px] ${Icon ? 'pl-11 pr-4' : 'px-4'} text-[#0F172A] bg-white border rounded-lg transition-colors placeholder:text-[#94A3B8] focus:outline-none focus:ring-2 disabled:bg-[#F6F8FA] disabled:cursor-not-allowed ${
             error
               ? 'border-[#E53E3E] focus:ring-[#E53E3E] focus:border-[#E53E3E]'
               : 'border-[#E2E8F0] focus:ring-[#008BC5] focus:border-[#008BC5]'

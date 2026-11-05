@@ -6,7 +6,7 @@ import { DEMO_MODE } from '../../constants/app.js';
 import { ATTENDEE_LOGIN_CODES } from '../../services/attendeeService.js';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
-import { UserCheck, User, ShieldAlert } from 'lucide-react';
+import { UserCheck, User, ShieldAlert, IdCard, MapPin, ClipboardCheck, ShieldCheck } from 'lucide-react';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -91,19 +91,33 @@ export function LoginPage() {
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center py-6 sm:py-12">
-      <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-6 sm:p-8 space-y-6">
+      <div className="w-full max-w-md sm:max-w-lg bg-white border border-[#E2E8F0] border-t-4 border-t-[#008BC5] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 sm:p-8 space-y-6">
         {/* Tiêu đề sự kiện */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#EAF6FF] text-[#008BC5] font-bold text-[18px] mb-1">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#008BC5] text-white font-bold text-[18px] mb-2">
             Z176
           </div>
-          <h1 className="text-[20px] sm:text-[22px] font-extrabold text-[#0F172A] leading-snug">
+          <h1 className="text-balance text-[24px] sm:text-[32px] font-bold text-[#0F172A] leading-tight sm:leading-[40px]">
             {event.eventName || 'Hội nghị Triển khai Nhiệm vụ Z176'}
           </h1>
-          <p className="text-[16px] text-[#64748B] font-medium">
+          <p className="text-[16px] text-[#334155] font-medium">
             Xem vị trí chỗ ngồi & Điểm danh
           </p>
         </div>
+
+        {/* 3 bước thực hiện */}
+        <ol className="grid grid-cols-3 gap-2 list-none p-0">
+          {[
+            { icon: IdCard, text: 'Nhập mã' },
+            { icon: MapPin, text: 'Xem chỗ ngồi' },
+            { icon: ClipboardCheck, text: 'Điểm danh' },
+          ].map(({ icon: Icon, text }, i) => (
+            <li key={text} className="flex flex-col items-center gap-1 rounded-lg bg-[#EAF6FF] px-1 py-2.5 text-center text-[14px] font-semibold leading-5 text-[#008BC5]">
+              <Icon className="w-5 h-5" />
+              <span>{i + 1}. {text}</span>
+            </li>
+          ))}
+        </ol>
 
         {/* Chế độ Nhân viên */}
         {!isGuestMode ? (
@@ -117,7 +131,11 @@ export function LoginPage() {
                 setError('');
                 setIsStaffCode(false);
               }}
-              placeholder="Nhập mã nhân viên (ví dụ: NV001, NV002...)"
+              placeholder="Ví dụ: NV001"
+              icon={IdCard}
+              helperText="Mã nhân viên có trên thẻ của bạn."
+              autoComplete="off"
+              autoCapitalize="characters"
               error={!isStaffCode ? error : ''}
               disabled={loading}
               required
@@ -151,17 +169,22 @@ export function LoginPage() {
               fullWidth
               size="lg"
               loading={loading}
-              icon={UserCheck}
+              icon={MapPin}
             >
               Xem chỗ ngồi
             </Button>
 
             {event.guestEnabled && (
-              <div className="pt-2">
+              <div className="space-y-4 pt-1">
+                <div className="flex items-center gap-3 text-[14px] text-[#64748B]">
+                  <span className="h-px flex-1 bg-[#E2E8F0]" />hoặc<span className="h-px flex-1 bg-[#E2E8F0]" />
+                </div>
                 <Button
                   type="button"
                   variant="secondary"
                   fullWidth
+                  icon={UserCheck}
+                  className="!text-[#008BC5] !border-[#008BC5] !border-[1.5px] active:!bg-[#F0F9FF]"
                   onClick={() => {
                     setIsGuestMode(true);
                     setError('');
@@ -254,11 +277,12 @@ export function LoginPage() {
         )}
 
         {/* Chân trang: Link chữ nhỏ màu #64748B dẫn tới /quan-tri/login */}
-        <div className="pt-2 border-t border-[#E2E8F0] text-center">
+        <div className="pt-3 border-t border-[#E2E8F0] text-center">
           <Link
             to="/quan-tri/login"
-            className="inline-flex items-center justify-center min-h-[44px] px-3 text-[14px] font-medium text-[#64748B] hover:text-[#008BC5] transition-colors"
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] px-3 text-[16px] font-medium text-[#008BC5] underline hover:text-[#006BA1] transition-colors"
           >
+            <ShieldCheck className="w-[18px] h-[18px]" />
             Đăng nhập quản trị
           </Link>
         </div>

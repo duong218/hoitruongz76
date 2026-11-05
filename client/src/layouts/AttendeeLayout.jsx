@@ -56,7 +56,7 @@ export function AttendeeLayout() {
       </main>
 
       {/* Footer */}
-      <footer className="py-4 text-center text-[14px] text-[#64748B] border-t border-[#E2E8F0] bg-white">
+      <footer className="py-4 px-4 text-center text-[14px] leading-5 text-[#334155] border-t border-[#E2E8F0] bg-white">
         Hệ thống Định hướng Chỗ ngồi Hội trường Z176 • Doanh nghiệp Bộ Quốc Phòng
       </footer>
     </div>
