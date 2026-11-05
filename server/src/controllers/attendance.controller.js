@@ -1,5 +1,6 @@
 import { Attendance, Seat, EventSetting, Employee, Group } from '../models/index.js';
 import { ROLES } from '../constants/roles.server.js';
+import { audit } from '../utils/audit.js';
 
 export const attendanceController = {
   // Lấy danh sách điểm danh
@@ -104,7 +105,8 @@ export const attendanceController = {
   // Đặt lại dữ liệu điểm danh
   async reset(req, res, next) {
     try {
-      await Attendance.deleteMany({});
+      const result = await Attendance.deleteMany({});
+      await audit(req, 'attendance.reset', `Xóa ${result.deletedCount} bản ghi điểm danh`);
       res.json({ message: 'Đã đặt lại dữ liệu điểm danh thành công.' });
     } catch (err) {
       next(err);

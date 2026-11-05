@@ -1,5 +1,6 @@
 import { Seat } from '../models/index.js';
 import { rowSeatIds } from '../constants/hall.server.js';
+import { audit } from '../utils/audit.js';
 
 export const seatController = {
   // Lấy danh sách gán ghế dạng Map: { "1-L-1": "group-id", ... }
@@ -30,6 +31,7 @@ export const seatController = {
         { seatId: { $in: seatIds } },
         { $set: { groupId: groupId || null } }
       );
+      await audit(req, 'seats.assign', `Gán ${groupId || 'trống'} cho ${seatIds.length} ghế`);
 
       const all = await Seat.find();
       const map = {};
@@ -53,6 +55,7 @@ export const seatController = {
         { seatId: { $in: allSeats } },
         { $set: { groupId: groupId || null } }
       );
+      await audit(req, 'seats.assign_rows', `Gán ${groupId || 'trống'} cho hàng ${rowNumbers.join(', ')}`);
 
       const all = await Seat.find();
       const map = {};

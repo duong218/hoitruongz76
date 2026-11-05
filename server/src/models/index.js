@@ -5,3 +5,4 @@ export { Group } from './Group.js';
 export { Seat } from './Seat.js';
 export { EventSetting } from './EventSetting.js';
 export { Attendance } from './Attendance.js';
+export { AuditLog } from './AuditLog.js';

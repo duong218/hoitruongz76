@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { ROLES, GUEST_GROUP_ID, GUEST_GROUP_NAME } from '../constants/roles.server.js';
 import { Employee, Group } from '../models/index.js';
+import { auditFailedLogin } from '../utils/audit.js';
 
 const SESSION_DURATION_HOURS = 8;
 const ATTENDEE_SESSION_HOURS = 12;
@@ -21,11 +22,13 @@ export const authController = {
 
       const staff = await Employee.findOne({ code: trimmedCode }).select('+passwordHash');
       if (!staff || (staff.role !== ROLES.ADMIN && staff.role !== ROLES.MANAGER)) {
+        await auditFailedLogin(trimmedCode);
         return res.status(400).json({ message: 'Mã hoặc mật khẩu không đúng.' });
       }
 
       const isMatch = await bcrypt.compare(trimmedPassword, staff.passwordHash || '');
       if (!isMatch) {
+        await auditFailedLogin(trimmedCode);
         return res.status(400).json({ message: 'Mã hoặc mật khẩu không đúng.' });
       }
 

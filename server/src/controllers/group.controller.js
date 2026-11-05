@@ -1,5 +1,6 @@
 import { Group, Employee, Seat } from '../models/index.js';
 import { ROLES, GUEST_GROUP_ID } from '../constants/roles.server.js';
+import { audit } from '../utils/audit.js';
 
 export const groupController = {
   // Lấy danh sách nhóm
@@ -50,6 +51,7 @@ export const groupController = {
         blockIds: Array.isArray(blockIds) ? blockIds : [],
       });
 
+      await audit(req, 'group.create', `Tạo nhóm "${trimmedName}" (${newGroup.id})`);
       res.status(201).json(newGroup);
     } catch (err) {
       next(err);
@@ -73,6 +75,7 @@ export const groupController = {
       if (color) group.color = color;
 
       await group.save();
+      await audit(req, 'group.update', `Sửa nhóm "${group.name}" (${id})`);
       res.json(group);
     } catch (err) {
       next(err);
@@ -91,6 +94,7 @@ export const groupController = {
 
       await Group.deleteOne({ id });
       await Seat.updateMany({ groupId: id }, { $set: { groupId: null } });
+      await audit(req, 'group.delete', `Xóa nhóm "${group.name}" (${id})`);
 
       res.json({ message: 'Đã xóa nhóm thành công.' });
     } catch (err) {

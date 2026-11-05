@@ -1,4 +1,5 @@
 import { EventSetting, Seat } from '../models/index.js';
+import { audit } from '../utils/audit.js';
 
 export const eventController = {
   // Cài đặt sự kiện (công khai). KHÔNG chứa token ghế.
@@ -49,6 +50,12 @@ export const eventController = {
       if (appUrl !== undefined) event.appUrl = appUrl.trim();
 
       await event.save();
+      const parts = [];
+      if (eventName !== undefined) parts.push('đổi tên sự kiện');
+      if (guestEnabled !== undefined) parts.push(`khách mời=${guestEnabled ? 'bật' : 'tắt'}`);
+      if (checkInOpen !== undefined) parts.push(`điểm danh=${checkInOpen ? 'mở' : 'đóng'}`);
+      if (appUrl !== undefined) parts.push('đổi đường dẫn');
+      await audit(req, 'event.update', `Cập nhật sự kiện: ${parts.join(', ') || 'không đổi gì'}`);
       res.json(event.toJSON());
     } catch (err) {
       next(err);

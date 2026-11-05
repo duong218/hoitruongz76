@@ -7,6 +7,7 @@ Tài liệu mô tả chi tiết kiến trúc, cấu trúc thư mục, danh mục
 > - Framework Web: **Express 5.x**.
 > - Cơ sở dữ liệu: **MongoDB** tương tác qua **Mongoose 9.x**.
 > - Bảo mật & Xác thực: **JWT (JSON Web Token)**, **bcryptjs** (băm mật khẩu), **Helmet** (HTTP headers), **CORS**, **Cookie Parser**.
+> - Đã rà soát và loại bỏ file thừa, đảm bảo phân định quyền chuẩn (Admin / Manager) và đồng bộ trọn vẹn với các nâng cấp phía Client.
 
 ---
 
@@ -31,7 +32,7 @@ server/
     │   ├── auth.controller.js        # Đăng nhập Staff, tra cứu đại biểu, tạo khách mời
     │   ├── employee.controller.js    # CRUD nhân sự, phân quyền, import danh sách
     │   ├── event.controller.js       # Cài đặt sự kiện, token ghế, cấu hình điểm danh
-    │   ├── group.controller.js       # CRUD nhóm ghế hội trường, thống kê số ghế/nhân sự
+    │   ├── group.controller.js       # CRUD nhóm ghế hội trường, kiểm tra ràng buộc khối
     │   ├── org.controller.js         # CRUD Khối (Blocks) & Phòng ban (Departments)
     │   └── seat.controller.js        # Quản lý 200 ghế, gán nhóm ghế lẻ, gán theo hàng
     ├── middleware/       # Các Middleware xác thực, ủy quyền và xử lý lỗi
@@ -48,152 +49,96 @@ server/
     │   ├── index.js          # Điểm xuất tập trung các Models
     │   └── Seat.js           # 200 ghế ngồi (seatId, groupId, token bảo mật dán trên ghế)
     ├── seed/             # Dữ liệu khởi tạo và khôi phục hệ thống
-    │   ├── seed.js           # Kịch bản nạp dữ liệu mẫu an toàn (npm run seed / seed:force)
-    │   └── seedData.js       # Bộ dữ liệu mẫu chuẩn của Nhà máy Z176
-    └── utils/            # Tiện ích máy chủ
-        └── seatToken.js      # Bộ sinh mã token ngẫu nhiên bảo mật cao cho tem QR từng ghế
+    │   ├── seedData.js       # Kịch bản nạp dữ liệu mẫu ban đầu (khối, phòng, nhân sự, 200 ghế)
+    │   └── runSeed.js        # File thực thi seed từ dòng lệnh: `npm run seed`
+    └── routes/           # Định nghĩa Endpoint và gắn Middleware phân quyền
+        ├── attendance.routes.js  # Tuyến đường điểm danh
+        ├── auth.routes.js        # Tuyến đường đăng nhập & xác thực
+        ├── employee.routes.js    # Tuyến đường quản lý nhân sự (Admin)
+        ├── event.routes.js       # Tuyến đường cài đặt sự kiện (Manager)
+        ├── group.routes.js       # Tuyến đường quản lý nhóm ghế (Manager)
+        ├── index.js              # Điểm gom và ánh xạ /api/*
+        ├── org.routes.js         # Tuyến đường tổ chức Khối / Phòng (Admin)
+        └── seat.routes.js        # Tuyến đường sơ đồ 200 ghế (Manager)
 ```
 
 ---
 
-## MỤC 2: KIẾN TRÚC MÔ HÌNH VÀ CƠ SỞ DỮ LIỆU (DATABASE MODELS)
+## MỤC 2: BẢNG DANH MỤC API ROUTES & PHÂN QUYỀN
 
-Hệ thống được chuẩn hóa trên MongoDB gồm 7 Collection chính:
-
-1. **`Employee` (`src/models/Employee.js`)**:
-   - Quản lý danh sách nhân sự toàn nhà máy, bao gồm nhân viên tham dự và các tài khoản quản trị/quản lý.
-   - Trường: `code` (Mã định danh duy nhất, in hoa), `name`, `role` (`ADMIN`, `MANAGER`, `EMPLOYEE`, `GUEST`), `departmentId`, `blockId`, `passwordHash` (Mật khẩu mã hóa bcrypt, `select: false` để bảo mật tuyệt đối).
-
-2. **`Block` (`src/models/Block.js`) & `Department` (`src/models/Department.js`)**:
-   - Quản lý cơ cấu tổ chức phân tầng: Khối cơ quan $\rightarrow$ Phòng ban trực thuộc.
-   - Nhân viên được gắn theo Khối để tự động xác định nhóm ghế trong hội trường.
-
-3. **`Group` (`src/models/Group.js`)**:
-   - Định nghĩa nhóm đại biểu trong hội trường (tên nhóm, màu sắc đại diện trên sơ đồ SVG, danh sách `blockIds` liên kết, cờ `checkInRequired`).
-   - Có nhóm hệ thống cố định dành cho `Khách mời` (`isSystem: true`).
-
-4. **`Seat` (`src/models/Seat.js`)**:
-   - Chứa đủ **200 vị trí ghế** tương ứng sơ đồ thực tế (10 hàng $\times$ 20 ghế).
-   - Mỗi ghế có `seatId` chuẩn (ví dụ `3-L-1`: Hàng 3, Bên trái, Ghế số 1), `groupId` (nhóm được phân bổ) và một chuỗi `token` bảo mật ngẫu nhiên không trùng lặp dùng để in mã QR tem dán cố định.
-
-5. **`EventSetting` (`src/models/EventSetting.js`)**:
-   - Quản lý trạng thái phiên hội nghị (Key duy nhất `'main'`).
-   - Cung cấp: `eventName` (Tên hội nghị), `checkInOpen` (Công tắc mở/đóng cổng điểm danh), `guestEnabled` (Bật/tắt tiếp đón khách ngoài danh sách), `appUrl` (Địa chỉ gốc in tem).
-
-6. **`Attendance` (`src/models/Attendance.js`)**:
-   - Lưu trữ nhật ký đại biểu đã điểm danh tại ghế: `employeeCode`, `seatId`, `checkedInAt`.
-   - Có ràng buộc `unique: true` trên `employeeCode` nhằm đảm bảo mỗi đại biểu chỉ được xác nhận có mặt một lần trong một sự kiện.
-
----
-
-## MỤC 3: DANH MỤC API ROUTES & PHÂN QUYỀN (API SPECIFICATION)
-
-Tất cả các API nghiệp vụ đều có tiền tố `/api`:
-
-### 1. Xác thực & Đăng nhập (`/api/auth`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/staff/login` | Public | Đăng nhập tài khoản Admin/Quản lý bằng Mã + Mật khẩu, cấp JWT token (8 giờ) |
-| `POST` | `/api/auth/attendee/lookup` | Public | Tra cứu mã nhân viên tham dự, xác thực phân nhóm tự động |
-| `POST` | `/api/auth/attendee/guest` | Public | Đăng ký nhanh vào hội trường với tư cách Khách mời |
-| `GET` | `/api/auth/me` | Bearer Token | Lấy thông tin phiên đăng nhập hiện tại từ JWT |
-
-### 2. Quản lý Nhân sự (`/api/employees`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/employees` | Public / Staff | Lấy toàn bộ danh sách nhân sự nhà máy |
-| `POST` | `/api/employees` | ADMIN | Thêm nhân sự mới (hỗ trợ cấp mật khẩu cho Staff) |
-| `PUT` | `/api/employees/:code` | ADMIN | Cập nhật thông tin nhân sự hoặc đổi mật khẩu quản trị |
-| `DELETE`| `/api/employees/:code` | ADMIN | Xóa nhân sự khỏi hệ thống |
-| `POST` | `/api/employees/import` | ADMIN | Nhập danh sách nhân sự hàng loạt từ file Excel |
-
-### 3. Cơ cấu Tổ chức (`/api/org`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/org/blocks` | Public / Staff | Danh sách các Khối cơ quan |
-| `POST` | `/api/org/blocks` | ADMIN | Thêm Khối mới |
-| `PUT` | `/api/org/blocks/:id` | ADMIN | Đổi tên Khối |
-| `DELETE`| `/api/org/blocks/:id` | ADMIN | Xóa Khối cơ quan |
-| `GET` | `/api/org/departments` | Public / Staff | Danh sách Phòng ban trực thuộc |
-| `POST` | `/api/org/departments` | ADMIN | Thêm Phòng ban mới |
-| `PUT` | `/api/org/departments/:id` | ADMIN | Sửa Phòng ban |
-| `DELETE`| `/api/org/departments/:id` | ADMIN | Xóa Phòng ban |
-
-### 4. Nhóm ghế Hội trường (`/api/groups`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/groups` | Public / Staff | Danh sách nhóm ghế, màu sắc và khối liên kết |
-| `GET` | `/api/groups/:id/usage` | Staff | Đếm số lượng nhân sự và số ghế đã gán cho nhóm |
-| `POST` | `/api/groups` | ADMIN, MANAGER | Tạo nhóm ghế mới |
-| `PUT` | `/api/groups/:id` | ADMIN, MANAGER | Cập nhật tên, màu sắc, khối hoặc yêu cầu điểm danh |
-| `DELETE`| `/api/groups/:id` | ADMIN, MANAGER | Xóa nhóm ghế (tự động giải phóng các ghế đã gán) |
-
-### 5. Sơ đồ 200 Ghế ngồi (`/api/seats`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/seats` | Public / Staff | Trả về Map gán ghế: `{"3-L-1": "group-id", ...}` |
-| `POST` | `/api/seats/assign-seats` | ADMIN, MANAGER | Gán hoặc bỏ gán nhóm cho danh sách ghế lẻ |
-| `POST` | `/api/seats/assign-rows` | ADMIN, MANAGER | Gán hoặc bỏ gán nhóm nhanh cho cả hàng ghế |
-
-### 6. Cài đặt Sự kiện & Mã QR (`/api/event`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/event` | Public / Staff | Lấy thông tin hội nghị, công tắc điểm danh & token ghế |
-| `PUT` | `/api/event` | ADMIN, MANAGER | Cập nhật tên hội nghị, đóng/mở điểm danh, link app |
-
-### 7. Điểm danh tại Ghế (`/api/attendance`)
-| Phương thức | Đường dẫn | Quyền hạn | Mô tả chức năng |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/attendance` | Public / Staff | Danh sách kết quả điểm danh của hội nghị |
-| `POST` | `/api/attendance/checkin` | Public | Xác thực quét mã QR tem ghế và ghi nhận có mặt |
-| `POST` | `/api/attendance/reset` | ADMIN, MANAGER | Xóa trắng nhật ký điểm danh để đón hội nghị mới |
+| Nhóm API | Tuyến đường Endpoint | Phương thức | Quyền truy cập | Mô tả chức năng |
+|---|---|:---:|:---:|---|
+| **Xác thực (Auth)** | `/api/auth/staff-login` | `POST` | Công khai | Đăng nhập Admin / Manager (trả JWT qua Cookie hoặc Body) |
+| | `/api/auth/attendee` | `POST` | Công khai | Tra cứu thông tin đại biểu tham dự theo mã nhân sự |
+| | `/api/auth/guest` | `POST` | Công khai | Tiếp đón đăng ký đại biểu khách mời tự do |
+| | `/api/auth/me` | `GET` | Đã đăng nhập | Lấy thông tin tài khoản hiện tại từ JWT |
+| | `/api/auth/logout` | `POST` | Đã đăng nhập | Xóa phiên đăng nhập |
+| **Cơ cấu tổ chức (Org)** | `/api/org/blocks` | `GET` | Mọi Role | Danh sách Khối cơ quan |
+| | `/api/org/blocks` | `POST` | `ADMIN` | Thêm mới Khối cơ quan |
+| | `/api/org/blocks/:id` | `PUT` / `DELETE`| `ADMIN` | Sửa / Xóa Khối cơ quan |
+| | `/api/org/departments` | `GET` | Mọi Role | Danh sách Phòng ban / Phân xưởng |
+| | `/api/org/departments` | `POST` | `ADMIN` | Thêm mới Phòng ban |
+| | `/api/org/departments/:id` | `PUT` / `DELETE` | `ADMIN` | Sửa / Xóa Phòng ban |
+| **Nhân sự (Employee)** | `/api/employees` | `GET` | `ADMIN`, `MANAGER` | Tra cứu, tìm kiếm, lọc danh sách nhân sự |
+| | `/api/employees` | `POST` | `ADMIN` | Thêm mới hồ sơ nhân sự |
+| | `/api/employees/:code` | `PUT` / `DELETE`| `ADMIN` | Cập nhật hồ sơ / Xóa nhân sự |
+| | `/api/employees/import` | `POST` | `ADMIN` | Nhập danh sách nhân sự hàng loạt từ file Excel |
+| **Nhóm ghế (Group)** | `/api/groups` | `GET` | Mọi Role | Lấy danh mục các nhóm ghế và màu sắc |
+| | `/api/groups` | `POST` | `MANAGER` | Tạo nhóm ghế (hỗ trợ liên kết khối) |
+| | `/api/groups/:id` | `PUT` / `DELETE` | `MANAGER` | Cập nhật / Xóa nhóm ghế hội trường |
+| | `/api/groups/:id/usage` | `GET` | `MANAGER` | Kiểm tra số lượng ghế và nhân sự đang gắn vào nhóm |
+| **Sơ đồ ghế (Seat)** | `/api/seats` | `GET` | Mọi Role | Lấy trạng thái phân bổ của 200 ghế hội trường |
+| | `/api/seats/assign` | `POST` | `MANAGER` | Gán hoặc hủy gán nhóm cho danh sách ghế đơn lẻ |
+| | `/api/seats/assign-row` | `POST` | `MANAGER` | Gán nhanh nhóm ghế cho toàn bộ một hàng ghế (20 ghế) |
+| | `/api/seats/reset` | `POST` | `MANAGER` | Đặt lại toàn bộ 200 ghế về trạng thái chưa gán |
+| **Sự kiện (Event)** | `/api/event` | `GET` | Mọi Role | Lấy cấu hình sự kiện, tên hội nghị, trạng thái mở điểm danh |
+| | `/api/event` | `PUT` | `MANAGER` | Cập nhật tên sự kiện, URL ứng dụng, bật/tắt đón khách |
+| | `/api/event/tokens/rotate` | `POST` | `MANAGER` | Đổi mới token bảo mật tem dán ghế chống gian lận |
+| **Điểm danh (Attendance)** | `/api/attendance` | `GET` | `MANAGER` | Xem danh sách đại biểu đã điểm danh theo thời gian thực |
+| | `/api/attendance/checkin` | `POST` | Công khai / Đại biểu | Quét mã QR điểm danh ghế ngồi kèm xác thực token |
+| | `/api/attendance/reset` | `POST` | `MANAGER` | Xóa dữ liệu điểm danh để chuẩn bị cho phiên họp mới |
 
 ---
 
-## MỤC 4: BẢO MẬT & LUỒNG XÁC THỰC NGHIỆP VỤ
+## MỤC 3: CHI TIẾT CÁC SCHEMA MONGOOSE (MODELS)
 
-1. **Bảo vệ phiên Quản trị (Staff Session)**:
-   - Sử dụng **JWT (JSON Web Token)** với hạn dùng 8 giờ.
-   - Header chuẩn: `Authorization: Bearer <token>`.
-   - Middleware `authenticate` kiểm tra token; middleware `authorize(role)` đảm bảo đúng quyền trước khi cho phép can thiệp dữ liệu quản trị.
+1. **`Block` (`server/src/models/Block.js`)**:
+   - `id`: String (bắt buộc, duy nhất, ví dụ: `block-agency`).
+   - `name`: String (bắt buộc, tên khối, collation không phân biệt hoa thường).
 
-2. **Quy trình Điểm danh Chống gian lận (Anti-cheat Check-in)**:
-   - Khi nhân viên quét mã QR tem ghế, API `/api/attendance/checkin` thực hiện kiểm tra 6 bước chặt chẽ trên Server:
-     1. Cổng điểm danh sự kiện đã mở chưa (`checkInOpen === true`).
-     2. Nhân sự có tồn tại trên hệ thống và có thuộc diện phải điểm danh không.
-     3. Mã ghế có tồn tại trong 200 ghế của hội trường không.
-     4. Khóa token gửi lên từ QR có khớp chính xác với token bí mật của chiếc ghế đó trong MongoDB hay không.
-     5. Chiếc ghế đó có đang được phân bổ cho Khối/Đơn vị của nhân viên đó không.
-     6. Đại biểu này đã điểm danh trước đó chưa (ngăn chặn điểm danh lặp lại).
+2. **`Department` (`server/src/models/Department.js`)**:
+   - `id`: String (bắt buộc, duy nhất).
+   - `name`: String (bắt buộc, tên phòng ban / phân xưởng).
+   - `blockId`: String (bắt buộc, tham chiếu tới `Block.id`).
 
-3. **Cơ chế Mã QR Dán Cố định Vĩnh viễn**:
-   - 160 tem QR dán trên ghế (từ hàng 3 đến hàng 10) mang tọa độ vật lý và token tĩnh của từng ghế.
-   - Khi chuyển giao giữa các hội nghị, quản lý chỉ cần đổi cấu hình phân bổ ghế trên phần mềm hoặc bấm **"Đặt lại điểm danh"** mà không cần in lại tem QR.
+3. **`Employee` (`server/src/models/Employee.js`)**:
+   - `code`: String (bắt buộc, mã định danh nhân sự duy nhất, đánh index).
+   - `name`: String (bắt buộc, họ tên nhân viên).
+   - `role`: String (enum: `ADMIN`, `MANAGER`, `EMPLOYEE`, `GUEST`).
+   - `departmentId`: String (tham chiếu tới phòng ban).
+   - `blockId`: String (tham chiếu tới khối).
+   - `passwordHash`: String (mã băm bcrypt, chỉ dùng cho tài khoản quản trị).
 
----
+4. **`Group` (`server/src/models/Group.js`)**:
+   - `id`: String (bắt buộc, duy nhất, ví dụ: `group-agency`).
+   - `name`: String (bắt buộc, tên nhóm ghế).
+   - `color`: String (bắt buộc, mã màu hex ví dụ: `#0284C7`, tương thích 18 màu sắc chuẩn).
+   - `isSystem`: Boolean (true đối với nhóm Khách mời cố định).
+   - `checkInRequired`: Boolean (yêu cầu quét QR tại ghế hay miễn quét).
+   - `blockIds`: Array of String (danh sách `Block.id` trực thuộc nhóm ghế này).
 
-## MỤC 5: HƯỚNG DẪN KHỞI CHẠY & NẠP DỮ LIỆU BACKEND
+5. **`Seat` (`server/src/models/Seat.js`)**:
+   - `seatId`: String (bắt buộc, regex kiểm tra chuẩn: `{row}-{side}-{n}`, ví dụ `1-L-1` đến `10-R-10`).
+   - `groupId`: String (null hoặc tham chiếu tới `Group.id`).
+   - `token`: String (chuỗi bí mật ngẫu nhiên dán trên tem QR ghế chống quét trước).
 
-```bash
-# 1. Chuyển vào thư mục server
-cd server
+6. **`EventSetting` (`server/src/models/EventSetting.js`)**:
+   - `eventName`: String (tên hội nghị, phiên đại hội).
+   - `guestEnabled`: Boolean (cho phép khách mời ngoài danh sách).
+   - `checkInOpen`: Boolean (mở/đóng cổng điểm danh).
+   - `appUrl`: String (đường dẫn ứng dụng hiển thị trên mã QR dán cửa).
 
-# 2. Cài đặt các thư viện cần thiết
-npm install
-
-# 3. Tạo file biến môi trường .env từ mẫu (nếu chưa có)
-# Kiểm tra MONGO_URI kết nối tới MongoDB đang chạy (mặc định: mongodb://127.0.0.1:27017/hoitruongz76)
-
-# 4. Khởi tạo dữ liệu mẫu ban đầu (chỉ nạp khi database đang rỗng)
-npm run seed
-
-# Hoặc nếu muốn xóa toàn bộ database để nạp lại từ đầu:
-npm run seed:force
-
-# 5. Khởi chạy Server chế độ phát triển (Auto reload bằng nodemon)
-npm run dev
-
-# 6. Khởi chạy chế độ Production
-npm start
-```
-
+7. **`Attendance` (`server/src/models/Attendance.js`)**:
+   - `employeeCode`: String (bắt buộc, mã nhân viên điểm danh).
+   - `seatId`: String (bắt buộc, mã vị trí ghế ngồi).
+   - `checkedInAt`: Date (thời điểm ghi nhận điểm danh, mặc định `Date.now`).

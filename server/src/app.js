@@ -10,6 +10,7 @@ import groupRoutes from './routes/groups.routes.js';
 import seatRoutes from './routes/seats.routes.js';
 import eventRoutes from './routes/events.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
+import auditRoutes from './routes/audit.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/seats', seatRoutes);
 app.use('/api/event', eventRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/audit', auditRoutes);
 
 app.use('/api', notFound);
 app.use(errorHandler);

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { Employee } from '../models/index.js';
 import { ROLES } from '../constants/roles.server.js';
+import { audit } from '../utils/audit.js';
 
 export const employeeController = {
   // Lấy danh sách nhân viên
@@ -49,6 +50,7 @@ export const employeeController = {
         passwordHash,
       });
 
+      await audit(req, 'employee.create', `Thêm ${trimmedCode} (${assignedRole})`);
       res.status(201).json(newEmp);
     } catch (err) {
       next(err);
@@ -69,6 +71,7 @@ export const employeeController = {
       if (departmentId !== undefined) emp.departmentId = departmentId || null;
       if (blockId !== undefined) emp.blockId = blockId || null;
 
+      let passwordChanged = false;
       const isStaff = emp.role === ROLES.ADMIN || emp.role === ROLES.MANAGER;
       if (isStaff) {
         if (password && password.trim()) {
@@ -77,6 +80,7 @@ export const employeeController = {
             return res.status(400).json({ message: 'Mật khẩu quản trị phải có tối thiểu 8 ký tự.' });
           }
           emp.passwordHash = await bcrypt.hash(trimmedPass, 10);
+          passwordChanged = true;
         } else if (!emp.passwordHash) {
           return res.status(400).json({ message: 'Tài khoản quản trị bắt buộc phải có mật khẩu (tối thiểu 8 ký tự).' });
         }
@@ -85,6 +89,14 @@ export const employeeController = {
       }
 
       await emp.save();
+      // Chỉ ghi TÊN các trường đã đổi, không ghi mật khẩu
+      const changed = [];
+      if (name) changed.push('tên');
+      if (role) changed.push(`vai trò=${role}`);
+      if (departmentId !== undefined) changed.push('phòng ban');
+      if (blockId !== undefined) changed.push('khối');
+      if (passwordChanged) changed.push('mật khẩu');
+      await audit(req, 'employee.update', `Sửa ${code}: ${changed.join(', ') || 'không đổi gì'}`);
       res.json(emp);
     } catch (err) {
       next(err);
@@ -97,6 +109,7 @@ export const employeeController = {
       const code = req.params.code.trim().toUpperCase();
       const result = await Employee.findOneAndDelete({ code });
       if (!result) return res.status(404).json({ message: 'Không tìm thấy nhân viên để xóa.' });
+      await audit(req, 'employee.delete', `Xóa ${code}`);
       res.json({ message: 'Đã xóa nhân viên thành công.' });
     } catch (err) {
       next(err);
@@ -127,6 +140,8 @@ export const employeeController = {
       }));
 
       await Employee.bulkWrite(bulkOps);
+      const staffRows = validRows.filter((r) => r.role === ROLES.ADMIN || r.role === ROLES.MANAGER).length;
+      await audit(req, 'employee.import', `Nhập ${validRows.length} dòng${staffRows ? `, trong đó ${staffRows} dòng có vai trò quản trị` : ''}`);
       res.json({ importedCount: validRows.length });
     } catch (err) {
       next(err);
