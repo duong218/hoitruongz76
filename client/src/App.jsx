@@ -22,6 +22,7 @@ import { StaffLoginPage } from './pages/auth/StaffLoginPage.jsx';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage.jsx';
 import { EmployeesPage } from './pages/admin/EmployeesPage.jsx';
 import { OrgPage } from './pages/admin/OrgPage.jsx';
+import { AuditPage } from './pages/admin/AuditPage.jsx';
 import { MaintenancePage } from './pages/admin/MaintenancePage.jsx';
 
 // Manager Pages (Chỉ MANAGER)
@@ -69,6 +70,7 @@ export default function App() {
                 <Route path="dashboard" element={<AdminDashboardPage />} />
                 <Route path="employees" element={<EmployeesPage />} />
                 <Route path="org" element={<OrgPage />} />
+                <Route path="audit" element={<AuditPage />} />
                 <Route path="maintenance" element={<MaintenancePage />} />
                 <Route path="event" element={<Navigate to="/manager/event" replace />} />
                 <Route path="qr" element={<Navigate to="/manager/event" replace />} />

@@ -9,4 +9,4 @@ export * from './seatService.js';
 export * from './attendanceService.js';
 export * from './eventService.js';
 export * from './backupService.js';
-
+export * from './auditService.js';

@@ -133,7 +133,7 @@ export function AdminLayout() {
                 }
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                <span className="text-[12px] mt-1 leading-none">{item.label}</span>
+                <span className="text-[12px] mt-1 leading-none">{item.shortLabel || item.label}</span>
               </NavLink>
             );
           })}

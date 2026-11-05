@@ -7,6 +7,7 @@ import {
   Layers,
   UserCheck,
   Calendar,
+  ScrollText,
 } from 'lucide-react';
 import { ROLES } from './roles.js';
 
@@ -29,7 +30,13 @@ export const ADMIN_NAV_ITEMS = [
   {
     to: '/admin/org',
     label: 'Cơ cấu tổ chức',
+    shortLabel: 'Cơ cấu',
     icon: GitFork,
+  },
+  {
+    to: '/admin/audit',
+    label: 'Nhật ký',
+    icon: ScrollText,
   },
   {
     to: '/admin/maintenance',
