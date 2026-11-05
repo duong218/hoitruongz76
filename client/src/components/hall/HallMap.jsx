@@ -159,17 +159,27 @@ export function HallMap({
           </text>
         </g>
 
-        {/* Lối đi giữa nhãn hướng dẫn */}
+        {/* Lối đi giữa nhãn hướng dẫn kèm quy ước đếm số ghế */}
         <text
           x={HALL_LAYOUT.ENTRANCE.centerX}
-          y={HALL_LAYOUT.STAGE.y + HALL_LAYOUT.STAGE.height + 20}
+          y={HALL_LAYOUT.STAGE.y + HALL_LAYOUT.STAGE.height + 17}
           textAnchor="middle"
-          fill="#94A3B8"
+          fill="#64748B"
           fontSize="13"
-          fontWeight="600"
+          fontWeight="700"
           letterSpacing="1"
         >
           LỐI ĐI GIỮA
+        </text>
+        <text
+          x={HALL_LAYOUT.ENTRANCE.centerX}
+          y={HALL_LAYOUT.STAGE.y + HALL_LAYOUT.STAGE.height + 31}
+          textAnchor="middle"
+          fill="#94A3B8"
+          fontSize="11"
+          fontWeight="500"
+        >
+          (Ghế 1 sát lối đi ↔ Ghế 10 sát tường)
         </text>
 
         {/* Vẽ từng hàng ghế */}
@@ -264,6 +274,7 @@ export function HallMap({
                     key={sId}
                     x={coords.x}
                     y={coords.y}
+                    seatNumber={n}
                     fill={fill}
                     stroke={stroke}
                   />
@@ -297,6 +308,7 @@ export function HallMap({
                     key={sId}
                     x={coords.x}
                     y={coords.y}
+                    seatNumber={n}
                     fill={fill}
                     stroke={stroke}
                   />

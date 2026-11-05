@@ -182,7 +182,10 @@ export function SeatingPage() {
         <div>
           <h1 className="text-[26px] font-bold text-[#0F172A] leading-tight">Sắp xếp chỗ ngồi</h1>
           <p className="text-[15px] text-[#475569] mt-1">
-            Bấm vào hàng ghế trên sơ đồ để gán cả hàng (20 ghế), hoặc chọn 1 hàng để chỉnh từng ghế lẻ.
+            Bấm vào hàng ghế trên sơ đồ để gán cả hàng (20 ghế), hoặc chọn 1 hàng để chỉnh từng ghế lẻ.{' '}
+            <span className="inline-block font-semibold text-[#008BC5]">
+              (Quy ước: Ghế 1 ở sát lối đi giữa, ghế 10 ở sát tường hai bên).
+            </span>
           </p>
         </div>
         <p className="text-[15px] text-[#475569] tabular-nums">
