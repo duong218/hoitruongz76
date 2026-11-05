@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Logo } from '../../components/ui/Logo.jsx';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useEventSettings } from '../../hooks/useEventSettings.js';
@@ -94,9 +95,7 @@ export function LoginPage() {
       <div className="w-full max-w-md sm:max-w-lg bg-white border border-[#E2E8F0] border-t-4 border-t-[#008BC5] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 sm:p-8 space-y-6">
         {/* Tiêu đề sự kiện */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-[#008BC5] text-white font-bold text-[18px] mb-2">
-            Z176
-          </div>
+          <Logo className="w-16 h-16 mb-2 inline-block" />
           <h1 className="text-balance text-[24px] sm:text-[32px] font-bold text-[#0F172A] leading-tight sm:leading-[40px]">
             {event.eventName || 'Hội nghị Triển khai Nhiệm vụ Z176'}
           </h1>

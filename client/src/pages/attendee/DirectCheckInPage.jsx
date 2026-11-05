@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Logo } from '../../components/ui/Logo.jsx';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useSeatAssignments } from '../../hooks/useSeatAssignments.js';
@@ -98,9 +99,7 @@ export function DirectCheckInPage() {
     <div className="flex-1 flex flex-col justify-center items-center py-8">
       <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-6 sm:p-8 space-y-6">
         <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-[#EAF6FF] text-[#008BC5] flex items-center justify-center font-bold text-[18px] mx-auto mb-3">
-            Z176
-          </div>
+          <Logo className="w-12 h-12 mx-auto mb-3" />
           <h2 className="text-[22px] font-extrabold text-[#0F172A]">
             Điểm danh trực tiếp tại ghế
           </h2>

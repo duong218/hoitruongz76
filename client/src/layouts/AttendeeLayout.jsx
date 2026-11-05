@@ -1,4 +1,5 @@
 import React from 'react';
+import { Logo } from '../components/ui/Logo.jsx';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { LogOut } from 'lucide-react';
@@ -19,9 +20,7 @@ export function AttendeeLayout() {
         <header className="bg-white border-b border-[#E2E8F0] shadow-[0_1px_3px_rgba(15,23,42,0.08)] sticky top-0 z-40">
           <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#008BC5] flex items-center justify-center text-white font-bold text-[14px]">
-                Z176
-              </div>
+              <Logo className="w-8 h-8" />
               <span className="font-bold text-[16px] text-[#0F172A] hidden sm:inline">
                 Sơ đồ hội trường Z176
               </span>

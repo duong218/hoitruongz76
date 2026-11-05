@@ -1,4 +1,5 @@
 import React from 'react';
+import { Logo } from '../components/ui/Logo.jsx';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { ROLES, ROLE_LABELS } from '../constants/roles.js';
@@ -28,9 +29,7 @@ export function AdminLayout() {
       {/* Header 64px / 72px */}
       <header className="h-16 lg:h-[72px] bg-white border-b border-[#E2E8F0] shadow-[0_1px_3px_rgba(15,23,42,0.08)] sticky top-0 z-40 flex items-center justify-between px-4 lg:px-8">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#008BC5] text-white flex items-center justify-center font-bold text-[16px] tracking-wider">
-            Z176
-          </div>
+          <Logo className="w-9 h-9" />
           <div>
             <span className="font-bold text-[18px] text-[#0F172A] block leading-tight">
               {headerTitle}
