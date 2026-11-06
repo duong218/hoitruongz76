@@ -9,7 +9,11 @@ import { ShieldCheck, Lock, User, ArrowLeft } from 'lucide-react';
 export function StaffLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nextUrl = searchParams.get('next');
+  const rawNextUrl = searchParams.get('next');
+  // Chống Open Redirect: chỉ chấp nhận URL nội bộ bắt đầu bằng / và không bắt đầu bằng //
+  const safeNextUrl = (rawNextUrl && rawNextUrl.startsWith('/') && !rawNextUrl.startsWith('//'))
+    ? rawNextUrl
+    : null;
 
   const { loginStaff } = useAuth();
 
@@ -36,17 +40,17 @@ export function StaffLoginPage() {
       const staffUser = await loginStaff(trimmedCode, trimmedPass);
 
       // Điều hướng sau đăng nhập thành công
-      if (nextUrl) {
-        // Kiểm tra quyền đối với nextUrl
-        if (nextUrl.startsWith('/admin') && staffUser.role !== ROLES.ADMIN) {
+      if (safeNextUrl) {
+        // Kiểm tra quyền đối với safeNextUrl
+        if (safeNextUrl.startsWith('/admin') && staffUser.role !== ROLES.ADMIN) {
           navigate('/manager/dashboard', { replace: true });
           return;
         }
-        if (nextUrl.startsWith('/manager') && staffUser.role !== ROLES.MANAGER) {
+        if (safeNextUrl.startsWith('/manager') && staffUser.role !== ROLES.MANAGER) {
           navigate('/admin/dashboard', { replace: true });
           return;
         }
-        navigate(nextUrl, { replace: true });
+        navigate(safeNextUrl, { replace: true });
         return;
       }
 

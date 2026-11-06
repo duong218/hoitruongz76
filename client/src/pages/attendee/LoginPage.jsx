@@ -13,7 +13,11 @@ import { UserCheck, User, ShieldAlert, IdCard, MapPin, QrCode, ScanLine, ShieldC
 export function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const nextUrl = searchParams.get('next');
+  const rawNextUrl = searchParams.get('next');
+  // Chống Open Redirect: Chỉ chấp nhận đường dẫn nội bộ bắt đầu bằng "/" và không phải "//"
+  const safeNextUrl = (rawNextUrl && rawNextUrl.startsWith('/') && !rawNextUrl.startsWith('//')) 
+    ? rawNextUrl 
+    : '/seat';
 
   const { loginWithCode, loginAsGuest } = useAuth();
   const { event } = useEventSettings();
@@ -53,7 +57,7 @@ export function LoginPage() {
         return;
       }
 
-      navigate(nextUrl || '/seat', { replace: true });
+      navigate(safeNextUrl, { replace: true });
     } catch (err) {
       setError(err.message || 'Không tìm thấy mã nhân viên này. Vui lòng kiểm tra lại.');
     } finally {
@@ -76,7 +80,7 @@ export function LoginPage() {
       setLoading(true);
       const result = await loginAsGuest(trimmed);
       if (result.ok) {
-        navigate(nextUrl || '/seat', { replace: true });
+        navigate(safeNextUrl, { replace: true });
       }
     } catch (err) {
       setError(err.message || 'Lỗi khi xác nhận thông tin khách mời.');

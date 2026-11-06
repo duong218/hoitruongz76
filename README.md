@@ -1,11 +1,14 @@
 # 🏛️ HỆ THỐNG QUẢN LÝ CHỖ NGỒI & ĐIỂM DANH HỘI TRƯỜNG Z176
 
+---Người xây dựng: Phạm Ngọc Dương---
+
 > **Ứng dụng Quản lý Sơ đồ Hội trường 200 ghế, Điều phối Chỗ ngồi & Điểm danh Thông minh theo thời gian thực.**  
 > Xây dựng trên nền tảng **MERN Stack** (MongoDB, Express, React, Node.js) đạt chuẩn bảo mật, giao diện tối ưu đa thiết bị (Desktop / Máy tính bảng / Điện thoại).
 
 ---
 
 ## 📋 MỤC LỤC
+
 1. [Giới thiệu tổng quan](#-giới-thiệu-tổng-quan)
 2. [Tính năng nổi bật](#-tính-năng-nổi-bật)
 3. [Kiến trúc & Công nghệ sử dụng](#-kiến-trúc--công-nghệ-sử-dụng)
@@ -20,6 +23,7 @@
 ## 🎯 GIỚI THIỆU TỔNG QUAN
 
 Hệ thống được thiết kế đặc thù cho **Hội trường Z176** với quy mô chuẩn **200 chỗ ngồi** (10 hàng, mỗi hàng 20 ghế chia đều 2 bên cánh Trái/Phải), giải quyết triệt để các bài toán:
+
 - **Sắp xếp chỗ ngồi theo khối/phòng ban**: Tránh nhầm lẫn, dễ dàng điều phối khu vực VIP và các đơn vị tham dự.
 - **Điểm danh chính xác tại chỗ**: Ngăn chặn tình trạng điểm danh hộ từ xa thông qua mã QR bảo mật động gắn riêng trên từng ghế.
 - **Phương án dự phòng toàn diện**: Hỗ trợ nhập mã tem thủ công (cho máy hỏng camera) và tính năng Điểm danh hộ có ghi nhật ký kiểm toán (cho đại biểu quên điện thoại).
@@ -30,6 +34,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 ## ✨ TÍNH NĂNG NỔI BẬT
 
 ### 1. Phân hệ Quản trị viên (Admin)
+
 - **Dashboard KPI tổng quan**: Giám sát quân số, cơ cấu khối - phòng ban, tỷ lệ bố trí chỗ ngồi và tình trạng an toàn hệ thống.
 - **Quản lý cơ cấu tổ chức (Khối & Phòng ban)**: Thiết lập cấu trúc doanh nghiệp linh hoạt, tự động liên kết với nhóm ghế.
 - **Quản lý danh sách nhân sự**: Tìm kiếm, lọc theo phòng ban/khối, thêm mới, sửa, đổi mật khẩu và nhập danh sách từ file Excel.
@@ -37,6 +42,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 - **Sao lưu & Phục hồi (Maintenance)**: Xuất file JSON dự phòng và khôi phục dữ liệu toàn vẹn khi cần.
 
 ### 2. Phân hệ Quản lý Vận hành (Manager)
+
 - **Sắp xếp chỗ ngồi trực quan 2D**:
   - Gán nhóm ghế nhanh theo từng hàng (20 ghế) hoặc chỉnh sửa từng ghế lẻ.
   - Bảng màu nhận diện lên tới 18 màu sắc rõ nét.
@@ -60,6 +66,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
   - Mỗi tem in rõ: Số hàng, Cánh Trái/Phải, Số ghế, Mã QR và dòng **Mã bảo mật 6 ký tự** in to dưới QR.
 
 ### 3. Phân hệ Đại biểu / Người tham dự
+
 - **Tra cứu chỗ ngồi nhanh**: Đăng nhập bằng Mã nhân viên hoặc số định danh.
 - **Sơ đồ dẫn đường thông minh**: Bản đồ 2D và sơ đồ rút gọn mobile hiển thị nổi bật khu vực ghế của mình, đường nét đứt dẫn lối từ Cửa vào.
 - **Quét mã điểm danh tại ghế**:
@@ -74,6 +81,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 ## 🛠️ KIẾN TRÚC & CÔNG NGHỆ SỬ DỤNG
 
 ### Phân hệ Client (`client/`)
+
 - **Core**: React 18 / 19, Vite 6.x.
 - **Routing**: React Router DOM v7 (kiểm soát tuyến đường theo vai trò `RequireRole`).
 - **Styling**: Tailwind CSS v4, Lucide React Icons.
@@ -84,6 +92,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
   - `axios`: Kết nối API Backend với Interceptors quản lý phiên token.
 
 ### Phân hệ Server Backend (`server/`)
+
 - **Core**: Node.js (>=20), Express 5.x (ES Module).
 - **Cơ sở dữ liệu**: MongoDB với Mongoose 9.x ODM.
 - **Bảo mật & Kiểm soát**:
@@ -167,6 +176,7 @@ hoitruongz76/
 ## 🪑 QUY ƯỚC SƠ ĐỒ & GHẾ NGỒI
 
 Hội trường gồm tổng cộng **200 chỗ ngồi**:
+
 - **Quy mô**: 10 hàng ghế (từ Hàng 1 đến Hàng 10).
 - **Phân bổ**: Mỗi hàng gồm 20 ghế:
   - **Cánh Trái (L)**: 10 ghế (mã từ `L-1` đến `L-10`).
@@ -186,16 +196,17 @@ Hội trường gồm tổng cộng **200 chỗ ngồi**:
 
 ## 🔐 TÀI KHOẢN & PHÂN QUYỀN HỆ THỐNG
 
-| Vai trò | Phân vùng truy cập | Quyền hạn chính |
-|---|---|---|
-| **ADMIN** (Quản trị viên) | `/admin/*` | Toàn quyền quản trị nhân sự, cơ cấu tổ chức, sao lưu phục hồi và xem nhật ký audit log. |
-| **MANAGER** (Quản lý) | `/manager/*` | Sắp xếp vị trí 200 ghế, quản lý nhóm, in tem QR, theo dõi điểm danh và điểm danh hộ. |
-| **EMPLOYEE** (Nhân viên) | `/login`, `/seat` | Tra cứu vị trí ghế chỉ định theo sơ đồ 2D, quét mã QR hoặc nhập mã tem để điểm danh. |
-| **GUEST** (Khách mời) | `/login`, `/seat` | Tra cứu chỗ ngồi khu vực khách mời (mặc định không bắt buộc quét điểm danh). |
+| Vai trò                   | Phân vùng truy cập | Quyền hạn chính                                                                         |
+| ------------------------- | ------------------ | --------------------------------------------------------------------------------------- |
+| **ADMIN** (Quản trị viên) | `/admin/*`         | Toàn quyền quản trị nhân sự, cơ cấu tổ chức, sao lưu phục hồi và xem nhật ký audit log. |
+| **MANAGER** (Quản lý)     | `/manager/*`       | Sắp xếp vị trí 200 ghế, quản lý nhóm, in tem QR, theo dõi điểm danh và điểm danh hộ.    |
+| **EMPLOYEE** (Nhân viên)  | `/login`, `/seat`  | Tra cứu vị trí ghế chỉ định theo sơ đồ 2D, quét mã QR hoặc nhập mã tem để điểm danh.    |
+| **GUEST** (Khách mời)     | `/login`, `/seat`  | Tra cứu chỗ ngồi khu vực khách mời (mặc định không bắt buộc quét điểm danh).            |
 
 ### Tài khoản mẫu ban đầu (khi chạy Seed dữ liệu)
-- **Quản trị viên**: Mã `` / Mật khẩu: ``
-- **Quản lý hội trường**: Mã `` / Mật khẩu: ``
+
+- **Quản trị viên**: Mã `/ Mật khẩu:`
+- **Quản lý hội trường**: Mã `/ Mật khẩu:`
 - **Nhân viên mẫu**: Mã `NV001` đến `NV008` (đăng nhập trực tiếp bằng mã, không cần mật khẩu).
 
 ---
@@ -203,11 +214,13 @@ Hội trường gồm tổng cộng **200 chỗ ngồi**:
 ## 🚀 HƯỚNG DẪN CÀI ĐẶT & KHỞI CHẠY
 
 ### 1. Yêu cầu môi trường
+
 - **Node.js**: Phiên bản 20.x trở lên.
 - **MongoDB**: Phiên bản 6.x trở lên (đang chạy tại máy local hoặc MongoDB Atlas).
 - Trình quản lý gói: `npm`.
 
 ### 2. Cài đặt Dependencies
+
 Cài đặt thư viện cho cả Root, Client và Server:
 
 ```bash
@@ -223,7 +236,9 @@ cd ..
 ```
 
 ### 3. Cấu hình Biến môi trường (`.env`)
+
 Kiểm tra file `server/.env`:
+
 ```env
 PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/hoitruongz76
@@ -234,11 +249,13 @@ SEED_MANAGER_PASSWORD=
 ```
 
 Kiểm tra file `client/.env` (nếu cần thay đổi cổng API):
+
 ```env
 VITE_API_URL=/api
 ```
 
 ### 4. Khởi tạo dữ liệu mẫu (Seed Database)
+
 Nạp cấu trúc hội trường 200 ghế, các khối, phòng ban và tài khoản mẫu vào MongoDB:
 
 ```bash
@@ -250,6 +267,7 @@ npm run seed:force
 ```
 
 ### 5. Khởi chạy ứng dụng
+
 Chạy song song cả Backend Server và Frontend Client:
 
 ```bash
@@ -261,6 +279,7 @@ npm run dev:client
 ```
 
 Mở trình duyệt truy cập:
+
 - **Giao diện Đại biểu / Điểm danh**: [http://localhost:3000/login](http://localhost:3000/login)
 - **Cổng Đăng nhập Quản trị & Quản lý**: [http://localhost:3000/quan-tri/login](http://localhost:3000/quan-tri/login)
 
@@ -288,11 +307,12 @@ flowchart TD
 ---
 
 ## 🛡️ AN TOÀN & BẢO MẬT HỆ THỐNG
+
 1. **Kiểm tra chéo vị trí ghế**: Người tham dự không thể quét mã của ghế nhóm khác để điểm danh thay. Hệ thống tự động so khớp Khối $\rightarrow$ Nhóm được phân bổ $\rightarrow$ Ghế thực tế.
 2. **Không thể giả mạo dữ liệu gửi lên**: Danh tính người điểm danh được trích xuất trực tiếp từ JWT Token của phiên, không nhận mã gửi từ Client.
 3. **Mã token ghế bảo mật cao**: Thuộc tính `token` của ghế được cấu hình `select: false` trong cơ sở dữ liệu, chỉ được gọi ra khi tạo trang in tem và khi so khớp điểm danh.
 4. **Nhật ký kiểm toán minh bạch**: Bất kỳ hành động sửa nhân sự, thay đổi sơ đồ ghế hay điểm danh hộ đều lưu vết IP, danh tính cán bộ thực hiện và lý do cụ thể.
 
 ---
-*Phát triển và vận hành phục vụ các hội nghị, sự kiện tiêu chuẩn tại Hội trường Z176.*
 
+_Phát triển và vận hành phục vụ các hội nghị, sự kiện tiêu chuẩn tại Hội trường Z176._

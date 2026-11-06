@@ -8,7 +8,7 @@ const ATTENDEE_KEY = 'z176_v2_attendee_session';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 20000, // Tăng lên 20 giây phù hợp với mạng Wi-Fi hội trường đông người
   headers: {
     'Content-Type': 'application/json',
   },
@@ -57,6 +57,11 @@ api.interceptors.response.use(
         }
       }
     }
+    // Kiểm tra lỗi quá thời gian chờ (Timeout do mạng chập chờn)
+    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+      return Promise.reject(new Error('Kết nối mạng tại hội trường đang chậm hoặc gián đoạn. Vui lòng bấm thử lại.'));
+    }
+
     const message = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra kết nối máy chủ';
     return Promise.reject(new Error(message));
   }
