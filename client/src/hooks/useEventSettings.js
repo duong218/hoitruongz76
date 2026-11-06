@@ -51,7 +51,14 @@ export function useEventSettings() {
     return updated;
   };
 
+  const startNewEvent = async (eventName) => {
+    const updated = await eventService.startNewEvent(eventName);
+    setEvent(updated);
+    return updated;
+  };
+
   return {
+    startNewEvent,
     event,
     loading,
     error,

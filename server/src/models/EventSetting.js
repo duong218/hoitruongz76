@@ -9,6 +9,8 @@ const eventSettingSchema = new mongoose.Schema(
     guestEnabled: { type: Boolean, default: true },
     checkInOpen: { type: Boolean, default: true },
     appUrl: { type: String, default: '', trim: true },
+    nameLocked: { type: Boolean, default: false }, // true sau khi bấm "Bắt đầu sự kiện mới"
+    startedAt: { type: Date, default: null },
   },
   { timestamps: true, toJSON: cleanJSON(['key', 'createdAt', 'updatedAt']) }
 );

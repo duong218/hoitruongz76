@@ -117,6 +117,10 @@ export const attendanceController = {
       const { employeeCode, seatId, reason } = req.body;
       const targetCode = (employeeCode || '').trim().toUpperCase();
       const targetSeatId = (seatId || '').trim();
+      const cleanReason = (reason || '').trim();
+      if (!cleanReason) {
+        return res.status(400).json({ message: 'Vui lòng nhập lý do điểm danh hộ.' });
+      }
 
       if (!targetCode) {
         return res.status(400).json({ message: 'Vui lòng cung cấp mã nhân sự cần điểm danh.' });
@@ -138,39 +142,25 @@ export const attendanceController = {
         });
       }
 
-      // 3. Nếu có chỉ định ghế, kiểm tra ghế
-      let assignedSeatId = targetSeatId;
-      if (assignedSeatId) {
-        const seat = await Seat.findOne({ seatId: assignedSeatId });
-        if (!seat) {
-          return res.status(400).json({ message: `Ghế "${assignedSeatId}" không tồn tại trong hội trường.` });
-        }
-      } else {
-        // Tự động tìm ghế thuộc nhóm của nhân sự nếu không gõ ghế
-        const groups = await Group.find();
-        const group = employee.blockId
-          ? groups.find((g) => Array.isArray(g.blockIds) && g.blockIds.includes(employee.blockId))
-          : null;
-        if (group) {
-          const firstSeat = await Seat.findOne({ groupId: group.id });
-          assignedSeatId = firstSeat ? firstSeat.seatId : '1-L-1';
-        } else {
-          assignedSeatId = '1-L-1';
-        }
+      // 3. Ghế là tùy chọn; nếu nhập thì phải tồn tại. Không tự gán ghế giả.
+      if (targetSeatId && !(await Seat.findOne({ seatId: targetSeatId }))) {
+        return res.status(400).json({ message: `Ghế \"${targetSeatId}\" không tồn tại trong hội trường.` });
       }
 
       const newRecord = await Attendance.create({
         employeeCode: targetCode,
-        seatId: assignedSeatId,
+        seatId: targetSeatId,
+        method: 'PROXY',
+        checkedInBy: req.user.code,
+        reason: cleanReason,
         checkedInAt: new Date(),
       });
 
       // Ghi nhật ký kiểm toán hành động điểm danh hộ
-      const note = reason ? ` (Lý do: ${reason})` : '';
       await audit(
         req,
         'attendance.manual_checkin',
-        `Điểm danh hộ cho [${targetCode}] ${employee.name} tại ghế ${assignedSeatId}${note}`
+        `Điểm danh hộ cho [${targetCode}] ${employee.name}${targetSeatId ? ` tại ghế ${targetSeatId}` : ''} (Lý do: ${cleanReason})`
       );
 
       res.status(201).json({

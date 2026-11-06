@@ -1,4 +1,4 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
 /**
  * 1. Đăng nhập Quản trị (Admin / Manager):
@@ -30,7 +30,7 @@ export const attendeeLookupLimiter = rateLimit({
     // Khóa theo mã nhân viên được gửi lên, chuẩn hóa viết hoa và bỏ khoảng trắng
     const code = (req.body?.code || '').toString().trim().toUpperCase();
     // Nếu không gửi code thì mới dùng IP fallback
-    return code || req.ip || 'unknown';
+    return code || ipKeyGenerator(req.ip || '');
   },
   message: { message: 'Mã nhân viên này đã bị thử sai quá nhiều lần. Vui lòng thử lại sau 5 phút.' },
 });

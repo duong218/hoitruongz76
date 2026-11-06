@@ -141,7 +141,7 @@ export function SeatPage() {
                 Bạn đã điểm danh thành công
               </h4>
               <p className="text-[16px] font-semibold text-[#0F172A] mt-1">
-                Vị trí: {seatLabel(myAttendance.seatId)}
+                Vị trí: {myAttendance.seatId ? seatLabel(myAttendance.seatId) : 'Ban tổ chức điểm danh hộ'}
               </p>
               <div className="flex items-center gap-1.5 text-[16px] text-[#166534] mt-1">
                 <Clock className="w-4 h-4" />

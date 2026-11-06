@@ -8,5 +8,6 @@ const router = Router();
 router.get('/', eventController.getSettings);
 router.get('/tokens', authenticate, authorize(ROLES.ADMIN, ROLES.MANAGER), eventController.getSeatTokens);
 router.put('/', authenticate, authorize(ROLES.ADMIN, ROLES.MANAGER), eventController.updateSettings);
+router.post('/start-new', authenticate, authorize(ROLES.ADMIN, ROLES.MANAGER), eventController.startNew);
 
 export default router;

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEventSettings } from '../../hooks/useEventSettings.js';
 import { useToast } from '../../context/ToastContext.jsx';
+import { useConfirm } from '../../context/ConfirmContext.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Switch } from '../../components/ui/Switch.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -20,8 +21,11 @@ import {
 import '../../utils/printQr.css';
 
 export function ManagerEventPage() {
-  const { event, updateEvent } = useEventSettings();
+  const { event, updateEvent, startNewEvent } = useEventSettings();
   const toast = useToast();
+  const { confirm } = useConfirm();
+  const [newEventName, setNewEventName] = useState('');
+  const [startingNew, setStartingNew] = useState(false);
 
   const [activeTab, setActiveTab] = useState('SETTINGS'); // 'SETTINGS' | 'QR'
   const [printTarget, setPrintTarget] = useState('NONE'); // 'LOGIN' | 'SEATS' | 'NONE'
@@ -78,6 +82,36 @@ export function ManagerEventPage() {
       toast.error(err.message || 'Lỗi khi lưu cấu hình.');
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  // Bắt đầu sự kiện mới: cảnh báo trước vì tên bị khóa và điểm danh cũ bị xóa
+  const handleStartNew = async () => {
+    const name = newEventName.trim();
+    if (!name) {
+      toast.error('Vui lòng nhập tên sự kiện mới.');
+      return;
+    }
+    const ok = await confirm({
+      title: 'Bắt đầu sự kiện mới',
+      message:
+        `Sau khi bắt đầu, bạn sẽ KHÔNG THỂ đổi tên sự kiện "${name}".\n\n` +
+        `Toàn bộ điểm danh của sự kiện hiện tại ("${event.eventName}") sẽ bị xóa và sự kiện đó không thể điểm danh hộ nữa. ` +
+        'Hãy xuất Excel ở trang Điểm danh trước khi tiếp tục.\n\nBạn có chắc chắn không?',
+      confirmText: 'Bắt đầu sự kiện mới',
+      cancelText: 'Hủy bỏ',
+      isDanger: true,
+    });
+    if (!ok) return;
+    try {
+      setStartingNew(true);
+      await startNewEvent(name);
+      setNewEventName('');
+      toast.success('Đã bắt đầu sự kiện mới.');
+    } catch (err) {
+      toast.error(err.message || 'Không thể bắt đầu sự kiện mới.');
+    } finally {
+      setStartingNew(false);
     }
   };
 
@@ -237,7 +271,12 @@ export function ManagerEventPage() {
             onChange={(e) => setEventName(e.target.value)}
             placeholder="Ví dụ: Đại hội Đại biểu Z176 Nhiệm kỳ 2026 - 2031"
             required
-            helperText="Tên sự kiện xuất hiện tại trang đăng nhập và tờ in mã QR."
+            disabled={!!event.nameLocked}
+            helperText={
+              event.nameLocked
+                ? 'Sự kiện đã bắt đầu nên không thể đổi tên. Muốn đổi, hãy bắt đầu sự kiện mới bên dưới.'
+                : 'Tên sự kiện xuất hiện tại trang đăng nhập và tờ in mã QR. Còn sửa được đến khi bấm "Bắt đầu sự kiện mới".'
+            }
           />
 
           {/* Công tắc Cho phép khách mời */}
@@ -287,6 +326,29 @@ export function ManagerEventPage() {
             </Button>
           </div>
         </form>
+      )}
+
+      {activeTab === 'SETTINGS' && (
+        <div className="no-print bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3 max-w-3xl">
+          <h3 className="text-[18px] font-bold text-[#0F172A]">Bắt đầu sự kiện mới</h3>
+          <p className="text-[14px] text-[#64748B]">
+            Dùng khi chuyển sang một sự kiện khác. Tên sự kiện sẽ bị khóa, điểm danh của sự kiện cũ bị xóa (hãy xuất Excel trước).
+          </p>
+          <div className="flex flex-col sm:flex-row items-end gap-3">
+            <div className="flex-1 w-full">
+              <Input
+                label="Tên sự kiện mới"
+                id="new-event-title-input"
+                value={newEventName}
+                onChange={(e) => setNewEventName(e.target.value)}
+                placeholder="Ví dụ: Hội nghị trao giải 2026"
+              />
+            </div>
+            <Button variant="danger" onClick={handleStartNew} loading={startingNew}>
+              Bắt đầu sự kiện mới
+            </Button>
+          </div>
+        </div>
       )}
 
       {/* ================= TAB 2: MÃ QR ================= */}

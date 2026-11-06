@@ -219,22 +219,5 @@ export async function parseEmployeeExcel(file, existingEmployeeCodes = [], block
   return results;
 }
 
-/**
- * Tạo và tải file Excel mẫu theo cấu trúc mới
- */
-export function downloadEmployeeTemplate(blocks = [], departments = []) {
-  const sampleData = [
-    ['Mã NV', 'Họ và tên', 'Phòng ban', 'Khối', 'Vai trò'],
-    ['NV101', 'Nguyễn Văn Minh', departments[0]?.name || 'Phòng Kế hoạch', blocks[0]?.name || 'Khối cơ quan', 'Nhân viên'],
-    ['NV102', 'Lê Thị Hoa', departments[1]?.name || 'Phòng Kỹ thuật', '', 'Nhân viên'], // Bỏ trống khối = khối mặc định
-    ['NV103', 'Phạm Quốc Hùng', departments[2]?.name || 'Phân xưởng 1', blocks[1]?.name || 'Khối phân xưởng', 'Nhân viên'],
-    ['QL02', 'Đỗ Mạnh Thắng', '', '', 'Quản lý'], // Quản lý có thể để trống phòng ban và khối
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet(sampleData);
-  ws['!cols'] = [{ wch: 15 }, { wch: 25 }, { wch: 25 }, { wch: 20 }, { wch: 15 }];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Mau_Nhan_Vien_Z176');
-  XLSX.writeFile(wb, 'Mau_Danh_Sach_Nhan_Vien_Z176_v2.xlsx');
-}
+// Mẫu nhập có định dạng nằm ở utils/excelExport.js (exceljs, tải khi bấm nút)
+export { downloadEmployeeTemplate } from './excelExport.js';

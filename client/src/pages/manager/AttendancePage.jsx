@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import * as XLSX from 'xlsx';
 import { useAttendance } from '../../hooks/useAttendance.js';
 import { useEmployees } from '../../hooks/useEmployees.js';
 import { useGroups } from '../../hooks/useGroups.js';
 import { useOrg } from '../../hooks/useOrg.js';
 import { useEventSettings } from '../../hooks/useEventSettings.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { findDuplicateSeats, recordNotes } from '../../utils/attendanceInsights.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { useConfirm } from '../../context/ConfirmContext.jsx';
 import { resolveGroup } from '../../utils/resolveGroup.js';
@@ -27,6 +28,7 @@ import {
   UserPlus,
   X,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 
 export function AttendancePage() {
@@ -37,6 +39,7 @@ export function AttendancePage() {
   const { event } = useEventSettings();
   const toast = useToast();
   const { confirm } = useConfirm();
+  const { user } = useAuth();
 
   // Modal "Điểm danh hộ"
   const [showManualModal, setShowManualModal] = useState(false);
@@ -83,6 +86,10 @@ export function AttendancePage() {
       attendanceMap: attMap,
     };
   }, [employees, groups, attendance]);
+
+  // Ghế có từ 2 người khác nhau trở lên (chỉ tính trong dữ liệu sự kiện hiện tại)
+  const dupSeats = useMemo(() => findDuplicateSeats(attendance), [attendance]);
+  const proxyCount = useMemo(() => attendance.filter((a) => a.method === 'PROXY').length, [attendance]);
 
   // Số liệu thẻ đầu trang
   const totalRequired = requiredEmployees.length;
@@ -188,7 +195,9 @@ export function AttendancePage() {
       const matchStatus =
         filterStatus === 'ALL' ||
         (filterStatus === 'CHECKED' && isChecked) ||
-        (filterStatus === 'UNCHECKED' && !isChecked);
+        (filterStatus === 'UNCHECKED' && !isChecked) ||
+        (filterStatus === 'DUP' && !!attendanceMap.get(emp.code.toUpperCase())?.seatId && dupSeats.has(attendanceMap.get(emp.code.toUpperCase()).seatId)) ||
+        (filterStatus === 'PROXY' && attendanceMap.get(emp.code.toUpperCase())?.method === 'PROXY');
 
       return matchSearch && matchBlock && matchDept && matchGroup && matchStatus;
     });
@@ -201,64 +210,56 @@ export function AttendancePage() {
     filterDeptId,
     filterGroupId,
     filterStatus,
+    dupSeats,
   ]);
 
-  // Xuất file Excel
-  const handleExportExcel = () => {
-    const rows = [
-      ['Mã NV', 'Họ và tên', 'Khối', 'Phòng ban', 'Nhóm ghế', 'Ghế ngồi', 'Giờ điểm danh', 'Trạng thái'],
-    ];
-
-    filteredDetailList.forEach((emp) => {
+  // Xuất file Excel (có viền, màu, ghi chú trùng ghế / điểm danh hộ)
+  const handleExportExcel = async () => {
+    const rows = filteredDetailList.map((emp) => {
       const g = resolveGroup(emp, groups);
       const rec = attendanceMap.get(emp.code.toUpperCase());
-      const blockName = emp.blockId ? blockMap.get(emp.blockId) || '' : '';
-      const deptName = emp.departmentId ? deptMap.get(emp.departmentId) || '' : '';
-      const groupName = g ? g.name : '';
-      const seatText = rec ? seatBadgeText(rec.seatId) : '—';
-      const timeText = rec
-        ? new Date(rec.checkedInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
-        : '—';
-      const statusText = rec ? 'Đã điểm danh' : 'Chưa điểm danh';
-
-      rows.push([
-        emp.code,
-        emp.name,
-        blockName,
-        deptName,
-        groupName,
-        seatText,
-        timeText,
-        statusText,
-      ]);
+      const { dupText, proxyText } = recordNotes(rec, dupSeats);
+      return {
+        code: emp.code,
+        name: emp.name,
+        block: emp.blockId ? blockMap.get(emp.blockId) || '' : '',
+        dept: emp.departmentId ? deptMap.get(emp.departmentId) || '' : '',
+        group: g ? g.name : '',
+        seat: rec ? (rec.seatId ? seatBadgeText(rec.seatId) : 'Không có ghế') : '—',
+        time: rec ? new Date(rec.checkedInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '—',
+        status: rec ? 'Đã điểm danh' : 'Chưa điểm danh',
+        dupText,
+        proxyText,
+        proxyBy: rec?.checkedInBy || '',
+        proxyReason: rec?.reason || '',
+      };
     });
 
-    const ws = XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols'] = [
-      { wch: 12 },
-      { wch: 22 },
-      { wch: 20 },
-      { wch: 20 },
-      { wch: 22 },
-      { wch: 22 },
-      { wch: 15 },
-      { wch: 18 },
-    ];
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Diem_Danh');
-
-    const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const cleanEventName = (event.eventName || 'Z176').replace(/\s+/g, '-');
-    XLSX.writeFile(wb, `diem-danh-${cleanEventName}-${ymd}.xlsx`);
-    toast.success('Đã xuất báo cáo điểm danh Excel thành công.');
+    try {
+      const { exportAttendanceXlsx } = await import('../../utils/excelExport.js');
+      await exportAttendanceXlsx({
+        eventName: event.eventName,
+        exportedBy: user?.name ? `${user.name} (${user.code})` : user?.code,
+        rows,
+        summary: {
+          required: totalRequired,
+          checked: totalChecked,
+          unchecked: totalUnchecked,
+          dupSeats: dupSeats.size,
+          proxy: proxyCount,
+        },
+      });
+      toast.success('Đã xuất báo cáo điểm danh Excel thành công.');
+    } catch (err) {
+      toast.error(err.message || 'Không xuất được file Excel.');
+    }
   };
 
   // Đặt lại điểm danh
   const handleReset = async () => {
     const ok = await confirm({
       title: 'Đặt lại toàn bộ điểm danh',
-      message: 'Hành động này sẽ xóa toàn bộ dữ liệu đã điểm danh của tất cả đại biểu và đưa trạng thái về ban đầu (0 người điểm danh).\n\nBạn có chắc chắn muốn thực hiện không?',
+      message: 'Hãy xuất Excel trước nếu cần lưu. Hành động này sẽ xóa toàn bộ dữ liệu đã điểm danh của tất cả đại biểu và đưa trạng thái về ban đầu (0 người điểm danh).\n\nBạn có chắc chắn muốn thực hiện không?',
       confirmText: 'Xóa kết quả điểm danh',
       cancelText: 'Hủy bỏ',
       isDanger: true,
@@ -437,6 +438,22 @@ export function AttendancePage() {
           </p>
         </div>
 
+        {dupSeats.size > 0 && (
+          <div className="p-4 bg-[#FEE2E2] border-l-4 border-l-[#DC2626] border border-[#FCA5A5] rounded-r-xl flex items-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-[#B91C1C] shrink-0" />
+            <p className="flex-1 text-[15px] font-semibold text-[#7F1D1D]">
+              Có {dupSeats.size} ghế bị nhiều người cùng điểm danh. Các dòng này được tô đỏ kèm chữ "TRÙNG GHẾ".
+            </p>
+            <button
+              type="button"
+              onClick={() => setFilterStatus('DUP')}
+              className="px-3 py-2 text-[14px] font-bold text-[#B91C1C] bg-white border border-[#FCA5A5] rounded-lg cursor-pointer"
+            >
+              Chỉ xem các dòng trùng
+            </button>
+          </div>
+        )}
+
         {/* Bộ lọc bảng chi tiết */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3">
           <div className="relative">
@@ -500,6 +517,8 @@ export function AttendancePage() {
               <option value="ALL">Tất cả trạng thái</option>
               <option value="CHECKED">Đã điểm danh</option>
               <option value="UNCHECKED">Chưa điểm danh</option>
+              <option value="DUP">Trùng ghế</option>
+              <option value="PROXY">Điểm danh hộ</option>
             </Select>
           </div>
         </div>
@@ -517,6 +536,7 @@ export function AttendancePage() {
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Vị trí ghế</th>
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Giờ quét</th>
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Trạng thái</th>
+                <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px]">Ghi chú</th>
                 <th className="py-3 px-4 font-bold text-[#475569] uppercase text-[13px] text-center">Thao tác</th>
               </tr>
             </thead>
@@ -526,13 +546,13 @@ export function AttendancePage() {
                 const rec = attendanceMap.get(emp.code.toUpperCase());
                 const isChecked = !!rec;
                 const isZebra = index % 2 === 1;
+                const { dupText, proxyText } = recordNotes(rec, dupSeats);
+                const rowBg = dupText ? 'bg-[#FEE2E2]' : proxyText ? 'bg-[#FEF9C3]' : isZebra ? 'bg-[#F6F8FA]' : 'bg-white';
 
                 return (
                   <tr
                     key={emp.code}
-                    className={`border-b border-[#E2E8F0] hover:bg-[#EAF6FF]/40 ${
-                      isZebra ? 'bg-[#F6F8FA]' : 'bg-white'
-                    }`}
+                    className={`border-b border-[#E2E8F0] hover:bg-[#EAF6FF]/40 ${rowBg}`}
                   >
                     <td className="py-3 px-4 font-bold font-mono text-[#0F172A]">{emp.code}</td>
                     <td className="py-3 px-4 font-medium text-[#0F172A]">{emp.name}</td>
@@ -542,7 +562,7 @@ export function AttendancePage() {
                       {g ? <GroupBadge name={g.name} color={g.color} /> : '—'}
                     </td>
                     <td className="py-3 px-4 font-semibold text-[#0F172A]">
-                      {rec ? seatBadgeText(rec.seatId) : <span className="text-[#94A3B8] font-normal">—</span>}
+                      {rec ? (rec.seatId ? seatBadgeText(rec.seatId) : 'Không có ghế') : <span className="text-[#94A3B8] font-normal">—</span>}
                     </td>
                     <td className="py-3 px-4 text-[#64748B]">
                       {rec ? (
@@ -561,6 +581,10 @@ export function AttendancePage() {
                           Chưa điểm danh
                         </Badge>
                       )}
+                    </td>
+                    <td className="py-3 px-4 text-[13px] font-semibold min-w-[220px]">
+                      {dupText && <div className="text-[#B91C1C]">{dupText}</div>}
+                      {proxyText && <div className="text-[#854D0E]">{proxyText}</div>}
                     </td>
                     <td className="py-3 px-4 text-center">
                       {!isChecked && (
@@ -588,11 +612,12 @@ export function AttendancePage() {
             const g = resolveGroup(emp, groups);
             const rec = attendanceMap.get(emp.code.toUpperCase());
             const isChecked = !!rec;
+            const { dupText, proxyText } = recordNotes(rec, dupSeats);
 
             return (
               <div
                 key={emp.code}
-                className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3"
+                className={`${dupText ? 'bg-[#FEE2E2]' : proxyText ? 'bg-[#FEF9C3]' : 'bg-white'} border border-[#E2E8F0] rounded-xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3`}
               >
                 <div className="flex items-start justify-between">
                   <div>
@@ -620,9 +645,11 @@ export function AttendancePage() {
                   <div>Khối: <strong>{emp.blockId ? blockMap.get(emp.blockId) : '—'}</strong></div>
                   <div>Phòng: <strong>{emp.departmentId ? deptMap.get(emp.departmentId) : '—'}</strong></div>
                   <div>Nhóm: <strong>{g?.name || '—'}</strong></div>
+                  {dupText && <div className="text-[#B91C1C] font-bold">{dupText}</div>}
+                  {proxyText && <div className="text-[#854D0E] font-bold">{proxyText}</div>}
                   {rec && (
                     <div className="text-[#15803D] font-bold pt-1 border-t border-[#E2E8F0]">
-                      Ghế: {seatBadgeText(rec.seatId)} • Lúc: {new Date(rec.checkedInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      Ghế: {rec.seatId ? seatBadgeText(rec.seatId) : 'Không có ghế'} • Lúc: {new Date(rec.checkedInAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   )}
                 </div>
