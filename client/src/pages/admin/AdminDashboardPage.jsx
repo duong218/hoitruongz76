@@ -61,7 +61,7 @@ export function AdminDashboardPage() {
   }, [employees]);
 
   return (
-    <div className="space-y-7 max-w-7xl mx-auto pb-8">
+    <div className="space-y-7 w-full pb-8">
       {/* 1. Header Banner hiện đại */}
       <div className="bg-gradient-to-r from-[#008BC5] via-[#0284C7] to-[#0369A1] rounded-2xl p-6 sm:p-8 text-white shadow-[0_4px_20px_rgba(0,139,197,0.25)] relative overflow-hidden">
         <div className="relative z-10 space-y-2 max-w-2xl">

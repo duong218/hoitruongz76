@@ -65,7 +65,7 @@ export function EventHistoryPage() {
   if (detail) {
     const miss = detail.rows.filter((r) => r.required && !r.checked).length;
     return (
-      <div className="space-y-6 max-w-6xl">
+      <div className="space-y-6 w-full">
         <Button variant="secondary" icon={ArrowLeft} onClick={() => setDetail(null)}>Quay lại danh sách</Button>
         <div>
           <h1 className="text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] leading-tight">{detail.eventName}</h1>
@@ -124,7 +124,7 @@ export function EventHistoryPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <div className="flex flex-wrap items-start gap-3">
         <div>
           <h1 className="text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] leading-tight">Lịch sử sự kiện đã diễn ra</h1>

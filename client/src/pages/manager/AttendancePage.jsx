@@ -351,7 +351,7 @@ export function AttendancePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       {/* Tiêu đề, rồi một hàng nút: việc hay dùng bên trái, nút nguy hiểm tách riêng bên phải */}
       <div className="space-y-4">
         <div>

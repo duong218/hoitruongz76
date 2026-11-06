@@ -221,7 +221,7 @@ export function ManagerEventPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <div className="no-print">
         <h1 className="text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] leading-tight">
           Cài đặt Sự kiện & Mã QR

@@ -196,7 +196,7 @@ export function SeatingPage() {
   );
 
   return (
-    <div className="space-y-6 max-w-7xl">
+    <div className="space-y-6 max-w-full">
       <div>
         <h1 className="text-[26px] font-extrabold text-[#0F172A] leading-tight">Sắp xếp chỗ ngồi</h1>
         <p className="text-[15px] text-[#475569] mt-1">
@@ -207,10 +207,10 @@ export function SeatingPage() {
         </p>
       </div>
 
-      {/* Bố cục 2 cột trên Desktop (>= 1024px): Cột phải 5 col để đủ rộng cho tên nhóm dài */}
+      {/* Bố cục 2 cột trên Desktop (>= 1024px): Cột trái bản đồ linh hoạt, cột phải bảng nhóm */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Cột trái: Sơ đồ hội trường chế độ ASSIGN */}
-        <div className="lg:col-span-7 xl:col-span-8">
+        <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9">
           <HallMap
             mode="assign"
             seatGroups={seatGroups}
@@ -221,7 +221,7 @@ export function SeatingPage() {
         </div>
 
         {/* Cột phải trên Desktop: Thẻ tiến độ & Panel Chọn nhóm */}
-        <div className="hidden lg:flex lg:flex-col lg:col-span-5 xl:col-span-4 gap-4 sticky top-24">
+        <div className="hidden lg:flex lg:flex-col lg:col-span-4 xl:col-span-4 2xl:col-span-3 gap-4 sticky top-24">
           {/* Thẻ tiến độ nằm ngay trên mục Gán nhóm */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
             <div className="flex items-center justify-between mb-2">

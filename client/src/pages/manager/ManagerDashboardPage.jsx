@@ -68,7 +68,7 @@ export function ManagerDashboardPage() {
   const checkPct = pct(checkedInCount, requiredCount);
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       {/* Tiêu đề + hành động chính */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -158,8 +158,8 @@ export function ManagerDashboardPage() {
       </section>
 
       {/* Sơ đồ + bảng nhóm: 2 cột trên màn hình rộng để không phải cuộn */}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] items-start">
-        <section className="space-y-3 min-w-0">
+      <div className="grid gap-6 lg:grid-cols-12 items-start">
+        <section className="space-y-3 min-w-0 lg:col-span-7 xl:col-span-8">
           <div>
             <h2 className="text-[18px] font-bold text-[#0F172A]">Sơ đồ phân bổ chỗ ngồi</h2>
             <p className="text-[14px] text-[#475569]">Hiện trạng các khối trên sơ đồ 2D hội trường.</p>
@@ -167,7 +167,7 @@ export function ManagerDashboardPage() {
           <HallMap mode="manage" seatGroups={seatGroups} groups={groups} />
         </section>
 
-        <section className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5">
+        <section className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 lg:col-span-5 xl:col-span-4 sticky top-24">
           <h2 className="text-[18px] font-bold text-[#0F172A]">Nhóm ghế</h2>
           <p className="text-[14px] text-[#475569]">Màu trùng với màu trên sơ đồ.</p>
 

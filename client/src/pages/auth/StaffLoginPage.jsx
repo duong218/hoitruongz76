@@ -114,7 +114,7 @@ export function StaffLoginPage() {
                   setCode(e.target.value.toUpperCase());
                   setError('');
                 }}
-                placeholder="Nhập mã (ADMIN01, QL01...)"
+                placeholder="Nhập tài khoản"
                 disabled={loading}
                 required
                 autoFocus

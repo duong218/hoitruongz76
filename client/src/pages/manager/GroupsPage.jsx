@@ -68,7 +68,7 @@ export function GroupsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       <div>
         <h1 className="text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] leading-tight">
           Quản lý Nhóm ghế Hội trường
