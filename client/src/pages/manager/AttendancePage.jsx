@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { CountUp } from '../../components/ui/CountUp.jsx';
 import { useAttendance } from '../../hooks/useAttendance.js';
 import { useEmployees } from '../../hooks/useEmployees.js';
 import { useGroups } from '../../hooks/useGroups.js';
@@ -351,7 +352,7 @@ export function AttendancePage() {
   };
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 max-w-6xl">
       {/* Tiêu đề, rồi một hàng nút: việc hay dùng bên trái, nút nguy hiểm tách riêng bên phải */}
       <div className="space-y-4">
         <div>
@@ -382,7 +383,7 @@ export function AttendancePage() {
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-2">
           <span className="text-[14px] font-semibold text-[#64748B]">Cần điểm danh</span>
           <p className="text-[32px] font-extrabold text-[#0F172A] leading-none">
-            {totalRequired}
+            <CountUp value={totalRequired} />
           </p>
           <span className="text-[13px] text-[#64748B] block">
             Nhân viên thuộc nhóm bắt buộc
@@ -393,7 +394,7 @@ export function AttendancePage() {
         <div className="bg-white border border-[#BBF7D0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] bg-gradient-to-r from-white to-[#ECFDF5]/30 space-y-2">
           <span className="text-[14px] font-semibold text-[#15803D]">Đã điểm danh</span>
           <p className="text-[32px] font-extrabold text-[#15803D] leading-none">
-            {totalChecked}
+            <CountUp value={totalChecked} />
           </p>
           <span className="text-[13px] text-[#15803D] font-medium block">
             Đã có mặt tại đúng ghế
@@ -404,7 +405,7 @@ export function AttendancePage() {
         <div className="bg-white border border-[#FDE68A] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-2">
           <span className="text-[14px] font-semibold text-[#B45309]">Chưa điểm danh</span>
           <p className="text-[32px] font-extrabold text-[#B45309] leading-none">
-            {totalUnchecked}
+            <CountUp value={totalUnchecked} />
           </p>
           <span className="text-[13px] text-[#B45309] block">
             Chưa quét mã tại ghế

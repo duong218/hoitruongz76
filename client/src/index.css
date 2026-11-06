@@ -127,3 +127,22 @@
 @media (prefers-reduced-motion: reduce) {
   .gd-scan, .gd-scan2, .gd-type, .gd-caret, .gd-pop, .gd-path, .gd-pulse, .gd-pop2 { animation: none !important; }
 }
+
+/* Lenis (cuộn mượt): khuyến nghị của thư viện */
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
+
+/* Các khối của trang quản lý hiện dần từ trên xuống (tổng tối đa ~2s) */
+.reveal-stack > * > * { animation: fadeInUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.reveal-stack > * > :nth-child(2) { animation-delay: 250ms; }
+.reveal-stack > * > :nth-child(3) { animation-delay: 500ms; }
+.reveal-stack > * > :nth-child(4) { animation-delay: 750ms; }
+.reveal-stack > * > :nth-child(5) { animation-delay: 1000ms; }
+.reveal-stack > * > :nth-child(6) { animation-delay: 1250ms; }
+.reveal-stack > * > :nth-child(7) { animation-delay: 1500ms; }
+.reveal-stack > * > :nth-child(8) { animation-delay: 1750ms; }
+.reveal-stack > * > :nth-child(n+9) { animation-delay: 2000ms; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-stack > * > * { animation: none !important; }
+}

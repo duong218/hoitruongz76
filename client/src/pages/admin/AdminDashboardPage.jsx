@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { CountUp } from '../../components/ui/CountUp.jsx';
 import { Link } from 'react-router-dom';
 import { useEmployees } from '../../hooks/useEmployees.js';
 import { useOrg } from '../../hooks/useOrg.js';
@@ -61,7 +62,7 @@ export function AdminDashboardPage() {
   }, [employees]);
 
   return (
-    <div className="space-y-7 w-full pb-8">
+    <div className="space-y-7 max-w-7xl mx-auto pb-8">
       {/* 1. Header Banner hiện đại */}
       <div className="bg-gradient-to-r from-[#008BC5] via-[#0284C7] to-[#0369A1] rounded-2xl p-6 sm:p-8 text-white shadow-[0_4px_20px_rgba(0,139,197,0.25)] relative overflow-hidden">
         <div className="relative z-10 space-y-2 max-w-2xl">
@@ -119,7 +120,7 @@ export function AdminDashboardPage() {
           </div>
           <div>
             <span className="text-[32px] font-black text-[#0F172A] tracking-tight">
-              {empLoading ? '...' : employees.length}
+              {empLoading ? '...' : <CountUp value={employees.length} />}
             </span>
             <div className="flex items-center gap-2 mt-1 text-[13px]">
               <span className="text-[#008BC5] font-semibold">{employeeCount} nhân viên</span>
@@ -139,7 +140,7 @@ export function AdminDashboardPage() {
           </div>
           <div>
             <span className="text-[32px] font-black text-[#0F172A] tracking-tight">
-              {orgLoading ? '...' : blocks.length}
+              {orgLoading ? '...' : <CountUp value={blocks.length} />}
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-[13px] text-[#16A34A] font-semibold">
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -158,7 +159,7 @@ export function AdminDashboardPage() {
           </div>
           <div>
             <span className="text-[32px] font-black text-[#0F172A] tracking-tight">
-              {orgLoading ? '...' : departments.length}
+              {orgLoading ? '...' : <CountUp value={departments.length} />}
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-[13px] text-[#9333EA] font-semibold">
               <span>Trực thuộc {blocks.length} khối</span>
@@ -176,7 +177,7 @@ export function AdminDashboardPage() {
           </div>
           <div>
             <span className="text-[32px] font-black text-[#0F172A] tracking-tight">
-              {empLoading ? '...' : adminCount + managerCount}
+              {empLoading ? '...' : <CountUp value={adminCount + managerCount} />}
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-[13px] text-[#D97706] font-semibold">
               <span>{adminCount} Admin • {managerCount} Quản lý</span>

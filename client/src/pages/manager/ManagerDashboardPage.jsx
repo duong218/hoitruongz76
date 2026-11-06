@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { CountUp } from '../../components/ui/CountUp.jsx';
 import { Link } from 'react-router-dom';
 import { useGroups } from '../../hooks/useGroups.js';
 import { useSeatAssignments } from '../../hooks/useSeatAssignments.js';
@@ -68,7 +69,7 @@ export function ManagerDashboardPage() {
   const checkPct = pct(checkedInCount, requiredCount);
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-6 max-w-6xl">
       {/* Tiêu đề + hành động chính */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -100,7 +101,7 @@ export function ManagerDashboardPage() {
         <div className="bg-white p-5 space-y-3">
           <span className="text-[14px] font-semibold text-[#475569]">Ghế đã sắp</span>
           <p className="h-10 flex items-end gap-1.5 tabular-nums">
-            <span className="text-[32px] font-bold leading-none text-[#0F172A]">{assignedSeatCount}</span>
+            <span className="text-[32px] font-bold leading-none text-[#0F172A]"><CountUp value={assignedSeatCount} /></span>
             <span className="text-[18px] font-semibold leading-6 text-[#475569]">/ {TOTAL_SEATS}</span>
           </p>
           <Bar value={seatPct} color="#008BC5" label="Tỷ lệ ghế đã sắp" />
@@ -121,7 +122,7 @@ export function ManagerDashboardPage() {
             </span>
           </div>
           <p className="h-10 flex items-end gap-1.5 tabular-nums">
-            <span className="text-[32px] font-bold leading-none text-[#0F172A]">{checkedInCount}</span>
+            <span className="text-[32px] font-bold leading-none text-[#0F172A]"><CountUp value={checkedInCount} /></span>
             <span className="text-[18px] font-semibold leading-6 text-[#475569]">/ {requiredCount} người</span>
           </p>
           <Bar value={checkPct} color="#16A34A" label="Tỷ lệ đã điểm danh" />
@@ -133,7 +134,7 @@ export function ManagerDashboardPage() {
         <div className="bg-white p-5 space-y-3">
           <span className="text-[14px] font-semibold text-[#475569]">Số nhóm ghế</span>
           <p className="h-10 flex items-end text-[32px] font-bold leading-none text-[#0F172A] tabular-nums">
-            {groups.length}
+            <CountUp value={groups.length} />
           </p>
           <p className="text-[14px] text-[#475569] pt-[14px]">Bao gồm Khách mời</p>
         </div>
@@ -158,8 +159,8 @@ export function ManagerDashboardPage() {
       </section>
 
       {/* Sơ đồ + bảng nhóm: 2 cột trên màn hình rộng để không phải cuộn */}
-      <div className="grid gap-6 lg:grid-cols-12 items-start">
-        <section className="space-y-3 min-w-0 lg:col-span-7 xl:col-span-8">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] items-start">
+        <section className="space-y-3 min-w-0">
           <div>
             <h2 className="text-[18px] font-bold text-[#0F172A]">Sơ đồ phân bổ chỗ ngồi</h2>
             <p className="text-[14px] text-[#475569]">Hiện trạng các khối trên sơ đồ 2D hội trường.</p>
@@ -167,7 +168,7 @@ export function ManagerDashboardPage() {
           <HallMap mode="manage" seatGroups={seatGroups} groups={groups} />
         </section>
 
-        <section className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 lg:col-span-5 xl:col-span-4 sticky top-24">
+        <section className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5">
           <h2 className="text-[18px] font-bold text-[#0F172A]">Nhóm ghế</h2>
           <p className="text-[14px] text-[#475569]">Màu trùng với màu trên sơ đồ.</p>
 
