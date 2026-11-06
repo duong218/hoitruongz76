@@ -273,8 +273,8 @@ export function AttendancePage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      {/* Tiêu đề & Nút tác vụ hàng đầu */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Tiêu đề, rồi một hàng nút: việc hay dùng bên trái, nút nguy hiểm tách riêng bên phải */}
+      <div className="space-y-4">
         <div>
           <h1 className="text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] leading-tight">
             Quản lý Điểm danh Hội trường
@@ -288,13 +288,13 @@ export function AttendancePage() {
           <Button variant="primary" onClick={() => openManualModal()} icon={UserPlus}>
             Điểm danh hộ
           </Button>
-          <Button variant="secondary" onClick={refresh} icon={RefreshCw}>
-            Làm mới
-          </Button>
           <Button variant="secondary" onClick={handleExportExcel} icon={Download}>
             Xuất Excel
           </Button>
-          <Button variant="danger" onClick={handleReset} icon={RotateCcw}>
+          <Button variant="secondary" onClick={refresh} icon={RefreshCw}>
+            Làm mới
+          </Button>
+          <Button variant="danger" onClick={handleReset} icon={RotateCcw} className="sm:ml-auto">
             Đặt lại điểm danh
           </Button>
         </div>

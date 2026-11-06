@@ -2,10 +2,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useEventSettings } from '../../hooks/useEventSettings.js';
 import { useToast } from '../../context/ToastContext.jsx';
-import { useConfirm } from '../../context/ConfirmContext.jsx';
+import { useAttendance } from '../../hooks/useAttendance.js';
+import { Modal } from '../../components/ui/Modal.jsx';
 import { Input } from '../../components/ui/Input.jsx';
 import { Switch } from '../../components/ui/Switch.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { Badge } from '../../components/ui/Badge.jsx';
 import { TOTAL_ROWS, SEATS_PER_SIDE, seatId, isVipRow } from '../../constants/hall.js';
 import { seatBadgeText } from '../../utils/seatLabel.js';
 import {
@@ -17,13 +19,19 @@ import {
   AlertTriangle,
   Check,
   Armchair,
+  Lock,
+  CalendarPlus,
+  Pencil,
 } from 'lucide-react';
 import '../../utils/printQr.css';
 
 export function ManagerEventPage() {
   const { event, updateEvent, startNewEvent } = useEventSettings();
   const toast = useToast();
-  const { confirm } = useConfirm();
+  const { attendance } = useAttendance();
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [ackDelete, setAckDelete] = useState(false);
+  const [savingName, setSavingName] = useState(false);
   const [newEventName, setNewEventName] = useState('');
   const [startingNew, setStartingNew] = useState(false);
 
@@ -64,16 +72,9 @@ export function ManagerEventPage() {
   // Lưu cài đặt sự kiện
   const handleSaveSettings = async (e) => {
     e.preventDefault();
-    const trimmed = eventName.trim();
-    if (!trimmed) {
-      toast.error('Vui lòng nhập tên sự kiện / hội nghị.');
-      return;
-    }
-
     try {
       setSavingSettings(true);
       await updateEvent({
-        eventName: trimmed,
         guestEnabled,
         checkInOpen,
       });
@@ -85,28 +86,29 @@ export function ManagerEventPage() {
     }
   };
 
-  // Bắt đầu sự kiện mới: cảnh báo trước vì tên bị khóa và điểm danh cũ bị xóa
-  const handleStartNew = async () => {
-    const name = newEventName.trim();
-    if (!name) {
-      toast.error('Vui lòng nhập tên sự kiện mới.');
-      return;
+  // Lưu riêng tên sự kiện (chỉ khi tên chưa bị khóa)
+  const handleSaveName = async () => {
+    const trimmed = eventName.trim();
+    if (!trimmed) return toast.error('Vui lòng nhập tên sự kiện.');
+    try {
+      setSavingName(true);
+      await updateEvent({ eventName: trimmed });
+      toast.success('Đã lưu tên sự kiện.');
+    } catch (err) {
+      toast.error(err.message || 'Không lưu được tên sự kiện.');
+    } finally {
+      setSavingName(false);
     }
-    const ok = await confirm({
-      title: 'Bắt đầu sự kiện mới',
-      message:
-        `Sau khi bắt đầu, bạn sẽ KHÔNG THỂ đổi tên sự kiện "${name}".\n\n` +
-        `Toàn bộ điểm danh của sự kiện hiện tại ("${event.eventName}") sẽ bị xóa và sự kiện đó không thể điểm danh hộ nữa. ` +
-        'Hãy xuất Excel ở trang Điểm danh trước khi tiếp tục.\n\nBạn có chắc chắn không?',
-      confirmText: 'Bắt đầu sự kiện mới',
-      cancelText: 'Hủy bỏ',
-      isDanger: true,
-    });
-    if (!ok) return;
+  };
+
+  // Bắt đầu sự kiện mới (hộp thoại đã là bước xác nhận)
+  const handleStartNew = async () => {
     try {
       setStartingNew(true);
-      await startNewEvent(name);
+      await startNewEvent(newEventName.trim());
+      setShowNewModal(false);
       setNewEventName('');
+      setAckDelete(false);
       toast.success('Đã bắt đầu sự kiện mới.');
     } catch (err) {
       toast.error(err.message || 'Không thể bắt đầu sự kiện mới.');
@@ -259,95 +261,118 @@ export function ManagerEventPage() {
 
       {/* ================= TAB 1: CÀI ĐẶT ================= */}
       {activeTab === 'SETTINGS' && (
-        <form
-          onSubmit={handleSaveSettings}
-          className="no-print bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-6 max-w-3xl"
-        >
-          {/* Tên sự kiện */}
-          <Input
-            label="Tên sự kiện / Hội nghị"
-            id="event-title-input"
-            value={eventName}
-            onChange={(e) => setEventName(e.target.value)}
-            placeholder="Ví dụ: Đại hội Đại biểu Z176 Nhiệm kỳ 2026 - 2031"
-            required
-            disabled={!!event.nameLocked}
-            helperText={
-              event.nameLocked
-                ? 'Sự kiện đã bắt đầu nên không thể đổi tên. Muốn đổi, hãy bắt đầu sự kiện mới bên dưới.'
-                : 'Tên sự kiện xuất hiện tại trang đăng nhập và tờ in mã QR. Còn sửa được đến khi bấm "Bắt đầu sự kiện mới".'
-            }
-          />
-
-          {/* Công tắc Cho phép khách mời */}
-          <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
-            <label className="block text-[16px] font-bold text-[#0F172A]">
-              Tiếp đón khách mời tham dự
-            </label>
-            <p className="text-[14px] text-[#64748B]">
-              Bật nút "Tôi là khách mời" trên màn hình đăng nhập để tiếp đón đại biểu ngoài danh sách.
-            </p>
-            <div className="pt-1">
-              <Switch
-                checked={guestEnabled}
-                onChange={(val) => setGuestEnabled(val)}
-                label="Chức năng khách mời:"
-              />
+        <div className="no-print space-y-6 max-w-3xl">
+          {/* Thẻ sự kiện hiện tại: một nơi duy nhất nói tên và trạng thái */}
+          <section className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <span className="text-[14px] font-bold text-[#64748B] uppercase tracking-wide">Sự kiện hiện tại</span>
+              {event.nameLocked ? (
+                <Badge variant="success" icon={Lock}>
+                  Đang diễn ra{event.startedAt ? ` • từ ${new Date(event.startedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}` : ''}
+                </Badge>
+              ) : (
+                <Badge variant="warning" icon={Pencil}>Chưa chốt tên</Badge>
+              )}
             </div>
-          </div>
 
-          {/* Công tắc lớn Mở điểm danh */}
-          <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
-            <label className="block text-[16px] font-bold text-[#0F172A]">
-              Trạng thái mở cổng điểm danh tại ghế
-            </label>
-            <p className="text-[14px] text-[#64748B]">
-              Khi bật, các đại biểu có thể bắt đầu quét mã QR trên ghế để xác nhận có mặt. Khi đóng, nút điểm danh sẽ bị khóa.
-            </p>
-            <div className="pt-2">
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={checkInOpen}
-                  onChange={(val) => setCheckInOpen(val)}
-                  label="Cổng điểm danh:"
-                />
+            {event.nameLocked ? (
+              <>
+                <h2 className="text-[24px] font-extrabold text-[#0F172A] leading-tight">{event.eventName}</h2>
+                <p className="text-[15px] text-[#64748B]">Tên đã chốt, không sửa được. Hiện có {attendance.length} người đã điểm danh.</p>
+              </>
+            ) : (
+              <div className="flex flex-col sm:flex-row items-end gap-3">
+                <div className="flex-1 w-full">
+                  <Input
+                    label="Tên sự kiện"
+                    id="event-title-input"
+                    value={eventName}
+                    onChange={(e) => setEventName(e.target.value)}
+                    placeholder="Ví dụ: Hội nghị trao giải 2026"
+                    helperText={'Còn sửa được đến khi bạn bấm "Bắt đầu sự kiện mới".'}
+                  />
+                </div>
+                <Button variant="primary" onClick={handleSaveName} loading={savingName} icon={Save}>Lưu tên</Button>
               </div>
+            )}
+
+            <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
+              <p className="text-[14px] text-[#64748B]">Chuyển sang sự kiện khác? Điểm danh cũ sẽ được làm sạch.</p>
+              <Button variant="secondary" icon={CalendarPlus} onClick={() => setShowNewModal(true)}>
+                Bắt đầu sự kiện mới
+              </Button>
             </div>
-          </div>
+          </section>
 
-          <div className="pt-4 border-t border-[#E2E8F0] flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              loading={savingSettings}
-              icon={Save}
-            >
-              Lưu thay đổi cài đặt
-            </Button>
-          </div>
-        </form>
-      )}
+          <form
+            onSubmit={handleSaveSettings}
+            className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-6"
+          >
+            <div className="space-y-2">
+              <label className="block text-[16px] font-bold text-[#0F172A]">Tiếp đón khách mời tham dự</label>
+              <p className="text-[14px] text-[#64748B]">
+                Bật nút "Tôi là khách mời" trên màn hình đăng nhập để tiếp đón đại biểu ngoài danh sách.
+              </p>
+              <Switch checked={guestEnabled} onChange={(val) => setGuestEnabled(val)} label="Chức năng khách mời:" />
+            </div>
 
-      {activeTab === 'SETTINGS' && (
-        <div className="no-print bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3 max-w-3xl">
-          <h3 className="text-[18px] font-bold text-[#0F172A]">Bắt đầu sự kiện mới</h3>
-          <p className="text-[14px] text-[#64748B]">
-            Dùng khi chuyển sang một sự kiện khác. Tên sự kiện sẽ bị khóa, điểm danh của sự kiện cũ bị xóa (hãy xuất Excel trước).
-          </p>
-          <div className="flex flex-col sm:flex-row items-end gap-3">
-            <div className="flex-1 w-full">
+            <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
+              <label className="block text-[16px] font-bold text-[#0F172A]">Cổng điểm danh tại ghế</label>
+              <p className="text-[14px] text-[#64748B]">
+                Khi bật, đại biểu quét mã QR trên ghế để xác nhận có mặt. Khi đóng, nút điểm danh bị khóa.
+              </p>
+              <Switch checked={checkInOpen} onChange={(val) => setCheckInOpen(val)} label="Cổng điểm danh:" />
+            </div>
+
+            <div className="pt-4 border-t border-[#E2E8F0] flex justify-end">
+              <Button type="submit" variant="primary" loading={savingSettings} icon={Save}>
+                Lưu cài đặt
+              </Button>
+            </div>
+          </form>
+
+          {/* Hộp thoại bắt đầu sự kiện mới */}
+          <Modal
+            isOpen={showNewModal}
+            onClose={() => { setShowNewModal(false); setAckDelete(false); }}
+            title="Bắt đầu sự kiện mới"
+          >
+            <div className="space-y-4">
               <Input
                 label="Tên sự kiện mới"
                 id="new-event-title-input"
                 value={newEventName}
                 onChange={(e) => setNewEventName(e.target.value)}
                 placeholder="Ví dụ: Hội nghị trao giải 2026"
+                autoFocus
               />
+              <ul className="p-4 bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg space-y-2 text-[15px] text-[#7F1D1D] list-disc pl-9">
+                <li>Tên sự kiện mới sẽ <strong>bị khóa</strong>, không sửa lại được.</li>
+                <li><strong>{attendance.length} bản ghi điểm danh</strong> của "{event.eventName}" sẽ bị xóa, và sự kiện đó không thể điểm danh hộ nữa.</li>
+                <li>Hãy xuất Excel ở trang Điểm danh trước nếu cần lưu.</li>
+              </ul>
+              <label className="flex items-start gap-3 text-[15px] text-[#0F172A] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={ackDelete}
+                  onChange={(e) => setAckDelete(e.target.checked)}
+                  className="w-5 h-5 mt-0.5 cursor-pointer"
+                />
+                <span>Tôi đã xuất Excel (hoặc không cần lưu) và đồng ý xóa điểm danh cũ.</span>
+              </label>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="secondary" onClick={() => { setShowNewModal(false); setAckDelete(false); }}>Hủy bỏ</Button>
+                <Button
+                  variant="danger"
+                  onClick={handleStartNew}
+                  loading={startingNew}
+                  disabled={!ackDelete || !newEventName.trim()}
+                >
+                  Bắt đầu sự kiện mới
+                </Button>
+              </div>
             </div>
-            <Button variant="danger" onClick={handleStartNew} loading={startingNew}>
-              Bắt đầu sự kiện mới
-            </Button>
-          </div>
+          </Modal>
         </div>
       )}
 
