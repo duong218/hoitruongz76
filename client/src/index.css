@@ -99,3 +99,23 @@
 @media (prefers-reduced-motion: reduce) {
   .aisle-flow, .arrow-nudge-l, .arrow-nudge-r, .fade-in-up { animation: none !important; }
 }
+/* Hướng dẫn bằng hình: chỉ transform/opacity/clip, tắt khi prefers-reduced-motion */
+@keyframes gdScan { 0%,100% { transform: translateY(0); } 50% { transform: translateY(40px); } }
+.gd-scan { animation: gdScan 1.6s ease-in-out infinite; }
+@keyframes gdScan2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(20px); } }
+.gd-scan2 { animation: gdScan2 1.2s ease-in-out infinite; }
+@keyframes gdType { from { width: 0; } to { width: 60px; } }
+.gd-type { animation: gdType 1.6s steps(5) 0.3s both; }
+@keyframes gdCaret { 50% { opacity: 0; } }
+.gd-caret { animation: gdCaret 0.8s step-end infinite; }
+@keyframes gdPop { 0%,60% { transform: none; } 75% { transform: scale(0.94); } 100% { transform: none; } }
+.gd-pop { transform-box: fill-box; transform-origin: center; animation: gdPop 2.4s ease-in-out infinite; }
+@keyframes gdDash { to { stroke-dashoffset: -20; } }
+.gd-path { animation: gdDash 0.8s linear infinite; }
+@keyframes gdPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.5); } }
+.gd-pulse { transform-box: fill-box; transform-origin: center; animation: gdPulse 1.2s ease-in-out infinite; }
+@keyframes gdPop2 { 0%,45% { transform: scale(0); opacity: 0; } 65% { transform: scale(1.2); opacity: 1; } 80%,100% { transform: scale(1); opacity: 1; } }
+.gd-pop2 { transform-box: fill-box; transform-origin: center; animation: gdPop2 2.4s ease-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .gd-scan, .gd-scan2, .gd-type, .gd-caret, .gd-pop, .gd-path, .gd-pulse, .gd-pop2 { animation: none !important; }
+}

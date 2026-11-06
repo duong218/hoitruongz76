@@ -7,7 +7,8 @@ import { DEMO_MODE } from '../../constants/app.js';
 import { ATTENDEE_LOGIN_CODES } from '../../services/attendeeService.js';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
-import { UserCheck, User, ShieldAlert, IdCard, MapPin, ClipboardCheck, ShieldCheck } from 'lucide-react';
+import { GuideAnimation } from '../../components/ui/GuideAnimation.jsx';
+import { UserCheck, User, ShieldAlert, IdCard, MapPin, QrCode, ScanLine, ShieldCheck, CircleHelp } from 'lucide-react';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export function LoginPage() {
   const [error, setError] = useState('');
   const [isStaffCode, setIsStaffCode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   const handleEmployeeSubmit = async (e) => {
     e.preventDefault();
@@ -104,19 +106,35 @@ export function LoginPage() {
           </p>
         </div>
 
-        {/* 3 bước thực hiện */}
-        <ol className="grid grid-cols-3 gap-2 list-none p-0">
+        {/* 4 bước thực hiện: số thứ tự + biểu tượng, bước hiện tại được tô đậm */}
+        <ol className="grid grid-cols-4 gap-1.5 list-none p-0">
           {[
-            { icon: IdCard, text: 'Nhập mã' },
-            { icon: MapPin, text: 'Xem chỗ ngồi' },
-            { icon: ClipboardCheck, text: 'Điểm danh' },
-          ].map(({ icon: Icon, text }, i) => (
-            <li key={text} className="flex flex-col items-center gap-1 rounded-lg bg-[#EAF6FF] px-1 py-2.5 text-center text-[14px] font-semibold leading-5 text-[#008BC5]">
+            { icon: QrCode, text: 'Quét mã QR', hint: 'ở cửa vào', done: true },
+            { icon: IdCard, text: 'Nhập mã', hint: 'trên thẻ' },
+            { icon: MapPin, text: 'Xem chỗ', hint: 'theo bản đồ' },
+            { icon: ScanLine, text: 'Quét điểm danh', hint: 'tại ghế' },
+          ].map(({ icon: Icon, text, hint, done }, i) => (
+            <li key={text} className={`flex flex-col items-center gap-0.5 rounded-lg px-1 py-2.5 text-center text-[13px] font-semibold leading-4 ${done ? 'bg-[#F1F5F9] text-[#64748B]' : i === 1 ? 'bg-[#008BC5] text-white ring-2 ring-[#BAE3F7]' : 'bg-[#EAF6FF] text-[#008BC5]'}`}>
               <Icon className="w-5 h-5" />
               <span>{i + 1}. {text}</span>
+              <span className="text-[12px] font-normal opacity-80">{done ? '✓ Bạn đã xong' : hint}</span>
             </li>
           ))}
         </ol>
+
+        {/* Nút xem hướng dẫn nhỏ + bảng 4 bước có hiệu ứng nhẹ */}
+        <div className="-mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => setShowGuide((v) => !v)}
+            aria-expanded={showGuide}
+            className="inline-flex items-center gap-1.5 min-h-[44px] px-3 text-[14px] font-medium text-[#008BC5] cursor-pointer"
+          >
+            <CircleHelp className="w-4 h-4" />
+            {showGuide ? 'Ẩn hướng dẫn' : 'Xem hướng dẫn'}
+          </button>
+          {showGuide && <GuideAnimation />}
+        </div>
 
         {/* Chế độ Nhân viên */}
         {!isGuestMode ? (
@@ -170,14 +188,11 @@ export function LoginPage() {
               loading={loading}
               icon={MapPin}
             >
-              Xem chỗ ngồi
+              Xem chỗ ngồi cho nhân viên
             </Button>
 
             {event.guestEnabled && (
-              <div className="space-y-4 pt-1">
-                <div className="flex items-center gap-3 text-[14px] text-[#64748B]">
-                  <span className="h-px flex-1 bg-[#E2E8F0]" />hoặc<span className="h-px flex-1 bg-[#E2E8F0]" />
-                </div>
+              <div>
                 <Button
                   type="button"
                   variant="secondary"
@@ -226,7 +241,7 @@ export function LoginPage() {
               loading={loading}
               icon={User}
             >
-              Xem chỗ ngồi
+              Xem chỗ ngồi cho nhân viên
             </Button>
 
             <div className="pt-2">

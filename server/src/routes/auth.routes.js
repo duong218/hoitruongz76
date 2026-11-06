@@ -9,5 +9,6 @@ router.post('/staff/login', staffLoginLimiter, authController.loginStaff);
 router.post('/attendee/lookup', attendeeLookupLimiter, authController.lookupAttendee);
 router.post('/attendee/guest', authController.enterAsGuest);
 router.get('/me', authenticate, authController.getMe);
+router.post('/change-password', authenticate, authController.changePassword);
 
 export default router;

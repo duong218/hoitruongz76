@@ -143,6 +143,27 @@ hoitruongz76/
 
 ---
 
+### 🔐 Quản lý mật khẩu & Khôi phục tài khoản
+
+1. **Quản lý / Quản trị viên tự đổi mật khẩu**:
+   - Khi đã đăng nhập, bấm nút **"Đổi MK"** ở góc phải thanh tiêu đề (Header).
+   - Nhập mật khẩu hiện tại $\rightarrow$ Nhập mật khẩu mới (tối thiểu 8 ký tự) $\rightarrow$ Xác nhận để lưu.
+
+2. **Quản trị viên (Admin) đặt lại mật khẩu cho Quản lý**:
+   - Admin truy cập trang **Quản lý Nhân sự** (`/admin/employees`).
+   - Tìm tài khoản Quản lý $\rightarrow$ Bấm nút cây bút **Sửa** $\rightarrow$ Điền mật khẩu mới vào ô "Mật khẩu" $\rightarrow$ Bấm Lưu.
+
+3. **Trường hợp Quản trị viên (Admin) bị quên mật khẩu**:
+   - Vì hệ thống chạy mạng nội bộ Intranet (không cấu hình gửi mail ngoài), hệ thống trang bị công cụ Terminal an toàn trực tiếp từ Server:
+   ```bash
+   cd server
+   npm run reset-admin <MậtKhẩuMớiCủaAdmin>
+   # Ví dụ: npm run reset-admin Admin@2026!
+   ```
+   Lệnh sẽ tự động băm bảo mật bcrypt và cập nhật mật khẩu mới ngay lập tức mà không làm mất bất kỳ dữ liệu sự kiện nào.
+
+---
+
 ## 🪑 QUY ƯỚC SƠ ĐỒ & GHẾ NGỒI
 
 Hội trường gồm tổng cộng **200 chỗ ngồi**:

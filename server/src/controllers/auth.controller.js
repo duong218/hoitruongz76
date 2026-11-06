@@ -159,5 +159,52 @@ export const authController = {
   getMe(req, res) {
     res.json({ user: req.user });
   },
+
+  // 5. Đổi mật khẩu cho tài khoản nhân sự đang đăng nhập (Admin hoặc Quản lý)
+  async changePassword(req, res, next) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const userCode = req.user?.code;
+
+      if (!userCode) {
+        return res.status(401).json({ message: 'Không xác định được danh tính người dùng.' });
+      }
+
+      if (!currentPassword || !newPassword) {
+        return res.status(400).json({ message: 'Vui lòng nhập đầy đủ mật khẩu hiện tại và mật khẩu mới.' });
+      }
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Mật khẩu mới phải có tối thiểu 8 ký tự.' });
+      }
+
+      // Tìm nhân sự kèm hash mật khẩu
+      const employee = await Employee.findOne({ code: userCode }).select('+passwordHash');
+      if (!employee || !employee.passwordHash) {
+        return res.status(404).json({ message: 'Tài khoản không tồn tại hoặc chưa được thiết lập mật khẩu.' });
+      }
+
+      const isMatch = await bcrypt.compare(currentPassword, employee.passwordHash);
+      if (!isMatch) {
+        return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác.' });
+      }
+
+      const sameAsOld = await bcrypt.compare(newPassword, employee.passwordHash);
+      if (sameAsOld) {
+        return res.status(400).json({ message: 'Mật khẩu mới không được trùng với mật khẩu hiện tại.' });
+      }
+
+      // Cập nhật mật khẩu mới
+      employee.passwordHash = await bcrypt.hash(newPassword, 10);
+      await employee.save();
+
+      return res.json({
+        ok: true,
+        message: 'Đổi mật khẩu thành công. Vui lòng ghi nhớ mật khẩu mới của bạn.',
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };
 

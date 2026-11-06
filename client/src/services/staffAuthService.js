@@ -55,4 +55,14 @@ export const staffAuthService = {
       window.dispatchEvent(new CustomEvent('z176_staff_session_changed', { detail: null }));
     }
   },
+
+  /**
+   * Đổi mật khẩu cho tài khoản nhân sự / quản lý đang đăng nhập
+   * @param {string} currentPassword
+   * @param {string} newPassword
+   * @returns {Promise<object>}
+   */
+  async changePassword(currentPassword, newPassword) {
+    return api.post('/auth/change-password', { currentPassword, newPassword });
+  },
 };
