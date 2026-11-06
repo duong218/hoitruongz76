@@ -1,0 +1,34 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db # dữ liệu nằm ở đây, tắt/xóa container không mất
+
+  server:
+    build: ./server
+    restart: unless-stopped
+    depends_on: [mongo]
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/hoitruongz76
+      CLIENT_ORIGIN: ${PUBLIC_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
+      SEED_MANAGER_PASSWORD: ${SEED_MANAGER_PASSWORD}
+
+  web:
+    build: ./client
+    restart: unless-stopped
+    depends_on: [server]
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "80:80"
+      - "443:443" # chỉ dùng khi có tên miền
+    volumes:
+      - caddy-data:/data # giữ chứng chỉ HTTPS
+
+volumes:
+  mongo-data:
+  caddy-data:

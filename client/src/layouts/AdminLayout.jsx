@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Logo } from '../components/ui/Logo.jsx';
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -8,12 +8,22 @@ import {
   ADMIN_NAV_ITEMS,
   MANAGER_NAV_ITEMS,
 } from '../constants/navConfig.js';
-import { LogOut, ExternalLink, ArrowLeftRight } from 'lucide-react';
+import { LogOut, ExternalLink, ArrowLeftRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
 export function AdminLayout() {
   const { staff, logoutStaff } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  // Thu gọn menu: nhớ lựa chọn trên trình duyệt này (lỗi đọc/ghi thì bỏ qua)
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('z176_nav_collapsed') === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = () => {
+    setCollapsed((c) => {
+      try { localStorage.setItem('z176_nav_collapsed', c ? '0' : '1'); } catch { /* bỏ qua */ }
+      return !c;
+    });
+  };
 
   const currentStaff = staff;
   const isAdmin = currentStaff?.role === ROLES.ADMIN;
@@ -66,11 +76,22 @@ export function AdminLayout() {
       {/* Main Container */}
       <div className="flex-1 flex max-w-7xl w-full mx-auto">
         {/* Desktop Sidebar (>= 1024px) */}
-        <aside className="hidden lg:block w-64 bg-white border-r border-[#E2E8F0] min-h-[calc(100vh-72px)] p-4 space-y-1 shrink-0">
-          <div className="pb-3 mb-2 border-b border-[#E2E8F0]">
-            <p className="text-[13px] font-bold text-[#64748B] uppercase tracking-wider px-3">
-              {isAdmin ? 'Danh mục quản trị' : 'Vận hành sự kiện'}
-            </p>
+        <aside className={`hidden lg:block ${collapsed ? 'w-[76px]' : 'w-64'} transition-[width] duration-200 bg-white border-r border-[#E2E8F0] min-h-[calc(100vh-72px)] p-4 space-y-1 shrink-0`}>
+          <div className={`pb-3 mb-2 border-b border-[#E2E8F0] flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+            {!collapsed && (
+              <p className="text-[13px] font-bold text-[#64748B] uppercase tracking-wider px-3">
+                {isAdmin ? 'Danh mục quản trị' : 'Vận hành sự kiện'}
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              title={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+              aria-label={collapsed ? 'Mở rộng menu' : 'Thu gọn menu'}
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[#334155] hover:bg-[#F6F8FA] cursor-pointer"
+            >
+              {collapsed ? <PanelLeftOpen className="w-5 h-5" /> : <PanelLeftClose className="w-5 h-5" />}
+            </button>
           </div>
 
           <nav className="space-y-1">
@@ -80,9 +101,11 @@ export function AdminLayout() {
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  title={collapsed ? item.label : undefined}
+                  aria-label={item.label}
                   style={{ '--stagger-delay': `${i * 130}ms` }}
                   className={({ isActive }) =>
-                    `fade-in-up flex items-center gap-3 px-4 py-3 text-[16px] font-medium transition-colors rounded-r-lg min-h-[48px] ${
+                    `fade-in-up flex items-center ${collapsed ? 'justify-center px-0' : 'px-4'} gap-3 py-3 text-[16px] font-medium transition-colors rounded-r-lg min-h-[48px] ${
                       isActive
                         ? 'bg-[#EAF6FF] text-[#008BC5] font-semibold border-l-[3px] border-l-[#008BC5]'
                         : 'text-[#334155] hover:bg-[#F6F8FA] border-l-[3px] border-l-transparent'
@@ -90,7 +113,7 @@ export function AdminLayout() {
                   }
                 >
                   <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.label}</span>
+                  {!collapsed && <span>{item.label}</span>}
                 </NavLink>
               );
             })}
@@ -102,10 +125,11 @@ export function AdminLayout() {
               href="/login"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-3 text-[15px] font-medium text-[#64748B] hover:text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg transition-colors min-h-[48px]"
+              title="Xem trang Người quét"
+              className={`flex items-center ${collapsed ? 'justify-center' : 'px-4'} gap-2 py-3 text-[15px] font-medium text-[#64748B] hover:text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg transition-colors min-h-[48px]`}
             >
-              <ExternalLink className="w-4 h-4" />
-              <span>Xem trang Người quét</span>
+              <ExternalLink className="w-4 h-4 shrink-0" />
+              {!collapsed && <span>Xem trang Người quét</span>}
             </a>
           </div>
         </aside>
