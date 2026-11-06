@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useSeatAssignments } from '../../hooks/useSeatAssignments.js';
@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   Clock,
   Map as MapIcon,
+  Volume2,
 } from 'lucide-react';
 
 export function SeatPage() {
@@ -72,6 +73,55 @@ export function SeatPage() {
       return { title: m[1], detail: m[2] };
     });
   }, [seatDescription]);
+
+  // Đọc to vị trí (Web Speech API, chỉ chạy khi người dùng bấm)
+  const ttsSupported = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  const [speaking, setSpeaking] = useState(false);
+  const [viVoice, setViVoice] = useState(null); // null: chưa biết, true/false: đã biết
+
+  useEffect(() => {
+    if (!ttsSupported) return undefined;
+    const synth = window.speechSynthesis;
+    const check = () => {
+      const voices = synth.getVoices();
+      if (voices.length) setViVoice(voices.some((v) => v.lang?.toLowerCase().startsWith('vi')));
+    };
+    check();
+    synth.addEventListener?.('voiceschanged', check);
+    return () => {
+      synth.removeEventListener?.('voiceschanged', check);
+      synth.cancel(); // dừng đọc khi rời trang
+    };
+  }, [ttsSupported]);
+
+  const speakText = useMemo(() => {
+    const where = myAttendance?.seatId
+      ? seatLabel(myAttendance.seatId)
+      : seatRows.length
+        ? seatRows.map((r) => `${r.title}, ${r.detail}`).join('. ')
+        : seatDescription;
+    return `Chỗ ngồi của bạn: ${where}.${group ? ` Khối ${group.name}.` : ''}`;
+  }, [myAttendance, seatRows, seatDescription, group]);
+
+  const handleSpeak = () => {
+    const synth = window.speechSynthesis;
+    if (synth.speaking) {
+      synth.cancel();
+      setSpeaking(false);
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(speakText);
+    u.lang = 'vi-VN';
+    const v = synth.getVoices().find((x) => x.lang?.toLowerCase().startsWith('vi'));
+    if (v) u.voice = v;
+    u.onend = () => setSpeaking(false);
+    u.onerror = (e) => {
+      setSpeaking(false);
+      if (e.error !== 'interrupted' && e.error !== 'canceled') setViVoice(false); // không đọc được -> hiện thông báo ngắn
+    };
+    setSpeaking(true);
+    synth.speak(u);
+  };
 
   // Xử lý kết quả quét hoặc nhập mã từ ScannerModal
   const handleScanResult = async ({ seat, token, error: scanError }) => {
@@ -193,6 +243,14 @@ export function SeatPage() {
             <p className="hidden sm:block text-[16px] leading-6 text-[#334155]">
               Tìm các ghế nhấp nháy màu <strong style={{ color: group.color }}>{group.name}</strong> và đi theo đường nét đứt từ Cửa vào.
             </p>
+
+            {ttsSupported && viVoice !== false ? (
+              <Button type="button" variant="primary" fullWidth icon={Volume2} onClick={handleSpeak} aria-pressed={speaking}>
+                {speaking ? 'Dừng đọc' : 'Đọc to vị trí'}
+              </Button>
+            ) : (
+              ttsSupported && <p className="text-[16px] text-[#334155]">Thiết bị chưa có giọng đọc tiếng Việt.</p>
+            )}
 
             <Button
               type="button"

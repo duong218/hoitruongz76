@@ -22,6 +22,8 @@ import {
   Lock,
   CalendarPlus,
   Pencil,
+  Share2,
+  Copy,
 } from 'lucide-react';
 import '../../utils/printQr.css';
 
@@ -127,6 +129,39 @@ export function ManagerEventPage() {
       toast.error('Lỗi khi lưu địa chỉ.');
     } finally {
       setSavingUrl(false);
+    }
+  };
+
+  // Chia sẻ link chung của trang đăng nhập (không kèm mã nhân viên / thông tin cá nhân)
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  const handleShareLink = async () => {
+    let url = appUrl.trim();
+    try {
+      const u = new URL(url);
+      u.search = '';
+      u.hash = '';
+      url = u.toString();
+    } catch {
+      /* giữ nguyên nếu không phải URL hợp lệ */
+    }
+    const name = event?.eventName || '';
+    if (canShare) {
+      try {
+        await navigator.share({
+          title: name,
+          text: `Xem vị trí chỗ ngồi & điểm danh: ${name}`,
+          url,
+        });
+      } catch (err) {
+        if (err?.name !== 'AbortError') toast.error('Không mở được bảng chia sẻ.');
+      }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Đã sao chép');
+    } catch {
+      toast.error('Không sao chép được link. Hãy chép thủ công ở ô địa chỉ.');
     }
   };
 
@@ -411,6 +446,14 @@ export function ManagerEventPage() {
                 icon={Save}
               >
                 Lưu địa chỉ
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleShareLink}
+                disabled={!appUrl.trim()}
+                icon={canShare ? Share2 : Copy}
+              >
+                {canShare ? 'Chia sẻ link' : 'Sao chép link'}
               </Button>
             </div>
           </div>
