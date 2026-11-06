@@ -72,6 +72,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 - **Quét mã điểm danh tại ghế**:
   - Quét camera trực tiếp vào tem QR dán trên ghế.
   - Cơ chế chống quét nhầm: Tự động cảnh báo nếu quét trúng QR dán cửa thay vì tem ghế.
+  - Chống quét khi chưa mở cổng: Tự động đếm ngược 5s để thử lại hoặc bấm "Thử lại ngay".
 - **Nhập mã ghế thủ công (Không quét được)**:
   - Nếu điện thoại hỏng camera hoặc tem mờ: Người dùng chỉ cần gõ đúng 6 ký tự in trên tem ghế để xác nhận có mặt.
   - Tự động kiểm tra: Nếu nhập mã của ghế thuộc nhóm khác, hệ thống sẽ từ chối và hướng dẫn về đúng vị trí được phân bổ.
@@ -83,13 +84,13 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 ### Phân hệ Client (`client/`)
 
 - **Core**: React 18 / 19, Vite 6.x.
-- **Routing**: React Router DOM v7 (kiểm soát tuyến đường theo vai trò `RequireRole`).
+- **Routing**: React Router DOM v7 (kiểm soát tuyến đường theo vai trò `RequireRole`, phòng chống tấn công Open Redirect).
 - **Styling**: Tailwind CSS v4, Lucide React Icons.
 - **Thư viện chuyên dụng**:
   - `html5-qrcode`: Xử lý quét mã QR từ camera đa thiết bị.
   - `qrcode.react`: Tạo mã QR SVG/Canvas độ nét cao cho in ấn tem ghế.
   - `xlsx`: Đọc và xuất file báo cáo bảng tính Excel.
-  - `axios`: Kết nối API Backend với Interceptors quản lý phiên token.
+  - `axios`: Kết nối API Backend với Interceptors quản lý phiên token, tối ưu hóa timeout 20s cho Wi-Fi đông người.
 
 ### Phân hệ Server Backend (`server/`)
 
@@ -101,6 +102,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
   - **Helmet & CORS**: Bảo vệ HTTP Headers và kiểm soát truy cập chéo nguồn.
   - **Express Rate Limit**: Chống spam quét mã và brute-force đăng nhập (giới hạn theo mã NV để tránh ảnh hưởng mạng nội bộ công ty).
   - **Audit Logging**: Module ghi nhật ký tự động mọi thao tác nhạy cảm.
+  - **Cơ chế khôi phục quản trị**: Script CLI đặt lại mật khẩu Admin từ terminal an toàn không phụ thuộc mail ngoài.
 
 ---
 
@@ -116,6 +118,7 @@ hoitruongz76/
 │   │   │   ├── employees/      # Form thêm/sửa, bảng nhân viên, import Excel
 │   │   │   ├── groups/         # Modal tạo nhóm ghế (chế độ nhanh & tùy biến)
 │   │   │   ├── hall/           # HallMap 2D, Seat SVG, Thước đo, Lối đi giữa
+│   │   │   ├── ChangePasswordModal.jsx # Modal tự đổi mật khẩu an toàn
 │   │   │   └── ui/             # Select (chống tràn), Button, Modal, Badge, Toast
 │   │   ├── constants/          # Quy chuẩn 200 ghế, bảng 18 màu, vai trò
 │   │   ├── context/            # AuthContext, ToastContext, ConfirmContext
@@ -138,7 +141,8 @@ hoitruongz76/
 │   │   ├── middleware/         # Xác thực JWT, phân quyền Role, bắt lỗi tập trung
 │   │   ├── models/             # Mongoose Schemas (Seat, Employee, Attendance, Audit,...)
 │   │   ├── routes/             # Định tuyến RESTful API (/api/*)
-│   │   ├── scripts/            # Script tạo dữ liệu mẫu ban đầu (seed)
+│   │   ├── scripts/            # Script khôi phục tài khoản Admin (resetAdmin.js)
+│   │   ├── seed/               # Script tạo dữ liệu mẫu ban đầu (seed.js)
 │   │   └── utils/              # Bộ sinh mã token 6 ký tự ngẫu nhiên, ghi audit
 │   ├── server.js               # Khởi chạy Express server
 │   ├── .env                    # Cấu hình cổng, chuỗi kết nối MongoDB, Secret Key
@@ -149,27 +153,6 @@ hoitruongz76/
 │   └── server.md               # Đặc tả chi tiết phân hệ Backend & RESTful API
 └── package.json                # Script npm root điều khiển chạy song song
 ```
-
----
-
-### 🔐 Quản lý mật khẩu & Khôi phục tài khoản
-
-1. **Quản lý / Quản trị viên tự đổi mật khẩu**:
-   - Khi đã đăng nhập, bấm nút **"Đổi MK"** ở góc phải thanh tiêu đề (Header).
-   - Nhập mật khẩu hiện tại $\rightarrow$ Nhập mật khẩu mới (tối thiểu 8 ký tự) $\rightarrow$ Xác nhận để lưu.
-
-2. **Quản trị viên (Admin) đặt lại mật khẩu cho Quản lý**:
-   - Admin truy cập trang **Quản lý Nhân sự** (`/admin/employees`).
-   - Tìm tài khoản Quản lý $\rightarrow$ Bấm nút cây bút **Sửa** $\rightarrow$ Điền mật khẩu mới vào ô "Mật khẩu" $\rightarrow$ Bấm Lưu.
-
-3. **Trường hợp Quản trị viên (Admin) bị quên mật khẩu**:
-   - Vì hệ thống chạy mạng nội bộ Intranet (không cấu hình gửi mail ngoài), hệ thống trang bị công cụ Terminal an toàn trực tiếp từ Server:
-   ```bash
-   cd server
-   npm run reset-admin <MậtKhẩuMớiCủaAdmin>
-   # Ví dụ: npm run reset-admin Admin@2026!
-   ```
-   Lệnh sẽ tự động băm bảo mật bcrypt và cập nhật mật khẩu mới ngay lập tức mà không làm mất bất kỳ dữ liệu sự kiện nào.
 
 ---
 
@@ -203,11 +186,16 @@ Hội trường gồm tổng cộng **200 chỗ ngồi**:
 | **EMPLOYEE** (Nhân viên)  | `/login`, `/seat`  | Tra cứu vị trí ghế chỉ định theo sơ đồ 2D, quét mã QR hoặc nhập mã tem để điểm danh.    |
 | **GUEST** (Khách mời)     | `/login`, `/seat`  | Tra cứu chỗ ngồi khu vực khách mời (mặc định không bắt buộc quét điểm danh).            |
 
-### Tài khoản mẫu ban đầu (khi chạy Seed dữ liệu)
+### Chính sách Mật khẩu & Quản trị An toàn
 
-- **Quản trị viên**: Mã `/ Mật khẩu:`
-- **Quản lý hội trường**: Mã `/ Mật khẩu:`
-- **Nhân viên mẫu**: Mã `NV001` đến `NV008` (đăng nhập trực tiếp bằng mã, không cần mật khẩu).
+> ⚠️ **Quy chuẩn bảo mật vận hành**: Hệ thống tuyệt đối **không lưu cứng mật khẩu mặc định** trong tài liệu công khai hay mã nguồn.
+> - Mật khẩu khởi tạo của tài khoản Quản trị viên (`ADMIN`) và Quản lý (`QL01`) được thiết lập an toàn thông qua biến môi trường `SEED_ADMIN_PASSWORD` và `SEED_MANAGER_PASSWORD` trong file riêng `server/.env` khi cấu hình máy chủ.
+> - Sau khi đăng nhập lần đầu, cán bộ quản trị và quản lý có thể tự đổi mật khẩu bất kỳ lúc nào bằng nút **"Đổi MK"** ở góc phải thanh tiêu đề.
+> - Nếu Quản trị viên quên mật khẩu, có thể đặt lại an toàn trực tiếp từ Terminal máy chủ: `npm run reset-admin <MậtKhẩuMới>`.
+
+- **Tài khoản Quản trị viên**: Mã `ADMIN` (Mật khẩu được cấu hình riêng trong `server/.env`).
+- **Tài khoản Quản lý hội trường**: Mã `QL01` (Mật khẩu được cấu hình riêng trong `server/.env`).
+- **Nhân viên / Đại biểu tham dự**: Mã `NV001` đến `NV008` (đăng nhập trực tiếp bằng mã nhân viên theo quy trình tham dự hội nghị).
 
 ---
 
@@ -244,8 +232,8 @@ PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/hoitruongz76
 CLIENT_ORIGIN=http://localhost:3000
 JWT_SECRET=your_super_secret_jwt_key_here
-SEED_ADMIN_PASSWORD=
-SEED_MANAGER_PASSWORD=
+SEED_ADMIN_PASSWORD=your_initial_admin_password
+SEED_MANAGER_PASSWORD=your_initial_manager_password
 ```
 
 Kiểm tra file `client/.env` (nếu cần thay đổi cổng API):
@@ -254,12 +242,12 @@ Kiểm tra file `client/.env` (nếu cần thay đổi cổng API):
 VITE_API_URL=/api
 ```
 
-### 4. Khởi tạo dữ liệu mẫu (Seed Database)
+### 4. Khởi tạo dữ liệu ban đầu (Seed Database)
 
-Nạp cấu trúc hội trường 200 ghế, các khối, phòng ban và tài khoản mẫu vào MongoDB:
+Nạp cấu trúc hội trường 200 ghế, các khối, phòng ban và tài khoản ban đầu vào MongoDB:
 
 ```bash
-# Nạp dữ liệu mẫu an toàn (không ghi đè nếu đã có dữ liệu)
+# Nạp dữ liệu ban đầu (chỉ nạp một lần khi cơ sở dữ liệu còn trống)
 npm run seed:server
 
 # HOẶC buộc làm mới dữ liệu từ đầu (Reset trắng và tạo lại mẫu chuẩn Z176)
@@ -308,10 +296,11 @@ flowchart TD
 
 ## 🛡️ AN TOÀN & BẢO MẬT HỆ THỐNG
 
-1. **Kiểm tra chéo vị trí ghế**: Người tham dự không thể quét mã của ghế nhóm khác để điểm danh thay. Hệ thống tự động so khớp Khối $\rightarrow$ Nhóm được phân bổ $\rightarrow$ Ghế thực tế.
+1. **Kiểm tra chéo vị trí ghế**: Người tham dự không thể quét mã của ghế nhóm khác để điểm danh thay. Hệ thống tự động so khớp Khối $\rightarrow$ Nhóm được phân bổ $\rightarrow$ Ghế thực tế. Khách mời hoặc nhân sự chưa phân nhóm quét mã đều bị từ chối an toàn.
 2. **Không thể giả mạo dữ liệu gửi lên**: Danh tính người điểm danh được trích xuất trực tiếp từ JWT Token của phiên, không nhận mã gửi từ Client.
 3. **Mã token ghế bảo mật cao**: Thuộc tính `token` của ghế được cấu hình `select: false` trong cơ sở dữ liệu, chỉ được gọi ra khi tạo trang in tem và khi so khớp điểm danh.
 4. **Nhật ký kiểm toán minh bạch**: Bất kỳ hành động sửa nhân sự, thay đổi sơ đồ ghế hay điểm danh hộ đều lưu vết IP, danh tính cán bộ thực hiện và lý do cụ thể.
+5. **Cơ chế khôi phục tài khoản Admin**: Script nội bộ `npm run reset-admin <mật_khẩu>` phục hồi quyền truy cập khi quên mật khẩu mà không cần máy chủ mail ngoài.
 
 ---
 
