@@ -19,7 +19,7 @@ export function LoginPage() {
     ? rawNextUrl 
     : '/seat';
 
-  const { loginWithCode, loginAsGuest } = useAuth();
+  const { attendee, loading: authLoading, loginWithCode, loginAsGuest, logoutAttendee } = useAuth();
   const { event } = useEventSettings();
 
   const [isGuestMode, setIsGuestMode] = useState(false);
@@ -57,7 +57,7 @@ export function LoginPage() {
         return;
       }
 
-      navigate(safeNextUrl, { replace: true });
+      navigate(safeNextUrl);
     } catch (err) {
       setError(err.message || 'Không tìm thấy mã nhân viên này. Vui lòng kiểm tra lại.');
     } finally {
@@ -80,7 +80,7 @@ export function LoginPage() {
       setLoading(true);
       const result = await loginAsGuest(trimmed);
       if (result.ok) {
-        navigate(safeNextUrl, { replace: true });
+        navigate(safeNextUrl);
       }
     } catch (err) {
       setError(err.message || 'Lỗi khi xác nhận thông tin khách mời.');
@@ -95,6 +95,32 @@ export function LoginPage() {
     setError('');
     setIsStaffCode(false);
   };
+
+  // Chờ đọc xong phiên đã lưu để form không nháy lên rồi biến mất
+  if (authLoading) return null;
+
+  // Đã đăng nhập rồi (ví dụ bấm Back về đây): không hiện lại form nhập mã.
+  // Không tự chuyển đi để nút Back vẫn dùng được, người dùng chọn đi tiếp hoặc đổi người.
+  if (attendee) {
+    return (
+      <div className="flex-1 flex flex-col justify-center items-center py-6 sm:py-12">
+        <div className="w-full max-w-md sm:max-w-lg bg-white border border-[#E2E8F0] border-t-4 border-t-[#008BC5] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5 sm:p-8 space-y-5 text-center">
+          <Logo className="w-16 h-16 inline-block" />
+          <h1 className="text-[24px] sm:text-[28px] font-bold text-[#0F172A]">Bạn đã đăng nhập</h1>
+          <p className="text-[18px] text-[#334155]">
+            <strong>{attendee.name}</strong>
+            {attendee.groupName ? ` • ${attendee.groupName}` : ''}
+          </p>
+          <Button type="button" variant="primary" fullWidth size="lg" icon={MapPin} onClick={() => navigate('/seat')}>
+            Xem chỗ ngồi của tôi
+          </Button>
+          <Button type="button" variant="secondary" fullWidth icon={User} onClick={() => logoutAttendee()}>
+            Đăng nhập người khác
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col justify-center items-center py-6 sm:py-12">
@@ -245,7 +271,7 @@ export function LoginPage() {
               loading={loading}
               icon={User}
             >
-              Xem chỗ ngồi cho nhân viên
+              Xem chỗ ngồi cho khách 
             </Button>
 
             <div className="pt-2">
