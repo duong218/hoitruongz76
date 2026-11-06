@@ -8,12 +8,15 @@ import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { Select } from '../../components/ui/Select.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
-import { Plus, Edit2, Trash2, Users, Building2, GitFork } from 'lucide-react';
+import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import { Plus, Edit2, Trash2, Users, Building2, GitFork, AlertCircle } from 'lucide-react';
 
 export function OrgPage() {
   const {
     blocks,
     departments,
+    loading,
+    error,
     addBlock,
     updateBlock,
     deleteBlock,
@@ -158,143 +161,68 @@ export function OrgPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-6 max-w-5xl">
       <div>
         <h1 className="text-[24px] sm:text-[28px] font-extrabold text-[#0F172A] leading-tight">
           Cơ cấu Tổ chức
         </h1>
-        <p className="text-[16px] text-[#64748B] mt-1">
-          Quản lý danh mục các Khối và Phòng ban. Lưu ý: Ghế hội trường chỉ phân bổ theo <strong>Khối</strong>.
+        <p className="text-[15px] text-[#64748B] mt-1">
+          Quản lý danh mục Khối và Phòng ban. Ghế hội trường chỉ phân bổ theo <strong className="text-[#334155]">Khối</strong>.
         </p>
       </div>
 
-      {/* PHẦN 1: KHỐI */}
-      <section className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
-          <div>
-            <div className="flex items-center gap-2">
-              <GitFork className="w-5 h-5 text-[#008BC5]" />
-              <h2 className="text-[20px] font-bold text-[#0F172A]">Danh mục Khối</h2>
-            </div>
-            <p className="text-[14px] text-[#64748B] mt-0.5">
-              Đơn vị quyết định chỗ ngồi hội trường. Nhân viên cùng Khối sẽ cùng ngồi vào nhóm ghế được chỉ định.
-            </p>
-          </div>
-          <Button variant="primary" onClick={handleOpenAddBlock} icon={Plus}>
-            Thêm Khối mới
-          </Button>
+      {error && (
+        <div role="alert" className="flex items-center gap-2 p-3 bg-[#FEECEC] border border-[#FECACA] rounded-lg text-[14px] font-medium text-[#B91C1C]">
+          <AlertCircle className="w-5 h-5 shrink-0" />
+          <span>{error}</span>
         </div>
+      )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {blocks.map((b) => {
-            const count = counts.bCounts[b.id] || 0;
-            return (
-              <div
-                key={b.id}
-                className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-2">
-                  <h3 className="text-[18px] font-bold text-[#0F172A]">{b.name}</h3>
-                  <div className="flex items-center gap-1.5 text-[15px] text-[#334155] bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0]">
-                    <Users className="w-4 h-4 text-[#64748B]" />
-                    <span><strong>{count}</strong> nhân viên trực thuộc</span>
-                  </div>
-                </div>
+      {/* KHỐI */}
+      <OrgSection
+        icon={GitFork}
+        title="Danh mục Khối"
+        count={blocks.length}
+        description="Quyết định chỗ ngồi hội trường: nhân viên cùng Khối ngồi chung nhóm ghế."
+        action={<Button variant="primary" size="sm" onClick={handleOpenAddBlock} icon={Plus}>Thêm Khối</Button>}
+        loading={loading}
+        isEmpty={blocks.length === 0}
+        empty={{ icon: GitFork, title: 'Chưa có Khối nào', description: 'Tạo Khối đầu tiên để bắt đầu phân bổ chỗ ngồi.', actionText: 'Thêm Khối', onAction: handleOpenAddBlock, actionIcon: Plus }}
+      >
+        {blocks.map((b) => (
+          <OrgRow
+            key={b.id}
+            name={b.name}
+            count={counts.bCounts[b.id] || 0}
+            onEdit={() => handleOpenEditBlock(b)}
+            onDelete={() => handleDeleteBlock(b)}
+          />
+        ))}
+      </OrgSection>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditBlock(b)}
-                    aria-label={`Sửa ${b.name}`}
-                    className="min-h-[44px] min-w-[44px] px-3 py-1 flex items-center justify-center gap-1.5 text-[14px] font-semibold text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg cursor-pointer"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    <span>Sửa</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteBlock(b)}
-                    aria-label={`Xóa ${b.name}`}
-                    className="min-h-[44px] min-w-[44px] px-3 py-1 flex items-center justify-center gap-1.5 text-[14px] font-semibold text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Xóa</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* PHẦN 2: PHÒNG BAN */}
-      <section className="space-y-4 pt-4 border-t-2 border-[#E2E8F0]">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
-          <div>
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-[#22C55E]" />
-              <h2 className="text-[20px] font-bold text-[#0F172A]">Danh mục Phòng ban / Phân xưởng</h2>
-            </div>
-            <p className="text-[14px] text-[#64748B] mt-0.5">
-              Dùng để lọc và tổng hợp báo cáo điểm danh. Mỗi phòng ban gắn với một Khối mặc định.
-            </p>
-          </div>
-          <Button variant="secondary" onClick={handleOpenAddDept} icon={Plus}>
-            Thêm Phòng ban mới
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {departments.map((d) => {
-            const count = counts.dCounts[d.id] || 0;
-            const defaultBlockName = blockMap.get(d.blockId) || 'Chưa gán';
-
-            return (
-              <div
-                key={d.id}
-                className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-2">
-                  <h3 className="text-[18px] font-bold text-[#0F172A]">{d.name}</h3>
-                  <div className="space-y-1">
-                    <span className="text-[13px] text-[#64748B]">Khối mặc định:</span>
-                    <div>
-                      <Badge variant="neutral">
-                        {defaultBlockName}
-                      </Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[15px] text-[#334155] bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0]">
-                    <Users className="w-4 h-4 text-[#64748B]" />
-                    <span><strong>{count}</strong> nhân viên</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E2E8F0]">
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEditDept(d)}
-                    aria-label={`Sửa ${d.name}`}
-                    className="min-h-[44px] min-w-[44px] px-3 py-1 flex items-center justify-center gap-1.5 text-[14px] font-semibold text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg cursor-pointer"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                    <span>Sửa</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteDept(d)}
-                    aria-label={`Xóa ${d.name}`}
-                    className="min-h-[44px] min-w-[44px] px-3 py-1 flex items-center justify-center gap-1.5 text-[14px] font-semibold text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Xóa</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
+      {/* PHÒNG BAN */}
+      <OrgSection
+        icon={Building2}
+        title="Phòng ban / Phân xưởng"
+        count={departments.length}
+        description="Dùng để lọc và tổng hợp báo cáo điểm danh. Mỗi phòng ban thuộc một Khối mặc định."
+        action={<Button variant="secondary" size="sm" onClick={handleOpenAddDept} icon={Plus} disabled={blocks.length === 0}>Thêm Phòng ban</Button>}
+        loading={loading}
+        isEmpty={departments.length === 0}
+        empty={{ icon: Building2, title: 'Chưa có Phòng ban nào', description: blocks.length === 0 ? 'Hãy tạo Khối trước, sau đó thêm Phòng ban.' : 'Thêm Phòng ban để lọc và tổng hợp báo cáo.', actionText: blocks.length === 0 ? undefined : 'Thêm Phòng ban', onAction: handleOpenAddDept, actionIcon: Plus }}
+      >
+        {departments.map((d) => (
+          <OrgRow
+            key={d.id}
+            name={d.name}
+            tag={blockMap.get(d.blockId) || 'Chưa gán Khối'}
+            tagWarn={!blockMap.get(d.blockId)}
+            count={counts.dCounts[d.id] || 0}
+            onEdit={() => handleOpenEditDept(d)}
+            onDelete={() => handleDeleteDept(d)}
+          />
+        ))}
+      </OrgSection>
 
       {/* Modal Khối */}
       <Modal
@@ -366,5 +294,87 @@ export function OrgPage() {
         </form>
       </Modal>
     </div>
+  );
+}
+
+
+/* ---------- Thành phần giao diện cục bộ của trang ---------- */
+
+function OrgSection({ icon: Icon, title, count, description, action, loading, isEmpty, empty, children }) {
+  return (
+    <section className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] overflow-hidden">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-[#E2E8F0]">
+        <div className="flex items-start gap-3 min-w-0">
+          <span className="w-10 h-10 rounded-lg bg-[#EAF6FF] text-[#008BC5] flex items-center justify-center shrink-0">
+            <Icon className="w-5 h-5" />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[18px] font-bold text-[#0F172A]">{title}</h2>
+              <span className="min-w-[24px] px-2 py-0.5 text-center text-[13px] font-semibold tabular-nums rounded-full bg-[#F1F5F9] text-[#475569]">
+                {count}
+              </span>
+            </div>
+            <p className="text-[14px] text-[#64748B] mt-0.5">{description}</p>
+          </div>
+        </div>
+        <div className="shrink-0">{action}</div>
+      </header>
+
+      {loading ? (
+        <ul aria-busy="true" aria-label="Đang tải" className="divide-y divide-[#E2E8F0]">
+          {[0, 1, 2].map((i) => (
+            <li key={i} className="px-5 py-4">
+              <div className="h-4 w-1/3 rounded bg-[#F1F5F9] animate-pulse" />
+            </li>
+          ))}
+        </ul>
+      ) : isEmpty ? (
+        <EmptyState {...empty} className="!border-0 !shadow-none !rounded-none" />
+      ) : (
+        <ul className="divide-y divide-[#E2E8F0]">{children}</ul>
+      )}
+    </section>
+  );
+}
+
+function OrgRow({ name, tag, tagWarn, count, onEdit, onDelete }) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-4 gap-y-0.5 px-5 py-3 hover:bg-[#F8FAFC] transition-colors">
+      <div className="grow basis-full sm:basis-0 min-w-0 sm:min-w-[10rem] flex flex-wrap items-center gap-x-3 gap-y-1">
+        <span className="text-[16px] font-semibold text-[#0F172A] break-words">{name}</span>
+        {tag && <Badge variant={tagWarn ? 'warning' : 'neutral'}>{tag}</Badge>}
+      </div>
+
+      <span
+        className={`inline-flex items-center gap-1.5 text-[14px] tabular-nums ${count ? 'text-[#334155]' : 'text-[#64748B]'}`}
+      >
+        <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
+        <span><strong className="font-semibold">{count}</strong> nhân viên</span>
+      </span>
+
+      <div className="ml-auto flex items-center gap-1">
+        <RowAction icon={Edit2} label="Sửa" ariaLabel={`Sửa ${name}`} onClick={onEdit} />
+        <RowAction icon={Trash2} label="Xóa" ariaLabel={`Xóa ${name}`} onClick={onDelete} danger />
+      </div>
+    </li>
+  );
+}
+
+function RowAction({ icon: Icon, label, ariaLabel, onClick, danger }) {
+  const tone = danger
+    ? 'hover:text-[#B91C1C] hover:bg-[#FEECEC]'
+    : 'hover:text-[#008BC5] hover:bg-[#EAF6FF]';
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      title={ariaLabel}
+      className={`min-h-[44px] min-w-[44px] px-3 inline-flex items-center justify-center gap-1.5 text-[14px] font-semibold text-[#475569] rounded-lg transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#008BC5] ${tone}`}
+    >
+      <Icon className="w-4 h-4" aria-hidden="true" />
+      <span className="hidden sm:inline">{label}</span>
+    </button>
   );
 }

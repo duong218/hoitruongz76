@@ -14,14 +14,16 @@ const PAGE_SIZE = 50;
 export function AuditPage() {
   const { employees } = useEmployees();
   const [range, setRange] = useState('7d');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [category, setCategory] = useState('');
   const [actorInput, setActorInput] = useState('');
   const [page, setPage] = useState(1);
   const actor = useDebouncedValue(actorInput, 300);
 
   const params = useMemo(
-    () => buildAuditParams({ range, category, actor, page, limit: PAGE_SIZE }),
-    [range, category, actor, page]
+    () => buildAuditParams({ range, fromDate, toDate, category, actor, page, limit: PAGE_SIZE }),
+    [range, fromDate, toDate, category, actor, page]
   );
   const { items, total, pages, loading, error, updatedAt, refresh } = useAuditLogs(params);
 
@@ -37,8 +39,17 @@ export function AuditPage() {
     setter(value);
     setPage(1);
   };
+  // Bấm nút khoảng thời gian thì bỏ ngày đã chọn tay
+  const pickRange = (value) => {
+    setRange(value);
+    setFromDate('');
+    setToDate('');
+    setPage(1);
+  };
   const clearFilters = () => {
     setRange('all');
+    setFromDate('');
+    setToDate('');
     setCategory('');
     setActorInput('');
     setPage(1);
@@ -48,7 +59,7 @@ export function AuditPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const filtered = range !== 'all' || !!category || !!actor.trim();
+  const filtered = range !== 'all' || !!fromDate || !!toDate || !!category || !!actor.trim();
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -63,7 +74,11 @@ export function AuditPage() {
 
       <AuditFilters
         range={range}
-        onRange={change(setRange)}
+        onRange={pickRange}
+        fromDate={fromDate}
+        onFromDate={change(setFromDate)}
+        toDate={toDate}
+        onToDate={change(setToDate)}
         category={category}
         onCategory={change(setCategory)}
         actor={actorInput}

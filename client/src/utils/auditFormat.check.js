@@ -27,6 +27,20 @@ assert.strictEqual(p.action, 'employee');
 assert.strictEqual(p.actor, 'ADMIN01');
 assert.ok(typeof p.from === 'string');
 
+// Chọn ngày: ưu tiên hơn khoảng thời gian, tính trọn ngày, chọn ngược thì đảo
+{
+  const one = buildAuditParams({ range: '7d', fromDate: '2026-11-03', toDate: '2026-11-03' }, now);
+  assert.strictEqual(new Date(one.from).getTime(), new Date(2026, 10, 3).getTime());
+  assert.strictEqual(new Date(one.to).getTime(), new Date(2026, 10, 3, 23, 59, 59, 999).getTime());
+  const fromOnly = buildAuditParams({ range: 'all', fromDate: '2026-11-01' }, now);
+  assert.ok(fromOnly.from && !fromOnly.to);
+  const toOnly = buildAuditParams({ range: 'today', toDate: '2026-11-01' }, now);
+  assert.ok(toOnly.to && !toOnly.from); // không rơi về mốc "Hôm nay"
+  const swapped = buildAuditParams({ range: 'all', fromDate: '2026-11-05', toDate: '2026-11-01' }, now);
+  assert.ok(new Date(swapped.from) < new Date(swapped.to));
+  assert.deepStrictEqual(buildAuditParams({ range: 'all', fromDate: 'hỏng', toDate: '' }, now), { page: 1, limit: 50 });
+}
+
 // Gom theo ngày, giữ thứ tự mới nhất trước
 const groups = groupByDay(
   [

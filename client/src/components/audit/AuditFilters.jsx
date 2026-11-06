@@ -5,7 +5,7 @@ import { Select } from '../ui/Select.jsx';
 import { Input } from '../ui/Input.jsx';
 import { AUDIT_CATEGORIES, AUDIT_TIME_RANGES } from '../../constants/auditConfig.js';
 
-export function AuditFilters({ range, onRange, category, onCategory, actor, onActor }) {
+export function AuditFilters({ range, onRange, fromDate, onFromDate, toDate, onToDate, category, onCategory, actor, onActor }) {
   return (
     <Card className="space-y-4">
       <div>
@@ -18,7 +18,7 @@ export function AuditFilters({ range, onRange, category, onCategory, actor, onAc
           className="grid grid-cols-4 gap-2 sm:inline-grid sm:grid-cols-[repeat(4,auto)]"
         >
           {AUDIT_TIME_RANGES.map((opt) => {
-            const active = opt.value === range;
+            const active = opt.value === range && !fromDate && !toDate;
             return (
               <button
                 key={opt.value}
@@ -39,7 +39,35 @@ export function AuditFilters({ range, onRange, category, onCategory, actor, onAc
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:contents">
+        <div>
+          <label htmlFor="audit-from" className="block text-[14px] font-semibold text-[#334155] mb-1.5">
+            Từ ngày
+          </label>
+          <Input
+            id="audit-from"
+            type="date"
+            value={fromDate}
+            max={toDate || undefined}
+            onChange={(e) => onFromDate(e.target.value)}
+            className="min-h-[50px] py-2.5"
+          />
+        </div>
+        <div>
+          <label htmlFor="audit-to" className="block text-[14px] font-semibold text-[#334155] mb-1.5">
+            Đến ngày
+          </label>
+          <Input
+            id="audit-to"
+            type="date"
+            value={toDate}
+            min={fromDate || undefined}
+            onChange={(e) => onToDate(e.target.value)}
+            className="min-h-[50px] py-2.5"
+          />
+        </div>
+        </div>
         <Select
           label="Loại thao tác"
           value={category}
@@ -56,7 +84,7 @@ export function AuditFilters({ range, onRange, category, onCategory, actor, onAc
             icon={Search}
             value={actor}
             onChange={(e) => onActor(e.target.value)}
-            placeholder="Nhập mã, ví dụ ADMIN01"
+            placeholder="Mã, VD: ADMIN01"
             autoComplete="off"
             className="min-h-[50px] py-2.5"
           />

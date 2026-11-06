@@ -47,11 +47,29 @@ export function rangeToFrom(range, now = new Date()) {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate() - back).toISOString();
 }
 
-/** Bộ lọc trên giao diện -> tham số gọi API (bỏ các mục để trống). */
-export function buildAuditParams({ range, category, actor, page = 1, limit = 50 }, now = new Date()) {
+/** "2026-11-06" (ô chọn ngày) -> Date theo giờ máy; end=true lấy cuối ngày 23:59:59.999. Sai định dạng -> null. */
+function parseDay(value, end = false) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || '');
+  if (!m) return null;
+  const d = end
+    ? new Date(+m[1], m[2] - 1, +m[3], 23, 59, 59, 999)
+    : new Date(+m[1], m[2] - 1, +m[3]);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Bộ lọc trên giao diện -> tham số gọi API (bỏ các mục để trống). Có chọn ngày thì ưu tiên hơn nút khoảng thời gian. */
+export function buildAuditParams({ range, fromDate, toDate, category, actor, page = 1, limit = 50 }, now = new Date()) {
   const params = { page, limit };
-  const from = rangeToFrom(range, now);
-  if (from) params.from = from;
+  let from = parseDay(fromDate);
+  let to = parseDay(toDate, true);
+  if (from && to && from > to) [from, to] = [parseDay(toDate), parseDay(fromDate, true)]; // chọn ngược thì tự đảo
+  if (from || to) {
+    if (from) params.from = from.toISOString();
+    if (to) params.to = to.toISOString();
+  } else {
+    const rangeFrom = rangeToFrom(range, now);
+    if (rangeFrom) params.from = rangeFrom;
+  }
   if (category) params.action = category;
   const trimmedActor = (actor || '').trim();
   if (trimmedActor) params.actor = trimmedActor;
