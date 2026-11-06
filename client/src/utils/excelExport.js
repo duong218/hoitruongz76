@@ -73,7 +73,7 @@ function simpleSheet(wb, name, columns, rows, fillArgb) {
  * @param {{ eventName: string, exportedBy: string, rows: Array<object>, summary: object }} p
  * row: { code, name, block, dept, group, seat, time, status, dupText, proxyText }
  */
-export async function exportAttendanceXlsx({ eventName, exportedBy, rows, summary }) {
+export async function exportAttendanceXlsx({ eventName, exportedBy, rows, summary, filters = [] }) {
   const wb = await newWorkbook();
   const ws = wb.addWorksheet('Điểm danh');
   const widths = [12, 26, 20, 22, 20, 24, 12, 18, 75];
@@ -84,9 +84,10 @@ export async function exportAttendanceXlsx({ eventName, exportedBy, rows, summar
     [eventName || 'Sự kiện'],
     [`Giờ xuất: ${new Date().toLocaleString('vi-VN')}   |   Người xuất: ${exportedBy || ''}`],
     [
-      `Cần điểm danh: ${summary.required}   |   Đã: ${summary.checked}   |   Chưa: ${summary.unchecked}` +
+      `Toàn đơn vị:  Cần điểm danh: ${summary.required}   |   Đã: ${summary.checked}   |   Chưa: ${summary.unchecked}` +
         `   |   Số ghế trùng: ${summary.dupSeats}   |   Điểm danh hộ: ${summary.proxy}`,
     ],
+    [`Bộ lọc: ${filters.length ? filters.join('   |   ') : 'Không lọc (toàn bộ)'}   →   ${rows.length} dòng được xuất`],
     ['Chú giải màu:  nền ĐỎ = TRÙNG GHẾ   |   nền VÀNG = ĐIỂM DANH HỘ   (mỗi dòng đều có chữ ở cột Ghi chú)'],
   ];
   info.forEach((line, i) => {
@@ -97,7 +98,7 @@ export async function exportAttendanceXlsx({ eventName, exportedBy, rows, summar
   });
   ws.addRow([]);
 
-  const HEAD = 6;
+  const HEAD = 7;
   ws.addRow(['Mã NV', 'Họ và tên', 'Khối', 'Phòng ban', 'Nhóm ghế', 'Ghế ngồi', 'Giờ quét', 'Trạng thái', 'Ghi chú']);
   headerRow(ws, HEAD);
 
@@ -143,7 +144,7 @@ export async function exportAttendanceXlsx({ eventName, exportedBy, rows, summar
   );
 
   const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  await save(wb, `diem-danh-${(eventName || 'Z176').replace(/\s+/g, '-')}-${ymd}.xlsx`);
+  await save(wb, `diem-danh-${(eventName || 'Z176').replace(/\s+/g, '-')}${filters.length ? '-da-loc' : ''}-${ymd}.xlsx`);
 }
 
 /** Mẫu nhập nhân viên. Sheet đầu tiên là sheet được đọc khi nhập, tiêu đề ở dòng 1. */

@@ -31,6 +31,19 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
+const STATUS_LABEL = {
+  CHECKED: 'Đã điểm danh',
+  UNCHECKED: 'Chưa điểm danh',
+  DUP: 'Trùng ghế',
+  PROXY: 'Điểm danh hộ',
+};
+
+const TABS = [
+  { id: 'BLOCK', label: 'Theo Khối', icon: GitFork },
+  { id: 'DEPT', label: 'Theo Phòng ban', icon: Building2 },
+  { id: 'DETAIL', label: 'Danh sách chi tiết', icon: FileText },
+];
+
 export function AttendancePage() {
   const { attendance, resetAttendance, refresh, manualCheckIn } = useAttendance();
   const { employees } = useEmployees();
@@ -48,8 +61,9 @@ export function AttendancePage() {
   const [manualSearchTerm, setManualSearchTerm] = useState('');
   const [manualLoading, setManualLoading] = useState(false);
 
-  // Chế độ xem bảng tổng hợp: "BLOCK" hoặc "DEPT"
-  const [summaryMode, setSummaryMode] = useState('BLOCK');
+  // Tab đang xem: 'BLOCK' (theo Khối) | 'DEPT' (theo Phòng ban) | 'DETAIL' (danh sách chi tiết)
+  const [view, setView] = useState('BLOCK');
+  const summaryMode = view === 'DEPT' ? 'DEPT' : 'BLOCK';
 
   // Bộ lọc bảng chi tiết
   const [searchTerm, setSearchTerm] = useState('');
@@ -213,8 +227,39 @@ export function AttendancePage() {
     dupSeats,
   ]);
 
-  // Xuất file Excel (có viền, màu, ghi chú trùng ghế / điểm danh hộ)
+  // Các bộ lọc đang bật (hiển thị trong hộp thông báo trước khi xuất và ghi vào file Excel)
+  const activeFilters = [
+    searchTerm.trim() && `Từ khóa: "${searchTerm.trim()}"`,
+    filterBlockId !== 'ALL' && `Khối: ${blockMap.get(filterBlockId) || ''}`,
+    filterDeptId !== 'ALL' && `Phòng ban: ${deptMap.get(filterDeptId) || ''}`,
+    filterGroupId !== 'ALL' && `Nhóm ghế: ${groups.find((g) => g.id === filterGroupId)?.name || ''}`,
+    filterStatus !== 'ALL' && `Trạng thái: ${STATUS_LABEL[filterStatus]}`,
+  ].filter(Boolean);
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setFilterBlockId('ALL');
+    setFilterDeptId('ALL');
+    setFilterGroupId('ALL');
+    setFilterStatus('ALL');
+  };
+
+  // Xuất file Excel theo đúng bộ lọc đang chọn (có viền, màu, ghi chú trùng ghế / điểm danh hộ)
   const handleExportExcel = async () => {
+    if (filteredDetailList.length === 0) {
+      toast.error('Không có nhân viên nào khớp bộ lọc hiện tại để xuất.');
+      return;
+    }
+    const ok = await confirm({
+      title: 'Xuất Excel theo bộ lọc',
+      message: activeFilters.length
+        ? `Sẽ xuất ${filteredDetailList.length} / ${totalRequired} nhân viên theo bộ lọc đang chọn:\n${activeFilters.map((f) => `• ${f}`).join('\n')}\n\nMuốn xuất toàn bộ thì bấm Hủy bỏ rồi chọn "Xóa bộ lọc".`
+        : `Chưa chọn bộ lọc nào, sẽ xuất toàn bộ ${filteredDetailList.length} nhân viên.`,
+      confirmText: `Xuất ${filteredDetailList.length} dòng`,
+      cancelText: 'Hủy bỏ',
+    });
+    if (!ok) return;
+
     const rows = filteredDetailList.map((emp) => {
       const g = resolveGroup(emp, groups);
       const rec = attendanceMap.get(emp.code.toUpperCase());
@@ -240,6 +285,7 @@ export function AttendancePage() {
       await exportAttendanceXlsx({
         eventName: event.eventName,
         exportedBy: user?.name ? `${user.name} (${user.code})` : user?.code,
+        filters: activeFilters,
         rows,
         summary: {
           required: totalRequired,
@@ -287,9 +333,6 @@ export function AttendancePage() {
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="primary" onClick={() => openManualModal()} icon={UserPlus}>
             Điểm danh hộ
-          </Button>
-          <Button variant="secondary" onClick={handleExportExcel} icon={Download}>
-            Xuất Excel
           </Button>
           <Button variant="secondary" onClick={refresh} icon={RefreshCw}>
             Làm mới
@@ -364,45 +407,58 @@ export function AttendancePage() {
         </div>
       )}
 
-      {/* BẢNG TỔNG HỢP (THEO KHỐI / THEO PHÒNG BAN) */}
-      <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h3 className="text-[18px] font-bold text-[#0F172A]">
-              Tổng hợp tỷ lệ có mặt
-            </h3>
-            <p className="text-[14px] text-[#64748B]">
-              Theo dõi tiến độ điểm danh theo từng đơn vị trong doanh nghiệp.
+      {/* Cảnh báo trùng ghế luôn hiện ở mọi tab */}
+      {dupSeats.size > 0 && (
+        <div className="p-4 bg-[#FEE2E2] border-l-4 border-l-[#DC2626] border border-[#FCA5A5] rounded-r-xl flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-3 flex-1">
+            <AlertTriangle className="w-6 h-6 text-[#B91C1C] shrink-0" />
+            <p className="text-[16px] font-semibold text-[#7F1D1D]">
+              Có {dupSeats.size} ghế bị nhiều người cùng điểm danh. Các dòng này được tô đỏ kèm chữ "TRÙNG GHẾ".
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              clearFilters();
+              setFilterStatus('DUP');
+              setView('DETAIL');
+            }}
+            className="px-4 min-h-[48px] text-[16px] font-bold text-[#B91C1C] bg-white border border-[#FCA5A5] rounded-[10px] cursor-pointer"
+          >
+            Chỉ xem các dòng trùng
+          </button>
+        </div>
+      )}
 
-          {/* 2 nút phân đoạn có chữ rõ ràng */}
-          <div className="inline-flex p-1 bg-[#F1F5F9] border border-[#E2E8F0] rounded-lg">
-            <button
-              type="button"
-              onClick={() => setSummaryMode('BLOCK')}
-              className={`px-4 py-2 rounded-md text-[14px] font-bold transition-colors cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
-                summaryMode === 'BLOCK'
-                  ? 'bg-white text-[#008BC5] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#0F172A]'
-              }`}
-            >
-              <GitFork className="w-4 h-4" />
-              <span>Theo Khối</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSummaryMode('DEPT')}
-              className={`px-4 py-2 rounded-md text-[14px] font-bold transition-colors cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
-                summaryMode === 'DEPT'
-                  ? 'bg-white text-[#008BC5] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#0F172A]'
-              }`}
-            >
-              <Building2 className="w-4 h-4" />
-              <span>Theo Phòng ban</span>
-            </button>
-          </div>
+      {/* 3 TAB: Theo Khối | Theo Phòng ban | Danh sách chi tiết */}
+      <div role="tablist" className="grid grid-cols-3 gap-1 p-1 bg-[#F1F5F9] border border-[#E2E8F0] rounded-xl">
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            onClick={() => setView(id)}
+            className={`min-h-[52px] px-2 py-2 rounded-lg text-[16px] font-bold leading-5 flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 text-center cursor-pointer transition-colors ${
+              view === id ? 'bg-white text-[#008BC5] shadow-sm' : 'text-[#334155] hover:text-[#0F172A]'
+            }`}
+          >
+            <Icon className="w-5 h-5 shrink-0" />
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* BẢNG TỔNG HỢP: Theo Khối hoặc Theo Phòng ban */}
+      {view !== 'DETAIL' && (
+      <div className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-4">
+        <div>
+          <h3 className="text-[18px] font-bold text-[#0F172A]">
+            Tỷ lệ có mặt {view === 'DEPT' ? 'theo Phòng ban' : 'theo Khối'}
+          </h3>
+          <p className="text-[16px] text-[#334155]">
+            Số người đã điểm danh trên tổng số người bắt buộc của từng {view === 'DEPT' ? 'phòng ban' : 'khối'}.
+          </p>
         </div>
 
         {/* Lưới danh sách tiến độ */}
@@ -412,9 +468,9 @@ export function AttendancePage() {
               key={item.id}
               className="p-4 bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl space-y-2.5"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <span className="text-[16px] font-bold text-[#0F172A]">{item.name}</span>
-                <span className="text-[14px] font-bold text-[#008BC5]">
+                <span className="text-[16px] font-bold text-[#008BC5] whitespace-nowrap">
                   {item.checked} / {item.total} ({item.pct}%)
                 </span>
               </div>
@@ -428,31 +484,17 @@ export function AttendancePage() {
           ))}
         </div>
       </div>
+      )}
 
       {/* BẢNG CHI TIẾT ĐIỂM DANH */}
+      {view === 'DETAIL' && (
       <div className="space-y-4">
         <div>
           <h3 className="text-[18px] font-bold text-[#0F172A]">Danh sách chi tiết</h3>
-          <p className="text-[14px] text-[#64748B]">
-            Chi tiết thời gian và vị trí ghế đã được quét mã của từng nhân viên.
+          <p className="text-[16px] text-[#334155]">
+            Chi tiết thời gian và vị trí ghế đã được quét mã của từng nhân viên. File Excel được xuất theo đúng bộ lọc bên dưới.
           </p>
         </div>
-
-        {dupSeats.size > 0 && (
-          <div className="p-4 bg-[#FEE2E2] border-l-4 border-l-[#DC2626] border border-[#FCA5A5] rounded-r-xl flex items-center gap-3">
-            <AlertTriangle className="w-6 h-6 text-[#B91C1C] shrink-0" />
-            <p className="flex-1 text-[15px] font-semibold text-[#7F1D1D]">
-              Có {dupSeats.size} ghế bị nhiều người cùng điểm danh. Các dòng này được tô đỏ kèm chữ "TRÙNG GHẾ".
-            </p>
-            <button
-              type="button"
-              onClick={() => setFilterStatus('DUP')}
-              className="px-3 py-2 text-[14px] font-bold text-[#B91C1C] bg-white border border-[#FCA5A5] rounded-lg cursor-pointer"
-            >
-              Chỉ xem các dòng trùng
-            </button>
-          </div>
-        )}
 
         {/* Bộ lọc bảng chi tiết */}
         <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3">
@@ -520,6 +562,21 @@ export function AttendancePage() {
               <option value="DUP">Trùng ghế</option>
               <option value="PROXY">Điểm danh hộ</option>
             </Select>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+            <p className="flex-1 text-[16px] text-[#0F172A]">
+              Đang hiển thị <strong>{filteredDetailList.length}</strong> / {totalRequired} nhân viên
+              {activeFilters.length > 0 && ' (đang lọc)'}
+            </p>
+            {activeFilters.length > 0 && (
+              <Button variant="ghost" onClick={clearFilters} icon={X}>
+                Xóa bộ lọc
+              </Button>
+            )}
+            <Button variant="primary" onClick={handleExportExcel} icon={Download} disabled={filteredDetailList.length === 0}>
+              Xuất Excel ({filteredDetailList.length})
+            </Button>
           </div>
         </div>
 
@@ -658,6 +715,7 @@ export function AttendancePage() {
           })}
         </div>
       </div>
+      )}
 
       {/* MODAL ĐIỂM DANH HỘ */}
       {showManualModal && (
