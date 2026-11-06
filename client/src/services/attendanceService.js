@@ -40,10 +40,11 @@ export const attendanceService = {
    * Đặt lại toàn bộ dữ liệu điểm danh
    * @returns {Promise<void>}
    */
-  async resetAttendance() {
-    await api.post('/attendance/reset');
+  async resetAttendance(save = false) {
+    const res = await api.post('/attendance/reset', { save });
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('z176_attendance_updated'));
     }
+    return res; // { archive } — archive có khi đã lưu lịch sử
   },
 };

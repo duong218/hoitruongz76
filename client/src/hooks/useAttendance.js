@@ -57,9 +57,10 @@ export function useAttendance() {
     return res;
   };
 
-  const resetAttendance = async () => {
-    await attendanceService.resetAttendance();
+  const resetAttendance = async (save = false) => {
+    const res = await attendanceService.resetAttendance(save);
     await fetchAttendance();
+    return res;
   };
 
   return {

@@ -301,19 +301,52 @@ export function AttendancePage() {
     }
   };
 
-  // Đặt lại điểm danh
+  // Đặt lại điểm danh sự kiện hiện tại. Tích "lưu" (mặc định) thì lưu lịch sử + tự tải Excel dữ liệu cũ.
   const handleReset = async () => {
-    const ok = await confirm({
-      title: 'Đặt lại toàn bộ điểm danh',
-      message: 'Hãy xuất Excel trước nếu cần lưu. Hành động này sẽ xóa toàn bộ dữ liệu đã điểm danh của tất cả đại biểu và đưa trạng thái về ban đầu (0 người điểm danh).\n\nBạn có chắc chắn muốn thực hiện không?',
-      confirmText: 'Xóa kết quả điểm danh',
+    const res = await confirm({
+      title: 'Đặt lại điểm danh sự kiện hiện tại',
+      message: `Sẽ xóa ${attendance.length} lượt điểm danh của "${event.eventName}" và đưa về 0. Chỉ ảnh hưởng sự kiện hiện tại, các sự kiện trong Lịch sử không bị đụng tới.`,
+      confirmText: 'Đặt lại điểm danh',
       cancelText: 'Hủy bỏ',
       isDanger: true,
+      checkbox: {
+        label: 'Lưu vào Lịch sử sự kiện và tải file Excel',
+        defaultChecked: true,
+        hint: [
+          'KHÔNG tích: dữ liệu bị xóa vĩnh viễn, không khôi phục được (chỉ còn dòng ghi trong Nhật ký).',
+          'Dữ liệu cũ được giữ lại trong mục Lịch sử sự kiện, và file Excel tự tải về máy.',
+        ],
+      },
     });
+    if (!res) return;
 
-    if (ok) {
-      await resetAttendance();
-      toast.info('Đã đặt lại dữ liệu điểm danh về 0.');
+    const save = res.checked;
+    if (save && attendance.length === 0) {
+      toast.info('Chưa có ai điểm danh nên không có gì để lưu.');
+      return;
+    }
+    let out;
+    try {
+      out = await resetAttendance(save);
+    } catch (err) {
+      // Lưu/xóa lỗi: dữ liệu cũ còn nguyên, báo rõ để không bấm lại mù quáng
+      toast.error(err.message || 'Không đặt lại được. Dữ liệu điểm danh vẫn còn nguyên.');
+      return;
+    }
+    if (!save) {
+      toast.info('Đã đặt lại điểm danh về 0 (không lưu lịch sử).');
+      return;
+    }
+    if (!out?.archive) {
+      toast.info('Đã đặt lại điểm danh về 0.');
+      return;
+    }
+    toast.success('Đã lưu vào Lịch sử sự kiện và đặt lại điểm danh về 0.');
+    try {
+      const { exportArchiveXlsx } = await import('../../utils/excelExport.js');
+      await exportArchiveXlsx(out.archive, user?.name ? `${user.name} (${user.code})` : user?.code);
+    } catch {
+      toast.warning('Đã lưu lịch sử nhưng chưa tải được Excel. Vào Lịch sử sự kiện để xuất lại.');
     }
   };
 

@@ -1,5 +1,6 @@
-import { EventSetting, Seat, Attendance } from '../models/index.js';
+import { EventSetting, Seat } from '../models/index.js';
 import { audit } from '../utils/audit.js';
+import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
 
 export const eventController = {
   // Cài đặt sự kiện (công khai). KHÔNG chứa token ghế.
@@ -68,20 +69,28 @@ export const eventController = {
   },
 
   // Bắt đầu sự kiện mới: xóa điểm danh sự kiện cũ, đặt tên mới và khóa tên.
-  // Sự kiện cũ không còn trong hệ thống nên không thể điểm danh hộ nữa (hãy xuất Excel trước).
+  // Điểm danh cũ được lưu vào lịch sử (chỉ xem/xuất Excel), không điểm danh hộ được nữa.
   async startNew(req, res, next) {
     try {
       const name = (req.body.eventName || '').trim();
       if (!name) return res.status(400).json({ message: 'Vui lòng nhập tên sự kiện mới.' });
-      let event = await EventSetting.findOne({ key: 'main' });
-      if (!event) event = new EventSetting({ key: 'main' });
-      const oldName = event.eventName;
-      const removed = await Attendance.deleteMany({});
-      event.eventName = name;
-      event.nameLocked = true;
-      event.startedAt = new Date();
-      await event.save();
-      await audit(req, 'event.start_new', `Bắt đầu sự kiện mới "${name}" (sự kiện trước "${oldName || ''}": xóa ${removed.deletedCount} bản ghi điểm danh)`);
+      const event = await withArchiveLock(async () => {
+        let ev = await EventSetting.findOne({ key: 'main' });
+        if (!ev) ev = new EventSetting({ key: 'main' });
+        const oldName = ev.eventName;
+        // Lưu lịch sử trước, xóa sau. Lưu lỗi thì ném lỗi, sự kiện cũ còn nguyên.
+        const archived = await archiveAndClear(req, 'start_new');
+        ev.eventName = name;
+        ev.nameLocked = true;
+        ev.startedAt = new Date();
+        await ev.save();
+        await audit(
+          req,
+          'event.start_new',
+          `Bắt đầu sự kiện mới "${name}" (sự kiện trước "${oldName || ''}": ${archived ? `đã lưu lịch sử ${archived.summary.checked} lượt điểm danh` : 'không có ai điểm danh nên không lưu'})`
+        );
+        return ev;
+      });
       res.json(event.toJSON());
     } catch (err) {
       next(err);

@@ -11,6 +11,7 @@ import seatRoutes from './routes/seats.routes.js';
 import eventRoutes from './routes/events.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
 import auditRoutes from './routes/audit.routes.js';
+import historyRoutes from './routes/history.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/seats', seatRoutes);
 app.use('/api/event', eventRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/history', historyRoutes);
 
 app.use('/api', notFound);
 app.use(errorHandler);

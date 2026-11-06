@@ -11,7 +11,9 @@ export function ConfirmProvider({ children }) {
     confirmText: 'Xác nhận',
     cancelText: 'Hủy bỏ',
     isDanger: false,
+    checkbox: null,
   });
+  const [checked, setChecked] = useState(false);
 
   const resolverRef = useRef(null);
 
@@ -21,9 +23,11 @@ export function ConfirmProvider({ children }) {
     confirmText = 'Xác nhận',
     cancelText = 'Hủy bỏ',
     isDanger = false,
+    checkbox = null, // { label, defaultChecked, hint } — có thì khi đồng ý trả về { checked }
   }) => {
     return new Promise((resolve) => {
       resolverRef.current = resolve;
+      setChecked(!!checkbox?.defaultChecked);
       setDialogState({
         isOpen: true,
         title,
@@ -31,6 +35,7 @@ export function ConfirmProvider({ children }) {
         confirmText,
         cancelText,
         isDanger,
+        checkbox,
       });
     });
   };
@@ -38,7 +43,7 @@ export function ConfirmProvider({ children }) {
   const handleClose = (result) => {
     setDialogState((prev) => ({ ...prev, isOpen: false }));
     if (resolverRef.current) {
-      resolverRef.current(result);
+      resolverRef.current(result && dialogState.checkbox ? { checked } : result);
       resolverRef.current = null;
     }
   };
@@ -80,6 +85,25 @@ export function ConfirmProvider({ children }) {
                 </p>
               </div>
             </div>
+
+            {dialogState.checkbox && (
+              <label className="flex items-start gap-3 p-3 border border-[#E2E8F0] rounded-lg bg-[#F6F8FA] cursor-pointer min-h-[48px]">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => setChecked(e.target.checked)}
+                  className="mt-1 w-5 h-5 accent-[#008BC5] shrink-0"
+                />
+                <span className="text-[16px] text-[#0F172A] font-semibold leading-snug">
+                  {dialogState.checkbox.label}
+                  {dialogState.checkbox.hint && (
+                    <span className="block text-[14px] font-normal text-[#334155] mt-1">
+                      {checked ? dialogState.checkbox.hint[1] : dialogState.checkbox.hint[0]}
+                    </span>
+                  )}
+                </span>
+              </label>
+            )}
 
             <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3">
               <button

@@ -144,7 +144,7 @@ export async function exportAttendanceXlsx({ eventName, exportedBy, rows, summar
   );
 
   const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  await save(wb, `diem-danh-${(eventName || 'Z176').replace(/\s+/g, '-')}${filters.length ? '-da-loc' : ''}-${ymd}.xlsx`);
+  await save(wb, `diem-danh-${(eventName || 'Z176').replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60)}${filters.length ? '-da-loc' : ''}-${ymd}.xlsx`);
 }
 
 /** Mẫu nhập nhân viên. Sheet đầu tiên là sheet được đọc khi nhập, tiêu đề ở dòng 1. */
@@ -203,4 +203,37 @@ export async function downloadEmployeeTemplate(blocks = [], departments = []) {
 
   wb.views = [{ activeTab: 0 }];
   await save(wb, 'Mau_Danh_Sach_Nhan_Vien_Z176_v3.xlsx');
+}
+
+/** Xuất một sự kiện đã lưu trong lịch sử (cùng định dạng file điểm danh hiện tại). */
+export async function exportArchiveXlsx(archive, exportedBy) {
+  const { findDuplicateSeats, recordNotes } = await import('./attendanceInsights.js');
+  const { seatBadgeText } = await import('./seatLabel.js');
+  const recs = archive.rows.filter((r) => r.checked).map((r) => ({ ...r, employeeCode: r.code }));
+  const dups = findDuplicateSeats(recs);
+  const hhmm = (d) => new Date(d).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+  const rows = archive.rows.map((r) => {
+    const rec = r.checked ? { ...r, employeeCode: r.code } : null;
+    const { dupText, proxyText } = recordNotes(rec, dups);
+    return {
+      code: r.code, name: r.name, block: r.block, dept: r.dept, group: r.group,
+      seat: rec ? (r.seatId ? seatBadgeText(r.seatId) : 'Không có ghế') : '—',
+      time: rec ? hhmm(r.checkedInAt) : '—',
+      status: rec ? 'Đã điểm danh' : 'Chưa điểm danh',
+      dupText, proxyText, proxyBy: r.checkedInBy, proxyReason: r.reason,
+    };
+  });
+  const when = new Date(archive.archivedAt).toLocaleString('vi-VN');
+  await exportAttendanceXlsx({
+    eventName: `${archive.eventName} (đã lưu lúc ${when})`,
+    exportedBy,
+    rows,
+    summary: {
+      required: archive.summary.required,
+      checked: archive.summary.checked,
+      unchecked: archive.rows.filter((r) => r.required && !r.checked).length,
+      dupSeats: dups.size,
+      proxy: archive.summary.proxy,
+    },
+  });
 }

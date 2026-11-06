@@ -1,6 +1,7 @@
 import { Attendance, Seat, EventSetting, Employee, Group } from '../models/index.js';
 import { ROLES } from '../constants/roles.server.js';
 import { audit } from '../utils/audit.js';
+import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
 
 export const attendanceController = {
   // Lấy danh sách điểm danh
@@ -175,15 +176,27 @@ export const attendanceController = {
     }
   },
 
-  // Đặt lại dữ liệu điểm danh
+  // Đặt lại điểm danh sự kiện HIỆN TẠI. body.save === true: lưu lịch sử trước rồi mới xóa.
   async reset(req, res, next) {
     try {
-      const result = await Attendance.deleteMany({});
-      await audit(req, 'attendance.reset', `Xóa ${result.deletedCount} bản ghi điểm danh`);
-      res.json({ message: 'Đã đặt lại dữ liệu điểm danh thành công.' });
+      const save = req.body?.save === true;
+      const out = await withArchiveLock(async () => {
+        if (save) {
+          const archive = await archiveAndClear(req, 'reset');
+          await audit(
+            req,
+            'attendance.reset',
+            archive ? `Đặt lại điểm danh, ĐÃ lưu lịch sử ${archive.summary.checked} lượt` : 'Đặt lại điểm danh (chưa có ai điểm danh nên không lưu)'
+          );
+          return { archive };
+        }
+        const result = await Attendance.deleteMany({});
+        await audit(req, 'attendance.reset', `Đặt lại điểm danh, KHÔNG lưu lịch sử, xóa ${result.deletedCount} bản ghi`);
+        return { archive: null };
+      });
+      res.json({ message: 'Đã đặt lại dữ liệu điểm danh thành công.', archive: out.archive });
     } catch (err) {
       next(err);
     }
   },
 };
-

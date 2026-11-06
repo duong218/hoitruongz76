@@ -43,6 +43,8 @@ export const AUDIT_ACTIONS = {
   'event.update': { label: 'Cập nhật sự kiện', tone: 'info' },
   'event.start_new': { label: 'Bắt đầu sự kiện mới', tone: 'warning' },
   'attendance.reset': { label: 'Đặt lại điểm danh', tone: 'error' },
+  'history.view': { label: 'Xem lịch sử sự kiện', tone: 'info' },
+  'history.export': { label: 'Xuất Excel lịch sử', tone: 'info' },
   'attendance.manual_checkin': { label: 'Điểm danh hộ', tone: 'warning' },
   'auth.login_failed': { label: 'Đăng nhập sai', tone: 'warning' },
 };

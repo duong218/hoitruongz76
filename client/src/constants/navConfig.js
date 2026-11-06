@@ -8,6 +8,7 @@ import {
   UserCheck,
   Calendar,
   ScrollText,
+  History,
 } from 'lucide-react';
 import { ROLES } from './roles.js';
 
@@ -70,5 +71,10 @@ export const MANAGER_NAV_ITEMS = [
     to: '/manager/event',
     label: 'Sự kiện',
     icon: Calendar,
+  },
+  {
+    to: '/manager/history',
+    label: 'Lịch sử sự kiện',
+    icon: History,
   },
 ];

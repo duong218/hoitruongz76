@@ -30,6 +30,7 @@ import { ManagerDashboardPage } from './pages/manager/ManagerDashboardPage.jsx';
 import { SeatingPage } from './pages/manager/SeatingPage.jsx';
 import { GroupsPage } from './pages/manager/GroupsPage.jsx';
 import { AttendancePage } from './pages/manager/AttendancePage.jsx';
+import { EventHistoryPage } from './pages/manager/EventHistoryPage.jsx';
 import { ManagerEventPage } from './pages/manager/ManagerEventPage.jsx';
 
 export default function App() {
@@ -91,6 +92,7 @@ export default function App() {
                 <Route path="groups" element={<GroupsPage />} />
                 <Route path="attendance" element={<AttendancePage />} />
                 <Route path="event" element={<ManagerEventPage />} />
+                <Route path="history" element={<EventHistoryPage />} />
               </Route>
 
               {/* Điều hướng mặc định */}

@@ -348,8 +348,8 @@ export function ManagerEventPage() {
               />
               <ul className="p-4 bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg space-y-2 text-[15px] text-[#7F1D1D] list-disc pl-9">
                 <li>Tên sự kiện mới sẽ <strong>bị khóa</strong>, không sửa lại được.</li>
-                <li><strong>{attendance.length} bản ghi điểm danh</strong> của "{event.eventName}" sẽ bị xóa, và sự kiện đó không thể điểm danh hộ nữa.</li>
-                <li>Hãy xuất Excel ở trang Điểm danh trước nếu cần lưu.</li>
+                <li><strong>{attendance.length} lượt điểm danh</strong> của "{event.eventName}" sẽ được <strong>lưu vào Lịch sử sự kiện</strong> (chỉ xem và xuất Excel, không điểm danh hộ được nữa).</li>
+                <li>Điểm danh của sự kiện mới bắt đầu lại từ 0. Không có ai điểm danh thì không lưu.</li>
               </ul>
               <label className="flex items-start gap-3 text-[15px] text-[#0F172A] cursor-pointer select-none">
                 <input
@@ -358,7 +358,7 @@ export function ManagerEventPage() {
                   onChange={(e) => setAckDelete(e.target.checked)}
                   className="w-5 h-5 mt-0.5 cursor-pointer"
                 />
-                <span>Tôi đã xuất Excel (hoặc không cần lưu) và đồng ý xóa điểm danh cũ.</span>
+                <span>Tôi hiểu: sự kiện cũ chuyển vào Lịch sử, tên sự kiện mới bị khóa.</span>
               </label>
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="secondary" onClick={() => { setShowNewModal(false); setAckDelete(false); }}>Hủy bỏ</Button>
