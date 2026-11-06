@@ -15,7 +15,7 @@ export function StaffLoginPage() {
     ? rawNextUrl
     : null;
 
-  const { loginStaff } = useAuth();
+  const { staff, loading: authLoading, loginStaff, logoutStaff } = useAuth();
 
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
@@ -43,21 +43,21 @@ export function StaffLoginPage() {
       if (safeNextUrl) {
         // Kiểm tra quyền đối với safeNextUrl
         if (safeNextUrl.startsWith('/admin') && staffUser.role !== ROLES.ADMIN) {
-          navigate('/manager/dashboard', { replace: true });
+          navigate('/manager/dashboard');
           return;
         }
         if (safeNextUrl.startsWith('/manager') && staffUser.role !== ROLES.MANAGER) {
-          navigate('/admin/dashboard', { replace: true });
+          navigate('/admin/dashboard');
           return;
         }
-        navigate(safeNextUrl, { replace: true });
+        navigate(safeNextUrl);
         return;
       }
 
       if (staffUser.role === ROLES.ADMIN) {
-        navigate('/admin/dashboard', { replace: true });
+        navigate('/admin/dashboard');
       } else {
-        navigate('/manager/dashboard', { replace: true });
+        navigate('/manager/dashboard');
       }
     } catch {
       // Bất kể lỗi gì (sai mã, sai pass, mã nhân viên thường): luôn hiện cùng 1 câu lỗi
@@ -72,6 +72,33 @@ export function StaffLoginPage() {
     setPassword(demoPass);
     setError('');
   };
+
+  // Chờ đọc xong phiên đã lưu để form không nháy lên rồi biến mất
+  if (authLoading) return null;
+
+  // Đã đăng nhập (và chưa hết hạn): không hiện lại form. Không tự chuyển đi để nút Back vẫn dùng được.
+  if (staff && !(staff.expiresAt && Date.now() > staff.expiresAt)) {
+    const home = staff.role === ROLES.ADMIN ? '/admin/dashboard' : '/manager/dashboard';
+    return (
+      <div className="min-h-screen bg-[#F6F8FA] flex flex-col justify-center items-center p-4 sm:p-6 text-[#0F172A]">
+        <div className="w-full max-w-md bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-6 sm:p-8 space-y-5 text-center">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#EAF6FF] text-[#008BC5]">
+            <ShieldCheck className="w-7 h-7" />
+          </div>
+          <h1 className="text-[22px] sm:text-[24px] font-extrabold text-[#0F172A] leading-tight">Bạn đã đăng nhập</h1>
+          <p className="text-[18px] text-[#334155]">
+            <strong>{staff.name}</strong> • {staff.role === ROLES.ADMIN ? 'Quản trị viên' : 'Quản lý'}
+          </p>
+          <Button type="button" variant="primary" fullWidth size="lg" icon={ShieldCheck} onClick={() => navigate(home)}>
+            Vào trang quản trị
+          </Button>
+          <Button type="button" variant="secondary" fullWidth icon={User} onClick={() => logoutStaff()}>
+            Đăng nhập tài khoản khác
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F6F8FA] flex flex-col justify-center items-center p-4 sm:p-6 text-[#0F172A]">
