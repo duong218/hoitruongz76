@@ -67,7 +67,7 @@ export function GroupList({
           return (
             <div
               key={group.id}
-              className="relative overflow-hidden bg-white border border-[#E2E8F0] rounded-xl p-5 pt-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] hover:shadow-[0_6px_16px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4"
+              className="relative overflow-hidden bg-white border border-[#E2E8F0] rounded-xl p-5 pt-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] hover:shadow-[0_6px_16px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 transition-all motion-reduce:transition-none motion-reduce:hover:translate-y-0 flex flex-col justify-between space-y-4"
             >
               <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: group.color }} />
               <div className="space-y-3">

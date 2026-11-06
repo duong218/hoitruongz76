@@ -144,6 +144,41 @@ export function validateImportRow(
 }
 
 /**
+ * Kiểm tra lại toàn bộ các dòng (gọi lại mỗi khi admin sửa trực tiếp trong bảng xem trước).
+ * Mã trùng với hệ thống hoặc trùng trong file đều bị báo lỗi (dòng xuất hiện sau bị báo).
+ * @param {Array<{ code: string, name: string, departmentName?: string, blockName?: string, role?: string }>} rows
+ * @returns {Array<object>} mỗi dòng kèm isValid, error, parsed
+ */
+export function revalidateRows(rows, existingCodes = [], blocks = [], departments = []) {
+  const existing = new Set(existingCodes.map((c) => c.toUpperCase()));
+  const seen = new Set();
+  return rows.map((r) => {
+    const check = validateImportRow(r, existing, blocks, departments, seen);
+    if (check.parsed.code) seen.add(check.parsed.code);
+    // Lỗi "không tồn tại": cho biết có tạo mới được Phòng ban / Khối không
+    const orgErr = !check.isValid && /không tồn tại/.test(check.error || '');
+    return { ...r, ...check, ...(orgErr ? findMissingOrg(r, blocks, departments) : {}) };
+  });
+}
+
+/**
+ * Phòng ban / Khối ghi trong file nhưng chưa có trên hệ thống.
+ * Chỉ cho tạo mới khi thiếu ĐÚNG MỘT trong hai (cái còn lại phải có sẵn). Thiếu cả hai thì vẫn là lỗi.
+ * @returns {{ createDept: boolean, createBlock: boolean }}
+ */
+export function findMissingOrg(row, blocks = [], departments = []) {
+  const has = (list, n) => list.some((x) => x.name.toLowerCase() === n.toLowerCase());
+  const d = (row.departmentName || '').trim();
+  const b = (row.blockName || '').trim();
+  const missingDept = !!d && !has(departments, d);
+  const missingBlock = !!b && !has(blocks, b);
+  return {
+    createDept: missingDept && !!b && !missingBlock, // phòng ban mới, thuộc Khối đã có
+    createBlock: missingBlock && !!d && !missingDept, // Khối mới, phòng ban đã có
+  };
+}
+
+/**
  * Đọc và phân tích file Excel theo schema mới
  * @param {File} file
  * @param {string[]} existingEmployeeCodes

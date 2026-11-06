@@ -78,6 +78,18 @@ export function EmployeesPage() {
     }
   };
 
+  const handleAddBlock = async (data) => {
+    const b = await addBlock(data);
+    toast.success(`Đã thêm Khối "${b.name}".`);
+    return b;
+  };
+
+  const handleAddDepartment = async (data) => {
+    const d = await addDepartment(data);
+    toast.success(`Đã thêm Phòng ban "${d.name}".`);
+    return d;
+  };
+
   const handleImportValid = async (validRows) => {
     const result = await importEmployees(validRows);
     toast.success(`Đã nhập thành công ${result.importedCount} nhân sự từ file Excel.`);
@@ -112,16 +124,8 @@ export function EmployeesPage() {
         initialData={editingEmployee}
         blocks={blocks}
         departments={departments}
-        onAddBlock={async (data) => {
-          const b = await addBlock(data);
-          toast.success(`Đã thêm Khối "${b.name}".`);
-          return b;
-        }}
-        onAddDepartment={async (data) => {
-          const d = await addDepartment(data);
-          toast.success(`Đã thêm Phòng ban "${d.name}".`);
-          return d;
-        }}
+        onAddBlock={handleAddBlock}
+        onAddDepartment={handleAddDepartment}
         onSubmit={handleFormSubmit}
         currentStaffCode={staff?.code || ''}
       />
@@ -133,6 +137,8 @@ export function EmployeesPage() {
         blocks={blocks}
         departments={departments}
         onImportValid={handleImportValid}
+        onAddBlock={handleAddBlock}
+        onAddDepartment={handleAddDepartment}
       />
     </div>
   );

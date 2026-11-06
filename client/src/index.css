@@ -13,6 +13,14 @@
     -moz-osx-font-smoothing: grayscale;
     touch-action: manipulation;
   }
+
+  h1, h2, h3 {
+    letter-spacing: -0.015em;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* ========================================================

@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 import { summarizeSeats, formatSeatRanges } from './seatSummary.js';
-import { validateImportRow } from './excel.js';
+import { validateImportRow, revalidateRows, findMissingOrg } from './excel.js';
 import { resolveGroup } from './resolveGroup.js';
 import { validateCheckIn, CHECKIN_CODES } from './checkIn.js';
 import { verifyStaffLogin } from './staffAuth.js';
@@ -314,6 +314,35 @@ console.log('--- Đang chạy kiểm thử logic toàn diện (Z176 Comprehensiv
   }
 
   await testAttendeeLookup();
+}
+
+// ==========================================
+// Nhập Excel: trùng mã -> báo lỗi, sửa mã xong thì hết lỗi
+// ==========================================
+{
+  const blocks = [{ id: 'b-cq', name: 'Khối cơ quan' }];
+  const depts = [{ id: 'd-kh', name: 'Phòng Kế hoạch', blockId: 'b-cq' }];
+  const rows = [
+    { code: 'NV010', name: 'An', departmentName: 'Phòng Kế hoạch' },
+    { code: 'nv010', name: 'Bình', departmentName: 'Phòng Kế hoạch' }, // trùng trong file
+    { code: 'NV001', name: 'Cường', departmentName: 'Phòng Kế hoạch' }, // trùng hệ thống
+  ];
+  const bad = revalidateRows(rows, ['NV001'], blocks, depts);
+  assert.deepStrictEqual(bad.map((r) => r.isValid), [true, false, false]);
+  rows[1].code = 'NV011';
+  rows[2].code = 'NV012';
+  assert(revalidateRows(rows, ['NV001'], blocks, depts).every((r) => r.isValid), 'Sửa mã xong phải hết lỗi');
+  console.log('✓ Nhập Excel: trùng mã bị chặn, sửa xong hợp lệ.');
+
+  // Thiếu đúng 1 trong 2 -> cho tạo mới; thiếu cả 2 (hoặc phòng ban mới mà Khối trống) -> chỉ báo lỗi
+  const one = (d, b) => revalidateRows([{ code: 'NV900', name: 'X', departmentName: d, blockName: b }], [], blocks, depts)[0];
+  assert.strictEqual(one('Phòng Mới', 'Khối cơ quan').createDept, true);
+  assert.strictEqual(one('Phòng Kế hoạch', 'Khối Mới').createBlock, true);
+  assert.deepStrictEqual(findMissingOrg({ departmentName: 'Phòng Mới', blockName: 'Khối Mới' }, blocks, depts), { createDept: false, createBlock: false });
+  assert.strictEqual(one('Phòng Mới', '').createDept, false);
+  const created = [{ id: 'd-moi', name: 'Phòng Mới', blockId: 'b-cq' }, ...depts];
+  assert.strictEqual(revalidateRows([{ code: 'NV900', name: 'X', departmentName: 'phòng mới', blockName: 'Khối cơ quan' }], [], blocks, created)[0].isValid, true);
+  console.log('✓ Nhập Excel: thiếu 1 trong 2 -> tạo mới được, thiếu cả 2 -> lỗi.');
 }
 
 console.log('--- TẤT CẢ KIỂM THỬ LOGIC Z176 ĐÃ VƯỢT QUA XUẤT SẮC! ---');

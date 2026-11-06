@@ -9,7 +9,10 @@ import { Button } from '../../components/ui/Button.jsx';
 import { Select } from '../../components/ui/Select.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { EmptyState } from '../../components/ui/EmptyState.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { Plus, Edit2, Trash2, Users, Building2, GitFork, AlertCircle } from 'lucide-react';
+
+const PAGE_SIZE = 10;
 
 export function OrgPage() {
   const {
@@ -44,6 +47,19 @@ export function OrgPage() {
     blocks.forEach((b) => map.set(b.id, b.name));
     return map;
   }, [blocks]);
+
+  // Tab Khối / Phòng ban, mỗi tab phân trang riêng
+  const [tab, setTab] = useState('block');
+  const [blockPage, setBlockPage] = useState(1);
+  const [deptPage, setDeptPage] = useState(1);
+  const bPages = Math.max(1, Math.ceil(blocks.length / PAGE_SIZE));
+  const dPages = Math.max(1, Math.ceil(departments.length / PAGE_SIZE));
+  const bPage = Math.min(blockPage, bPages);
+  const dPage = Math.min(deptPage, dPages);
+  const tabs = [
+    { key: 'block', label: 'Khối', icon: GitFork },
+    { key: 'dept', label: 'Phòng ban / Phân xưởng', icon: Building2 },
+  ];
 
   // Modal Khối
   const [blockModalOpen, setBlockModalOpen] = useState(false);
@@ -178,7 +194,27 @@ export function OrgPage() {
         </div>
       )}
 
+      <div role="tablist" className="inline-flex flex-wrap p-1 gap-1 bg-[#F1F5F9] rounded-xl">
+        {tabs.map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => setTab(key)}
+            className={`min-h-[44px] px-4 inline-flex items-center gap-2 text-[15px] font-semibold rounded-lg transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#008BC5] ${
+              tab === key ? 'bg-white text-[#008BC5] shadow-[0_1px_3px_rgba(15,23,42,0.1)]' : 'text-[#475569] hover:text-[#0F172A]'
+            }`}
+          >
+            <Icon className="w-4 h-4" aria-hidden="true" />
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* KHỐI */}
+      {tab === 'block' && (
+      <div className="space-y-4">
       <OrgSection
         icon={GitFork}
         title="Danh mục Khối"
@@ -189,7 +225,7 @@ export function OrgPage() {
         isEmpty={blocks.length === 0}
         empty={{ icon: GitFork, title: 'Chưa có Khối nào', description: 'Tạo Khối đầu tiên để bắt đầu phân bổ chỗ ngồi.', actionText: 'Thêm Khối', onAction: handleOpenAddBlock, actionIcon: Plus }}
       >
-        {blocks.map((b) => (
+        {blocks.slice((bPage - 1) * PAGE_SIZE, bPage * PAGE_SIZE).map((b) => (
           <OrgRow
             key={b.id}
             name={b.name}
@@ -199,19 +235,24 @@ export function OrgPage() {
           />
         ))}
       </OrgSection>
+      <Pagination page={bPage} pages={bPages} total={blocks.length} limit={PAGE_SIZE} onChange={setBlockPage} />
+      </div>
+      )}
 
       {/* PHÒNG BAN */}
+      {tab === 'dept' && (
+      <div className="space-y-4">
       <OrgSection
         icon={Building2}
         title="Phòng ban / Phân xưởng"
         count={departments.length}
         description="Dùng để lọc và tổng hợp báo cáo điểm danh. Mỗi phòng ban thuộc một Khối mặc định."
-        action={<Button variant="secondary" size="sm" onClick={handleOpenAddDept} icon={Plus} disabled={blocks.length === 0}>Thêm Phòng ban</Button>}
+        action={<Button variant="primary" size="sm" onClick={handleOpenAddDept} icon={Plus} disabled={blocks.length === 0}>Thêm Phòng ban</Button>}
         loading={loading}
         isEmpty={departments.length === 0}
         empty={{ icon: Building2, title: 'Chưa có Phòng ban nào', description: blocks.length === 0 ? 'Hãy tạo Khối trước, sau đó thêm Phòng ban.' : 'Thêm Phòng ban để lọc và tổng hợp báo cáo.', actionText: blocks.length === 0 ? undefined : 'Thêm Phòng ban', onAction: handleOpenAddDept, actionIcon: Plus }}
       >
-        {departments.map((d) => (
+        {departments.slice((dPage - 1) * PAGE_SIZE, dPage * PAGE_SIZE).map((d) => (
           <OrgRow
             key={d.id}
             name={d.name}
@@ -223,6 +264,9 @@ export function OrgPage() {
           />
         ))}
       </OrgSection>
+      <Pagination page={dPage} pages={dPages} total={departments.length} limit={PAGE_SIZE} onChange={setDeptPage} />
+      </div>
+      )}
 
       {/* Modal Khối */}
       <Modal

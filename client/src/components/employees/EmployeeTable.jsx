@@ -6,6 +6,12 @@ import { Select } from '../ui/Select.jsx';
 import { EmptyState } from '../ui/EmptyState.jsx';
 import { ROLE_LABELS, ROLES } from '../../constants/roles.js';
 
+// Chữ cái đầu của họ và tên (VD: Nguyễn Văn An -> NA)
+const initials = (name = '') => {
+  const w = name.trim().split(/\s+/);
+  return ((w[0]?.[0] || '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase();
+};
+
 export function EmployeeTable({
   employees = [],
   blocks = [],
@@ -176,7 +182,7 @@ export function EmployeeTable({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
-                  <th className="py-3.5 pl-4 w-10">
+                  <th className="py-3 pl-4 w-10">
                     <input
                       type="checkbox"
                       checked={allPicked}
@@ -186,37 +192,36 @@ export function EmployeeTable({
                       className="w-5 h-5 accent-[#008BC5] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                     />
                   </th>
-                  <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-[13px] font-semibold text-[#64748B] uppercase tracking-wider">
                     Mã NV
                   </th>
-                  <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-[13px] font-semibold text-[#64748B] uppercase tracking-wider">
                     Họ và tên
                   </th>
-                  <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-[13px] font-semibold text-[#64748B] uppercase tracking-wider">
                     Phòng ban
                   </th>
-                  <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-[13px] font-semibold text-[#64748B] uppercase tracking-wider">
                     Khối
                   </th>
-                  <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider">
+                  <th className="py-3 px-4 text-[13px] font-semibold text-[#64748B] uppercase tracking-wider">
                     Vai trò
                   </th>
-                  <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider text-right">
+                  <th className="py-3 px-4 text-[13px] font-semibold text-[#64748B] uppercase tracking-wider text-right">
                     Thao tác
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.map((emp, index) => {
+                {filteredEmployees.map((emp) => {
                   const blockName = emp.blockId ? blockMap.get(emp.blockId) : null;
                   const deptName = emp.departmentId ? deptMap.get(emp.departmentId) : null;
-                  const isZebra = index % 2 === 1;
 
                   return (
                     <tr
                       key={emp.code}
-                      className={`border-b border-[#E2E8F0] hover:bg-[#EAF6FF]/50 transition-colors ${
-                        isZebra ? 'bg-[#F6F8FA]' : 'bg-[#FFFFFF]'
+                      className={`border-b border-[#E2E8F0] last:border-b-0 transition-colors ${
+                        selected.has(emp.code) && !isLocked(emp) ? 'bg-[#EAF6FF]/60' : 'bg-white hover:bg-[#F8FAFC]'
                       }`}
                     >
                       <td className="py-3 pl-4 w-10">
@@ -230,11 +235,19 @@ export function EmployeeTable({
                           className="w-5 h-5 accent-[#008BC5] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
                         />
                       </td>
-                      <td className="py-3 px-4 text-[16px] font-bold text-[#0F172A] font-mono">
+                      <td className="py-3 px-4 text-[14px] font-semibold text-[#334155] font-mono">
                         {emp.code}
                       </td>
                       <td className="py-3 px-4 text-[16px] font-medium text-[#0F172A]">
-                        {emp.name}
+                        <div className="flex items-center gap-3">
+                          <span
+                            aria-hidden="true"
+                            className="w-8 h-8 rounded-full bg-[#F1F5F9] border border-[#E2E8F0] text-[#475569] text-[12px] font-bold flex items-center justify-center shrink-0 select-none"
+                          >
+                            {initials(emp.name)}
+                          </span>
+                          {emp.name}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-[15px] text-[#334155]">
                         {deptName || <span className="text-[#94A3B8] italic">—</span>}
@@ -265,7 +278,7 @@ export function EmployeeTable({
                             type="button"
                             onClick={() => onEdit(emp)}
                             aria-label={`Sửa thông tin ${emp.name}`}
-                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg transition-colors cursor-pointer"
+                            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#64748B] hover:text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg transition-colors cursor-pointer"
                           >
                             <Edit2 className="w-5 h-5" />
                           </button>
@@ -281,7 +294,7 @@ export function EmployeeTable({
                               type="button"
                               onClick={() => onDelete(emp)}
                               aria-label={`Xóa nhân viên ${emp.name}`}
-                              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg transition-colors cursor-pointer"
+                              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#64748B] hover:text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
@@ -347,7 +360,7 @@ export function EmployeeTable({
                       type="button"
                       onClick={() => onEdit(emp)}
                       aria-label={`Sửa ${emp.name}`}
-                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg cursor-pointer"
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#64748B] hover:text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg cursor-pointer"
                     >
                       <Edit2 className="w-5 h-5" />
                     </button>
@@ -363,7 +376,7 @@ export function EmployeeTable({
                         type="button"
                         onClick={() => onDelete(emp)}
                         aria-label={`Xóa ${emp.name}`}
-                        className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg cursor-pointer"
+                        className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#64748B] hover:text-[#E53E3E] hover:bg-[#FEECEC] rounded-lg cursor-pointer"
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
