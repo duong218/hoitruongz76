@@ -9,7 +9,7 @@ import { Pagination } from '../../components/ui/Pagination.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { buildAuditParams, groupByDay, formatTime } from '../../utils/auditFormat.js';
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 20;
 
 export function AuditPage() {
   const { employees } = useEmployees();
