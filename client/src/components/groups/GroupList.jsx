@@ -67,14 +67,15 @@ export function GroupList({
           return (
             <div
               key={group.id}
-              className="bg-white border border-[#E2E8F0] rounded-xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)] flex flex-col justify-between space-y-4"
+              className="relative overflow-hidden bg-white border border-[#E2E8F0] rounded-xl p-5 pt-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] hover:shadow-[0_6px_16px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 transition-all flex flex-col justify-between space-y-4"
             >
+              <div className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: group.color }} />
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-3 min-w-0">
                     <span
-                      className="w-6 h-6 rounded-lg shrink-0 border border-black/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)]"
-                      style={{ backgroundColor: group.color }}
+                      className="w-7 h-7 rounded-lg shrink-0 ring-4 ring-offset-0 shadow-[0_1px_2px_rgba(0,0,0,0.15)]"
+                      style={{ backgroundColor: group.color, "--tw-ring-color": `${group.color}33` }}
                     />
                     <h4 className="text-[18px] font-bold text-[#0F172A] truncate">
                       {group.name}
@@ -98,7 +99,8 @@ export function GroupList({
                         assignedBlockNames.map((name, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-[13px] font-semibold bg-[#F1F5F9] text-[#334155] rounded border border-[#E2E8F0]"
+                            className="px-2.5 py-1 text-[13px] font-semibold text-[#334155] rounded-md border"
+                            style={{ backgroundColor: `${group.color}1A`, borderColor: `${group.color}55` }}
                           >
                             {name}
                           </span>
@@ -128,15 +130,15 @@ export function GroupList({
                 </div>
 
                 {/* Thống kê: N người - M ghế (N tính bằng resolveGroup) */}
-                <div className="flex items-center justify-between text-[15px] text-[#334155] bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
-                  <div className="flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-[#64748B]" />
-                    <span><strong>{empCount}</strong> người</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <Armchair className="w-4 h-4 text-[#64748B]" />
-                    <span><strong>{seatCount}</strong> ghế</span>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[[Users, empCount, 'người'], [Armchair, seatCount, 'ghế']].map(([Icon, n, label]) => (
+                    <div key={label} className="flex items-center gap-2.5 bg-[#F8FAFC] p-3 rounded-lg border border-[#E2E8F0]">
+                      <Icon className="w-5 h-5 shrink-0" style={{ color: group.color }} />
+                      <span className="text-[15px] text-[#334155]">
+                        <strong className="text-[20px] font-extrabold text-[#0F172A] mr-1">{n}</strong>{label}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
 

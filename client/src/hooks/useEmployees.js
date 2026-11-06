@@ -44,6 +44,13 @@ export function useEmployees() {
     await fetchEmployees();
   };
 
+  // Xóa nhiều: dùng lại API xóa từng người, tải lại danh sách 1 lần. Trả về số người xóa lỗi.
+  const deleteEmployees = async (codes) => {
+    const results = await Promise.allSettled(codes.map((c) => employeeService.deleteEmployee(c)));
+    await fetchEmployees();
+    return results.filter((r) => r.status === 'rejected').length;
+  };
+
   const importEmployees = async (validRows) => {
     const result = await employeeService.importEmployees(validRows);
     await fetchEmployees();
@@ -58,6 +65,7 @@ export function useEmployees() {
     addEmployee,
     updateEmployee,
     deleteEmployee,
+    deleteEmployees,
     importEmployees,
   };
 }

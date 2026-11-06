@@ -10,7 +10,7 @@ import { ImportExcelModal } from '../../components/employees/ImportExcelModal.js
 
 export function EmployeesPage() {
   const { staff } = useAuth();
-  const { employees, addEmployee, updateEmployee, deleteEmployee, importEmployees } = useEmployees();
+  const { employees, addEmployee, updateEmployee, deleteEmployee, deleteEmployees, importEmployees } = useEmployees();
   const { blocks, departments, addBlock, addDepartment } = useOrg();
   const toast = useToast();
   const { confirm } = useConfirm();
@@ -48,6 +48,26 @@ export function EmployeesPage() {
     }
   };
 
+  // Xóa nhiều người (đã chọn hoặc tất cả đang hiển thị). Trả về true nếu đã xóa.
+  const handleDeleteMany = async (list, isAll) => {
+    const ok = await confirm({
+      title: isAll ? 'Xóa tất cả nhân sự' : 'Xóa nhân sự đã chọn',
+      message: `Bạn sắp xóa ${list.length} nhân sự${isAll ? ' đang hiển thị trong danh sách' : ' đã chọn'}. Hành động này không thể hoàn tác. Bạn có chắc chắn muốn tiếp tục không?`,
+      confirmText: `Xóa ${list.length} người`,
+      cancelText: 'Hủy bỏ',
+      isDanger: true,
+    });
+    if (!ok) return false;
+    try {
+      const failed = await deleteEmployees(list.map((e) => e.code));
+      if (failed) toast.error(`Đã xóa ${list.length - failed} người, ${failed} người xóa lỗi.`);
+      else toast.success(`Đã xóa ${list.length} nhân sự.`);
+    } catch (err) {
+      toast.error(err.message || 'Lỗi khi xóa nhân sự.');
+    }
+    return true;
+  };
+
   const handleFormSubmit = async (data) => {
     if (editingEmployee) {
       await updateEmployee(editingEmployee.code, data);
@@ -81,6 +101,7 @@ export function EmployeesPage() {
         onAddNew={handleAddNew}
         onEdit={handleEdit}
         onDelete={handleDelete}
+        onDeleteMany={handleDeleteMany}
         onOpenImport={() => setImportModalOpen(true)}
         currentStaffCode={staff?.code || ''}
       />

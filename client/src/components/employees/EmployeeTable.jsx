@@ -12,6 +12,7 @@ export function EmployeeTable({
   departments = [],
   onEdit,
   onDelete,
+  onDeleteMany,
   onAddNew,
   onOpenImport,
   currentStaffCode = '',
@@ -19,6 +20,7 @@ export function EmployeeTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBlockId, setSelectedBlockId] = useState('ALL');
   const [selectedDeptId, setSelectedDeptId] = useState('ALL');
+  const [selected, setSelected] = useState(new Set());
 
   const blockMap = useMemo(() => {
     const map = new Map();
@@ -51,6 +53,24 @@ export function EmployeeTable({
       return matchSearch && matchBlock && matchDept;
     });
   }, [employees, searchTerm, selectedBlockId, selectedDeptId]);
+
+  // Chọn để xóa: chỉ tính người đang hiển thị; khóa tài khoản đang đăng nhập và mọi tài khoản Quản lý / Quản trị viên
+  const isLocked = (emp) =>
+    emp.code?.toUpperCase() === currentStaffCode?.toUpperCase() || emp.role !== ROLES.EMPLOYEE;
+  const deletable = filteredEmployees.filter((e) => !isLocked(e));
+  const picked = deletable.filter((e) => selected.has(e.code));
+  const allPicked = deletable.length > 0 && picked.length === deletable.length;
+  const toggle = (code) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  const toggleAll = () => setSelected(allPicked ? new Set() : new Set(deletable.map((e) => e.code)));
+  const runDelete = async (list, isAll) => {
+    if (await onDeleteMany(list, isAll)) setSelected(new Set());
+  };
 
   return (
     <div className="space-y-4">
@@ -124,8 +144,20 @@ export function EmployeeTable({
       </div>
 
       {/* Hiển thị số lượng kết quả */}
-      <div className="flex items-center justify-between text-[14px] text-[#64748B]">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[14px] text-[#64748B]">
         <span>Hiển thị <strong>{filteredEmployees.length}</strong> / {employees.length} người</span>
+        {deletable.length > 0 && (
+          <div className="flex items-center gap-2">
+            {picked.length > 0 && (
+              <Button variant="danger" size="sm" icon={Trash2} onClick={() => runDelete(picked, false)}>
+                Xóa đã chọn ({picked.length})
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" icon={Trash2} onClick={() => runDelete(deletable, true)}>
+              Xóa tất cả ({deletable.length})
+            </Button>
+          </div>
+        )}
       </div>
 
       {filteredEmployees.length === 0 ? (
@@ -144,6 +176,16 @@ export function EmployeeTable({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-[#E2E8F0] bg-[#F8FAFC]">
+                  <th className="py-3.5 pl-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allPicked}
+                      onChange={toggleAll}
+                      disabled={deletable.length === 0}
+                      aria-label="Chọn tất cả nhân sự đang hiển thị"
+                      className="w-5 h-5 accent-[#008BC5] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                    />
+                  </th>
                   <th className="py-3.5 px-4 text-[14px] font-bold text-[#475569] uppercase tracking-wider">
                     Mã NV
                   </th>
@@ -177,6 +219,17 @@ export function EmployeeTable({
                         isZebra ? 'bg-[#F6F8FA]' : 'bg-[#FFFFFF]'
                       }`}
                     >
+                      <td className="py-3 pl-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(emp.code) && !isLocked(emp)}
+                          onChange={() => toggle(emp.code)}
+                          disabled={isLocked(emp)}
+                          aria-label={`Chọn ${emp.name}`}
+                          title={isLocked(emp) ? 'Tài khoản Quản lý / Quản trị không xóa hàng loạt' : undefined}
+                          className="w-5 h-5 accent-[#008BC5] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        />
+                      </td>
                       <td className="py-3 px-4 text-[16px] font-bold text-[#0F172A] font-mono">
                         {emp.code}
                       </td>
@@ -254,7 +307,16 @@ export function EmployeeTable({
                   className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div>
+                    <input
+                      type="checkbox"
+                      checked={selected.has(emp.code) && !isLocked(emp)}
+                      onChange={() => toggle(emp.code)}
+                      disabled={isLocked(emp)}
+                      aria-label={`Chọn ${emp.name}`}
+                          title={isLocked(emp) ? 'Tài khoản Quản lý / Quản trị không xóa hàng loạt' : undefined}
+                      className="w-5 h-5 accent-[#008BC5] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 mt-1"
+                    />
+                    <div className="flex-1">
                       <span className="text-[14px] font-bold text-[#008BC5] font-mono">
                         {emp.code}
                       </span>
