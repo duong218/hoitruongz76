@@ -194,8 +194,8 @@ Hội trường gồm tổng cộng **200 chỗ ngồi**:
 | **GUEST** (Khách mời) | `/login`, `/seat` | Tra cứu chỗ ngồi khu vực khách mời (mặc định không bắt buộc quét điểm danh). |
 
 ### Tài khoản mẫu ban đầu (khi chạy Seed dữ liệu)
-- **Quản trị viên**: Mã `ADMIN` / Mật khẩu: `12345678`
-- **Quản lý hội trường**: Mã `QL01` / Mật khẩu: `12345678`
+- **Quản trị viên**: Mã `` / Mật khẩu: ``
+- **Quản lý hội trường**: Mã `` / Mật khẩu: ``
 - **Nhân viên mẫu**: Mã `NV001` đến `NV008` (đăng nhập trực tiếp bằng mã, không cần mật khẩu).
 
 ---
@@ -229,8 +229,8 @@ PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/hoitruongz76
 CLIENT_ORIGIN=http://localhost:3000
 JWT_SECRET=your_super_secret_jwt_key_here
-SEED_ADMIN_PASSWORD=12345678
-SEED_MANAGER_PASSWORD=12345678
+SEED_ADMIN_PASSWORD=
+SEED_MANAGER_PASSWORD=
 ```
 
 Kiểm tra file `client/.env` (nếu cần thay đổi cổng API):
