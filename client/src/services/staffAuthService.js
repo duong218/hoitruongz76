@@ -63,6 +63,16 @@ export const staffAuthService = {
    * @returns {Promise<object>}
    */
   async changePassword(currentPassword, newPassword) {
-    return api.post('/auth/change-password', { currentPassword, newPassword });
+    const data = await api.post('/auth/change-password', { currentPassword, newPassword });
+    // Server thu hồi token cũ khi đổi mật khẩu và trả token mới: lưu lại để không bị đăng xuất
+    if (data?.token) {
+      try {
+        const session = JSON.parse(localStorage.getItem(STORAGE_KEY_STAFF));
+        if (session) localStorage.setItem(STORAGE_KEY_STAFF, JSON.stringify({ ...session, token: data.token }));
+      } catch {
+        /* bỏ qua, người dùng sẽ đăng nhập lại */
+      }
+    }
+    return data;
   },
 };

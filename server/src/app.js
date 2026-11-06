@@ -15,6 +15,8 @@ import historyRoutes from './routes/history.routes.js';
 import { notFound, errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
+// Chạy sau Caddy (1 lớp proxy): lấy IP thật của người dùng cho rate limit
+app.set('trust proxy', 1);
 
 app.use(helmet());
 app.use(cors({ origin: env.CLIENT_ORIGIN, credentials: true }));

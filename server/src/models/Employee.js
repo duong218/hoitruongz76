@@ -11,8 +11,10 @@ const employeeSchema = new mongoose.Schema(
     blockId: { type: String, default: null }, // trỏ tới Block.id
     // Chỉ ADMIN / MANAGER có. select:false nên mặc định không bao giờ được đọc ra.
     passwordHash: { type: String, select: false },
+    // Mốc đổi mật khẩu gần nhất: token cấp trước mốc này bị từ chối
+    passwordChangedAt: { type: Date, default: null },
   },
-  { timestamps: true, toJSON: cleanJSON(['passwordHash', 'createdAt', 'updatedAt']) }
+  { timestamps: true, toJSON: cleanJSON(['passwordHash', 'passwordChangedAt', 'createdAt', 'updatedAt']) }
 );
 
 export const Employee = mongoose.model('Employee', employeeSchema);

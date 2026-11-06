@@ -15,6 +15,18 @@ export const staffLoginLimiter = rateLimit({
 });
 
 /**
+ * Khách mời: không có mật khẩu nên giới hạn theo IP để không bị spam tạo phiên.
+ * Mức nới vì khách cùng một hội trường thường dùng chung Wi-Fi/IP.
+ */
+export const guestLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  limit: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Có quá nhiều lượt vào cùng lúc. Vui lòng thử lại sau vài phút.' },
+});
+
+/**
  * 2. Tra cứu mã nhân viên (Attendee Lookup):
  * Định danh theo MÃ NHÂN VIÊN (keyGenerator: req.body.code) thay vì theo IP.
  * Điều này đảm bảo: Dù 200 nhân viên cùng kết nối chung một mạng Wifi công ty (chung IP NAT/Gateway),

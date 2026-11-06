@@ -2,6 +2,22 @@ import { EventSetting, Seat } from '../models/index.js';
 import { audit } from '../utils/audit.js';
 import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
 
+// Chỉ nhận http/https, tối đa 200 ký tự, không kèm tài khoản. Chuỗi rỗng = xóa đường dẫn.
+function validateAppUrl(value) {
+  if (typeof value !== 'string') return 'Địa chỉ ứng dụng phải là chuỗi.';
+  const s = value.trim();
+  if (s === '') return null;
+  if (s.length > 200) return 'Địa chỉ ứng dụng tối đa 200 ký tự.';
+  try {
+    const u = new URL(s);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'Địa chỉ ứng dụng chỉ được bắt đầu bằng http:// hoặc https://.';
+    if (u.username || u.password) return 'Địa chỉ ứng dụng không được chứa tên đăng nhập hoặc mật khẩu.';
+    return null;
+  } catch {
+    return 'Địa chỉ ứng dụng không hợp lệ.';
+  }
+}
+
 export const eventController = {
   // Cài đặt sự kiện (công khai). KHÔNG chứa token ghế.
   async getSettings(req, res, next) {
@@ -40,6 +56,16 @@ export const eventController = {
   async updateSettings(req, res, next) {
     try {
       const { eventName, guestEnabled, checkInOpen, appUrl } = req.body;
+      const bad = (message) => res.status(400).json({ message });
+      if (eventName !== undefined && (typeof eventName !== 'string' || !eventName.trim() || eventName.trim().length > 150)) {
+        return bad('Tên sự kiện phải là chữ, từ 1 đến 150 ký tự.');
+      }
+      if (guestEnabled !== undefined && typeof guestEnabled !== 'boolean') return bad('guestEnabled phải là true hoặc false.');
+      if (checkInOpen !== undefined && typeof checkInOpen !== 'boolean') return bad('checkInOpen phải là true hoặc false.');
+      if (appUrl !== undefined) {
+        const urlError = validateAppUrl(appUrl);
+        if (urlError) return bad(urlError);
+      }
       let event = await EventSetting.findOne({ key: 'main' });
       if (!event) {
         event = new EventSetting({ key: 'main' });
@@ -72,8 +98,9 @@ export const eventController = {
   // Điểm danh cũ được lưu vào lịch sử (chỉ xem/xuất Excel), không điểm danh hộ được nữa.
   async startNew(req, res, next) {
     try {
-      const name = (req.body.eventName || '').trim();
+      const name = typeof req.body.eventName === 'string' ? req.body.eventName.trim() : '';
       if (!name) return res.status(400).json({ message: 'Vui lòng nhập tên sự kiện mới.' });
+      if (name.length > 150) return res.status(400).json({ message: 'Tên sự kiện tối đa 150 ký tự.' });
       const event = await withArchiveLock(async () => {
         let ev = await EventSetting.findOne({ key: 'main' });
         if (!ev) ev = new EventSetting({ key: 'main' });

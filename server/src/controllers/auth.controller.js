@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { ROLES, GUEST_GROUP_ID, GUEST_GROUP_NAME } from '../constants/roles.server.js';
-import { Employee, Group } from '../models/index.js';
+import { Employee, Group, EventSetting } from '../models/index.js';
 import { auditFailedLogin } from '../utils/audit.js';
 
 const SESSION_DURATION_HOURS = 8;
@@ -119,10 +119,20 @@ export const authController = {
   // 3. Đăng nhập khách mời
   async enterAsGuest(req, res, next) {
     try {
+      const event = await EventSetting.findOne({ key: 'main' });
+      if (event && event.guestEnabled === false) {
+        return res.status(403).json({ message: 'Chức năng khách mời hiện đang tắt. Vui lòng liên hệ ban tổ chức.' });
+      }
+
       const { fullName } = req.body;
-      const trimmed = (fullName || '').trim();
+      const trimmed = typeof fullName === 'string'
+        ? fullName.replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim()
+        : '';
       if (!trimmed) {
         return res.status(400).json({ message: 'Vui lòng nhập họ và tên của quý khách.' });
+      }
+      if (trimmed.length > 60) {
+        return res.status(400).json({ message: 'Họ và tên tối đa 60 ký tự.' });
       }
 
       const guestGroup = (await Group.findOne({ id: GUEST_GROUP_ID })) || {
@@ -196,10 +206,25 @@ export const authController = {
 
       // Cập nhật mật khẩu mới
       employee.passwordHash = await bcrypt.hash(newPassword, 10);
+      employee.passwordChangedAt = new Date();
       await employee.save();
+
+      // Mọi token cũ (kể cả phiên hiện tại) đã bị thu hồi; cấp token mới để người đổi không bị văng ra
+      const token = jwt.sign(
+        {
+          code: employee.code,
+          name: employee.name,
+          role: employee.role,
+          departmentId: employee.departmentId,
+          blockId: employee.blockId,
+        },
+        env.JWT_SECRET,
+        { expiresIn: `${SESSION_DURATION_HOURS}h` }
+      );
 
       return res.json({
         ok: true,
+        token,
         message: 'Đổi mật khẩu thành công. Vui lòng ghi nhớ mật khẩu mới của bạn.',
       });
     } catch (err) {

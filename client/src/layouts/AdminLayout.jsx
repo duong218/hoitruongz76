@@ -8,12 +8,14 @@ import {
   ADMIN_NAV_ITEMS,
   MANAGER_NAV_ITEMS,
 } from '../constants/navConfig.js';
-import { LogOut, ExternalLink, ArrowLeftRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { LogOut, ExternalLink, ArrowLeftRight, PanelLeftClose, PanelLeftOpen, KeyRound } from 'lucide-react';
+import { ChangePasswordModal } from '../components/ChangePasswordModal.jsx';
 
 export function AdminLayout() {
   const { staff, logoutStaff } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   // Thu gọn menu: nhớ lựa chọn trên trình duyệt này (lỗi đọc/ghi thì bỏ qua)
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('z176_nav_collapsed') === '1'; } catch { return false; }
@@ -60,6 +62,18 @@ export function AdminLayout() {
               {ROLE_LABELS[currentStaff?.role] || currentStaff?.role}
             </span>
           </div>
+
+          {/* Nút đổi mật khẩu cho Quản lý và Quản trị viên */}
+          <button
+            type="button"
+            onClick={() => setIsChangePasswordOpen(true)}
+            className="min-h-[44px] min-w-[44px] px-3 py-2 flex items-center justify-center gap-1.5 text-[14px] font-medium text-[#475569] hover:text-[#008BC5] hover:bg-[#F1F5F9] rounded-lg transition-colors cursor-pointer border border-[#E2E8F0]"
+            title="Đổi mật khẩu tài khoản"
+            aria-label="Đổi mật khẩu tài khoản"
+          >
+            <KeyRound className="w-4 h-4 text-[#008BC5]" />
+            <span className="hidden md:inline">Đổi MK</span>
+          </button>
 
           <button
             type="button"
@@ -168,6 +182,12 @@ export function AdminLayout() {
           })}
         </div>
       </nav>
+
+      {/* Modal đổi mật khẩu */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </div>
   );
 }

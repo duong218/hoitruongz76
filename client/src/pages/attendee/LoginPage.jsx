@@ -257,6 +257,7 @@ export function LoginPage() {
                 setError('');
               }}
               placeholder="Ví dụ: Thiếu tướng Nguyễn Văn A..."
+              maxLength={60}
               error={error}
               disabled={loading}
               required

@@ -80,6 +80,7 @@ export const employeeController = {
             return res.status(400).json({ message: 'Mật khẩu quản trị phải có tối thiểu 8 ký tự.' });
           }
           emp.passwordHash = await bcrypt.hash(trimmedPass, 10);
+          emp.passwordChangedAt = new Date();
           passwordChanged = true;
         } else if (!emp.passwordHash) {
           return res.status(400).json({ message: 'Tài khoản quản trị bắt buộc phải có mật khẩu (tối thiểu 8 ký tự).' });
