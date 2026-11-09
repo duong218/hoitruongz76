@@ -51,8 +51,8 @@ export function useEventSettings() {
     return updated;
   };
 
-  const startNewEvent = async (eventName) => {
-    const updated = await eventService.startNewEvent(eventName);
+  const startNewEvent = async (eventName, opensAt, closesAt) => {
+    const updated = await eventService.startNewEvent(eventName, opensAt, closesAt);
     setEvent(updated);
     return updated;
   };

@@ -11,6 +11,9 @@ const eventSettingSchema = new mongoose.Schema(
     appUrl: { type: String, default: '', trim: true },
     nameLocked: { type: Boolean, default: false }, // true sau khi bấm "Bắt đầu sự kiện mới"
     startedAt: { type: Date, default: null },
+    // Khung giờ cho phép người tham dự vào (null = chưa đặt lịch = chưa mở cho ai)
+    opensAt: { type: Date, default: null },
+    closesAt: { type: Date, default: null },
   },
   { timestamps: true, toJSON: cleanJSON(['key', 'createdAt', 'updatedAt']) }
 );

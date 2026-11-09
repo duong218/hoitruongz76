@@ -27,6 +27,11 @@ import {
 } from 'lucide-react';
 import '../../utils/printQr.css';
 
+// Giờ Việt Nam cố định +7 (không có giờ mùa hè), không phụ thuộc múi giờ của máy đang dùng
+const toLocalInput = (iso) => (iso ? new Date(new Date(iso).getTime() + 7 * 3600 * 1000).toISOString().slice(0, 16) : '');
+const fromLocalInput = (v) => (v ? new Date(`${v}:00+07:00`).toISOString() : null);
+const fmtVN = (iso) => { const t = toLocalInput(iso); return `${t.slice(11, 16)} ngày ${t.slice(8, 10)}/${t.slice(5, 7)}/${t.slice(0, 4)}`; };
+
 export function ManagerEventPage() {
   const { event, updateEvent, startNewEvent } = useEventSettings();
   const toast = useToast();
@@ -35,6 +40,8 @@ export function ManagerEventPage() {
   const [ackDelete, setAckDelete] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [newEventName, setNewEventName] = useState('');
+  const [newOpensAt, setNewOpensAt] = useState('');
+  const [newClosesAt, setNewClosesAt] = useState('');
   const [startingNew, setStartingNew] = useState(false);
 
   const [activeTab, setActiveTab] = useState('SETTINGS'); // 'SETTINGS' | 'QR'
@@ -68,6 +75,19 @@ export function ManagerEventPage() {
       setAppUrl(defaultUrl);
     }
   }, [event]);
+
+  // Trạng thái khung giờ theo dữ liệu đã lưu trên máy chủ
+  const windowState = (() => {
+    const o = event.opensAt && new Date(event.opensAt).getTime();
+    const c = event.closesAt && new Date(event.closesAt).getTime();
+    const now = Date.now();
+    if (!o || !c) return { variant: 'warning', text: 'Chưa đặt giờ: người tham dự chưa vào được' };
+    if (now < o) return { variant: 'neutral', text: 'Chưa tới giờ mở' };
+    if (now >= c) return { variant: 'error', text: 'Đã hết giờ' };
+    return { variant: 'success', text: 'Đang trong giờ sự kiện' };
+  })();
+
+  const newTimesOk = !!newOpensAt && !!newClosesAt && newClosesAt > newOpensAt;
 
   const isLocalhost = appUrl.includes('localhost') || appUrl.includes('127.0.0.1');
 
@@ -107,9 +127,11 @@ export function ManagerEventPage() {
   const handleStartNew = async () => {
     try {
       setStartingNew(true);
-      await startNewEvent(newEventName.trim());
+      await startNewEvent(newEventName.trim(), fromLocalInput(newOpensAt), fromLocalInput(newClosesAt));
       setShowNewModal(false);
       setNewEventName('');
+      setNewOpensAt('');
+      setNewClosesAt('');
       setAckDelete(false);
       toast.success('Đã bắt đầu sự kiện mới.');
     } catch (err) {
@@ -344,6 +366,19 @@ export function ManagerEventPage() {
             className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-6"
           >
             <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3 flex-wrap">
+                <label className="block text-[16px] font-bold text-[#0F172A]">Giờ mở và đóng sự kiện</label>
+                <Badge variant={windowState.variant}>{windowState.text}</Badge>
+              </div>
+              <p className="text-[15px] font-semibold text-[#0F172A]">
+                {event.opensAt && event.closesAt ? `${fmtVN(event.opensAt)}  đến  ${fmtVN(event.closesAt)}` : 'Chưa đặt giờ.'}
+              </p>
+              <p className="text-[14px] text-[#64748B]">
+                Giờ Việt Nam, được đặt khi bấm "Bắt đầu sự kiện mới". Ngoài khung giờ này, nhân viên và khách mời quét QR sẽ chỉ thấy thông báo chờ, không xem chỗ và không điểm danh được. Quản lý vẫn xếp chỗ bình thường.
+              </p>
+            </div>
+
+            <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
               <label className="block text-[16px] font-bold text-[#0F172A]">Tiếp đón khách mời tham dự</label>
               <p className="text-[14px] text-[#64748B]">
                 Bật nút "Tôi là khách mời" trên màn hình đăng nhập để tiếp đón đại biểu ngoài danh sách.
@@ -381,6 +416,13 @@ export function ManagerEventPage() {
                 placeholder="Ví dụ: Hội nghị trao giải 2026"
                 autoFocus
               />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Input label="Giờ mở" id="new-event-opens-at" type="datetime-local" value={newOpensAt} onChange={(e) => setNewOpensAt(e.target.value)} />
+                <Input label="Giờ đóng" id="new-event-closes-at" type="datetime-local" value={newClosesAt} onChange={(e) => setNewClosesAt(e.target.value)} />
+              </div>
+              <p className="text-[13px] text-[#64748B] -mt-2">
+                Giờ Việt Nam. Ngoài khung giờ này, nhân viên và khách mời không vào và không điểm danh được. Quản lý vẫn xếp chỗ bình thường.
+              </p>
               <ul className="p-4 bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg space-y-2 text-[15px] text-[#7F1D1D] list-disc pl-9">
                 <li>Tên sự kiện mới sẽ <strong>bị khóa</strong>, không sửa lại được.</li>
                 <li><strong>{attendance.length} lượt điểm danh</strong> của "{event.eventName}" sẽ được <strong>lưu vào Lịch sử sự kiện</strong> (chỉ xem và xuất Excel, không điểm danh hộ được nữa).</li>
@@ -396,16 +438,21 @@ export function ManagerEventPage() {
                 <span>Tôi hiểu: sự kiện cũ chuyển vào Lịch sử, tên sự kiện mới bị khóa.</span>
               </label>
               <div className="flex justify-end gap-3 pt-2">
-                <Button variant="secondary" onClick={() => { setShowNewModal(false); setAckDelete(false); }}>Hủy bỏ</Button>
+                <Button variant="secondary" onClick={() => { setShowNewModal(false); setAckDelete(false); setNewOpensAt(''); setNewClosesAt(''); }}>Hủy bỏ</Button>
                 <Button
                   variant="danger"
                   onClick={handleStartNew}
                   loading={startingNew}
-                  disabled={!ackDelete || !newEventName.trim()}
+                  disabled={!ackDelete || !newEventName.trim() || !newTimesOk}
                 >
                   Bắt đầu sự kiện mới
                 </Button>
               </div>
+              {!newTimesOk && (
+                <p className="text-[14px] text-[#B45309] text-right">
+                  {newOpensAt && newClosesAt ? 'Giờ đóng phải sau giờ mở.' : 'Nhập đủ giờ mở và giờ đóng để bắt đầu sự kiện mới.'}
+                </p>
+              )}
             </div>
           </Modal>
         </div>

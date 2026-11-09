@@ -18,6 +18,21 @@ function validateAppUrl(value) {
   }
 }
 
+// Giờ ISO -> Date. Rỗng/null -> null. Sai định dạng -> undefined.
+function readTime(v) {
+  if (v === null || v === '') return null;
+  const d = typeof v === 'string' ? new Date(v) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : undefined;
+}
+
+// Trả thông báo lỗi nếu khung giờ vô lý, ngược lại null
+function windowError(opensAt, closesAt) {
+  if (!opensAt || !closesAt) return null;
+  if (closesAt <= opensAt) return 'Giờ đóng phải sau giờ mở.';
+  if (closesAt - opensAt > 7 * 24 * 3600 * 1000) return 'Khung giờ sự kiện dài quá 7 ngày, hãy kiểm tra lại ngày giờ.';
+  return null;
+}
+
 export const eventController = {
   // Cài đặt sự kiện (công khai). KHÔNG chứa token ghế.
   async getSettings(req, res, next) {
@@ -101,6 +116,13 @@ export const eventController = {
       const name = typeof req.body.eventName === 'string' ? req.body.eventName.trim() : '';
       if (!name) return res.status(400).json({ message: 'Vui lòng nhập tên sự kiện mới.' });
       if (name.length > 150) return res.status(400).json({ message: 'Tên sự kiện tối đa 150 ký tự.' });
+      // Mỗi sự kiện mới bắt buộc có giờ mở và giờ đóng (kiểm tra trước khi lưu lịch sử và xóa điểm danh cũ)
+      const opensAt = readTime(req.body.opensAt);
+      const closesAt = readTime(req.body.closesAt);
+      if (!opensAt || !closesAt) return res.status(400).json({ message: 'Vui lòng nhập giờ mở và giờ đóng của sự kiện mới.' });
+      const windowMsg = windowError(opensAt, closesAt);
+      if (windowMsg) return res.status(400).json({ message: windowMsg });
+      if (closesAt <= new Date()) return res.status(400).json({ message: 'Giờ đóng đã qua. Hãy chọn giờ đóng sau thời điểm hiện tại.' });
       const event = await withArchiveLock(async () => {
         let ev = await EventSetting.findOne({ key: 'main' });
         if (!ev) ev = new EventSetting({ key: 'main' });
@@ -110,11 +132,13 @@ export const eventController = {
         ev.eventName = name;
         ev.nameLocked = true;
         ev.startedAt = new Date();
+        ev.opensAt = opensAt;
+        ev.closesAt = closesAt;
         await ev.save();
         await audit(
           req,
           'event.start_new',
-          `Bắt đầu sự kiện mới "${name}" (sự kiện trước "${oldName || ''}": ${archived ? `đã lưu lịch sử ${archived.summary.checked} lượt điểm danh` : 'không có ai điểm danh nên không lưu'})`
+          `Bắt đầu sự kiện mới "${name}" (giờ ${opensAt.toISOString()} - ${closesAt.toISOString()}; sự kiện trước "${oldName || ''}": ${archived ? `đã lưu lịch sử ${archived.summary.checked} lượt điểm danh` : 'không có ai điểm danh nên không lưu'})`
         );
         return ev;
       });

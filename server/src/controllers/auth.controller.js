@@ -4,6 +4,7 @@ import { env } from '../config/env.js';
 import { ROLES, GUEST_GROUP_ID, GUEST_GROUP_NAME } from '../constants/roles.server.js';
 import { Employee, Group, EventSetting } from '../models/index.js';
 import { auditFailedLogin } from '../utils/audit.js';
+import { eventGate, sendGate } from '../utils/eventWindow.js';
 
 const SESSION_DURATION_HOURS = 5;
 const ATTENDEE_SESSION_HOURS = 12;
@@ -69,6 +70,10 @@ export const authController = {
         return res.status(400).json({ message: 'Vui lòng nhập mã nhân viên.' });
       }
 
+      // Ngoài khung giờ sự kiện thì không ai vào được (chặn trước khi tra cứu cho nhẹ DB)
+      const gate = eventGate(await EventSetting.findOne({ key: 'main' }));
+      if (gate) return sendGate(res, gate);
+
       const employee = await Employee.findOne({ code: trimmedCode });
       if (!employee) {
         return res.status(404).json({ message: 'Không tìm thấy mã nhân viên này. Vui lòng kiểm tra lại.' });
@@ -123,6 +128,8 @@ export const authController = {
       if (event && event.guestEnabled === false) {
         return res.status(403).json({ message: 'Chức năng khách mời hiện đang tắt. Vui lòng liên hệ ban tổ chức.' });
       }
+      const gate = eventGate(event);
+      if (gate) return sendGate(res, gate);
 
       const { fullName } = req.body;
       const trimmed = typeof fullName === 'string'
@@ -232,4 +239,3 @@ export const authController = {
     }
   },
 };
-

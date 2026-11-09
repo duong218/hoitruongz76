@@ -36,6 +36,8 @@ export const attendeeLookupLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 phút
   limit: 10, // Một mã nhân sự nhập sai tối đa 10 lần trong 5 phút
   skipSuccessfulRequests: true, // Nhập đúng được thông qua ngay, không tính vào giới hạn
+  // Bị chặn vì chưa tới giờ / đã hết giờ không phải nhập sai nên cũng không tính
+  requestWasSuccessful: (req, res) => res.statusCode < 400 || res.locals.notCounted === true,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => {

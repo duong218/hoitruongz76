@@ -16,8 +16,8 @@ export const eventService = {
     return withTokens(await api.get('/event'));
   },
 
-  async startNewEvent(eventName) {
-    const updated = await withTokens(await api.post('/event/start-new', { eventName }));
+  async startNewEvent(eventName, opensAt, closesAt) {
+    const updated = await withTokens(await api.post('/event/start-new', { eventName, opensAt, closesAt }));
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('z176_event_updated', { detail: updated }));
       window.dispatchEvent(new Event('z176_attendance_updated'));

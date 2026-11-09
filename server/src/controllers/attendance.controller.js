@@ -1,4 +1,5 @@
 import { Attendance, Seat, EventSetting, Employee, Group } from '../models/index.js';
+import { eventGate } from '../utils/eventWindow.js';
 import { ROLES } from '../constants/roles.server.js';
 import { audit } from '../utils/audit.js';
 import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
@@ -34,6 +35,9 @@ export const attendanceController = {
 
       // 1. Kiểm tra sự kiện đã mở điểm danh chưa
       const event = await EventSetting.findOne({ key: 'main' });
+      // Token đăng nhập còn hạn 12 giờ nên phải chặn theo khung giờ cả ở đây
+      const gate = eventGate(event);
+      if (gate) return res.status(403).json(gate);
       if (event && !event.checkInOpen) {
         return res.status(400).json({ message: 'Chưa mở điểm danh. Vui lòng chờ ban tổ chức.' });
       }
