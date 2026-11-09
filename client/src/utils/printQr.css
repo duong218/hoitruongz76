@@ -7,6 +7,13 @@
 }
 
 @media print {
+  /* Tờ in nằm trong .reveal-stack (hiệu ứng hiện dần, opacity 0 lúc mới mount) nên phải tắt animation, nếu không bản in trắng */
+  .qr-print-sheet,
+  .qr-seat-stickers-sheet {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
   /* Ẩn tất cả các thành phần giao diện không cần thiết khi in */
   header,
   nav,
