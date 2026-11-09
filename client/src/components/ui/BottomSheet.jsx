@@ -26,7 +26,7 @@ export function BottomSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="bottomsheet-title"
-      className="fixed inset-0 z-[100] flex flex-col justify-end bg-black/60 sm:hidden"
+      data-lenis-prevent className="fixed inset-0 z-[100] flex flex-col justify-end bg-black/60 sm:hidden"
       onClick={onClose}
     >
       <div

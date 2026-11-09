@@ -104,7 +104,7 @@ export function AttendeeLayout() {
 
       {/* Footer */}
       <footer className="py-4 px-4 text-center text-[14px] leading-5 text-[#334155] border-t border-[#E2E8F0] bg-white">
-        Hệ thống Định hướng Chỗ ngồi Hội trường Z1Nhà máy Z176-76 • Doanh nghiệp Bộ Quốc Phòng • Phát triển, thiết kế bởi Phạm Ngọc Dương
+       Hệ thống Định hướng Chỗ ngồi Hội trường Z176 Nhà máy Z176-76 • Doanh nghiệp Bộ Quốc Phòng • Phát triển, thiết kế bởi Phạm Ngọc Dương
       </footer>
     </div>
   );

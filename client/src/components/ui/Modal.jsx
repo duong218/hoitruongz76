@@ -27,7 +27,7 @@ export function Modal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-headline"
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 overflow-y-auto"
+      data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 overflow-y-auto"
       onClick={onClose}
     >
       <div

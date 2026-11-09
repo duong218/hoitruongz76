@@ -146,3 +146,6 @@ html.lenis, html.lenis body { height: auto; }
 @media (prefers-reduced-motion: reduce) {
   .reveal-stack > * > * { animation: none !important; }
 }
+/* Popup đang mở: Lenis bỏ qua lớp phủ (data-lenis-prevent) và trang nền bị khóa cuộn */
+[data-lenis-prevent] { overscroll-behavior: contain; }
+body:has([data-lenis-prevent]) { overflow: hidden; }

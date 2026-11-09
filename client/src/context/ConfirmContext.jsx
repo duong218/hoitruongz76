@@ -56,7 +56,7 @@ export function ConfirmProvider({ children }) {
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-dialog-title"
-          className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-none"
+          data-lenis-prevent className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-none"
         >
           <div className="w-full max-w-md bg-white rounded-xl border border-[#E2E8F0] shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-6 space-y-4">
             <div className="flex items-start gap-3">

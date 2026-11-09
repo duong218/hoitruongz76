@@ -179,7 +179,7 @@ export function ScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[120] bg-black/95 flex flex-col justify-between text-white p-4 pb-[env(safe-area-inset-bottom,20px)] overflow-y-auto"
+      data-lenis-prevent className="fixed inset-0 z-[120] bg-black/95 flex flex-col justify-between text-white p-4 pb-[env(safe-area-inset-bottom,20px)] overflow-y-auto"
     >
       {/* Top bar */}
       <div className="flex items-center justify-between pt-2 max-w-md mx-auto w-full">
