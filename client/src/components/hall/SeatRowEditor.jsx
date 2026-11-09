@@ -3,6 +3,7 @@ import { SEATS_PER_SIDE, seatId } from '../../constants/hall.js';
 import { Modal } from '../ui/Modal.jsx';
 import { BottomSheet } from '../ui/BottomSheet.jsx';
 import { Button } from '../ui/Button.jsx';
+import { SeatPreviewMap } from './SeatPreviewMap.jsx';
 import { Check, XCircle } from 'lucide-react';
 
 export function SeatRowEditor({
@@ -110,13 +111,24 @@ export function SeatRowEditor({
   );
 
   const content = (
-    <div className="space-y-6">
+    <div className="flex flex-col sm:grid sm:grid-cols-[minmax(0,1fr)_14rem] lg:grid-cols-[minmax(0,1fr)_18rem] xl:grid-cols-[minmax(0,1fr)_22rem] sm:gap-6 sm:items-start">
+      {/* Xem trước vị trí ghế đang chọn: dính trên cùng khi cuộn (điện thoại) / cột phải (máy tính) */}
+      <aside className="order-1 sm:order-2 sticky top-0 z-10 bg-white pb-3 sm:pb-0 w-full max-w-xs mx-auto sm:max-w-none">
+        <SeatPreviewMap row={row} selectedSeatIds={selectedSeatIds} seatGroups={seatGroups} groups={groups} />
+        <div className="hidden sm:block mt-3">
+          <Button variant="primary" fullWidth onClick={onClose}>
+            Xong
+          </Button>
+        </div>
+      </aside>
+
+      <div className="order-2 sm:order-1 space-y-6 min-w-0">
       <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-3 text-[15px] text-[#334155] leading-snug">
         Đang chỉnh: <strong className="text-[#0F172A]">Hàng {row}</strong> ({row <= 2 ? 'Hàng VIP' : 'Hàng tiêu chuẩn'}).
         Bấm chọn một hoặc nhiều ghế rồi chọn nhóm bên dưới để gán.
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-5 xl:space-y-0 xl:grid xl:grid-cols-2 xl:gap-6">
         {renderSeatGrid('Bên trái', 'L', leftSeatIds)}
         {renderSeatGrid('Bên phải', 'R', rightSeatIds)}
       </div>
@@ -177,11 +189,12 @@ export function SeatRowEditor({
         </div>
       </div>
 
-      {/* Nút Xong */}
-      <div className="pt-2">
+      {/* Nút Xong (điện thoại; máy tính dùng nút dưới sơ đồ) */}
+      <div className="pt-2 sm:hidden">
         <Button variant="primary" fullWidth onClick={onClose}>
           Xong
         </Button>
+      </div>
       </div>
     </div>
   );
@@ -203,7 +216,7 @@ export function SeatRowEditor({
       isOpen={isOpen}
       onClose={onClose}
       title={`Chỉnh từng ghế - Hàng ${row}`}
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-3xl lg:max-w-5xl xl:max-w-6xl"
     >
       {content}
     </Modal>

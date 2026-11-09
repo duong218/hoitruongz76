@@ -7,7 +7,7 @@ import { SeatRowEditor } from '../../components/hall/SeatRowEditor.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { BottomSheet } from '../../components/ui/BottomSheet.jsx';
 import { TOTAL_SEATS } from '../../constants/hall.js';
-import { Edit3, XCircle, Info, CheckSquare } from 'lucide-react';
+import { Edit3, XCircle, Info, CheckSquare, ArrowDown } from 'lucide-react';
 
 export function SeatingPage() {
   const { groups } = useGroups();
@@ -84,9 +84,9 @@ export function SeatingPage() {
   const freeCount = TOTAL_SEATS - assignedCount;
 
   // Danh sách nhóm vừa là chú thích màu (khi chưa chọn hàng) vừa là nút gán (khi đã chọn hàng)
-  const renderGroupSelector = () => (
+  const renderGroupSelector = ({ wide = false, part = 'all' } = {}) => (
     <div className="space-y-4">
-      {hasSel ? (
+      {part !== 'list' && (hasSel ? (
         <div className="bg-[#EAF6FF] border border-[#BAE6FD] rounded-xl p-4 space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <span className="text-[13px] font-bold uppercase tracking-wider text-[#006BA1]">
@@ -120,8 +120,9 @@ export function SeatingPage() {
           <Info className="w-4 h-4 text-[#008BC5] shrink-0 mt-0.5" />
           <span>Bấm trực tiếp vào các hàng ghế trên sơ đồ để chọn, sau đó bấm nhóm bên dưới để gán.</span>
         </div>
-      )}
+      ))}
 
+      {part !== 'info' && (
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-[13px] font-extrabold uppercase tracking-wider text-[#475569]">
@@ -134,7 +135,7 @@ export function SeatingPage() {
           )}
         </div>
 
-        <ul className="space-y-2 list-none p-0 max-h-[460px] overflow-y-auto pr-1">
+        <ul className={`list-none p-0 ${wide ? 'grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-2' : 'space-y-2 max-h-[460px] overflow-y-auto pr-1'}`}>
           {groups.map((group) => (
             <li key={group.id}>
               <button
@@ -192,8 +193,13 @@ export function SeatingPage() {
           </button>
         )}
       </div>
+      )}
     </div>
   );
+
+  // Cuộn xuống bảng gán nhóm nhanh nằm dưới sơ đồ
+  const scrollToGroupPanel = () =>
+    document.getElementById('seating-group-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   return (
     <div className="space-y-6 max-w-full">
@@ -218,9 +224,17 @@ export function SeatingPage() {
             selectedRows={selectedRows}
             onToggleRow={handleToggleRow}
           />
+
+          {/* Panel Chọn nhóm: nằm ngay dưới sơ đồ (Desktop), các nhóm xếp 2-3 cột cho đủ thông tin */}
+          <div id="seating-group-panel" className="hidden lg:block mt-6 scroll-mt-24 bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+            <h3 className="text-[18px] font-extrabold text-[#0F172A] pb-3 border-b border-[#E2E8F0] mb-4">
+              Gán nhóm nhanh
+            </h3>
+            {renderGroupSelector({ wide: true, part: 'list' })}
+          </div>
         </div>
 
-        {/* Cột phải trên Desktop: Thẻ tiến độ & Panel Chọn nhóm */}
+        {/* Cột phải trên Desktop: Thẻ tiến độ & thông tin hàng đang chọn */}
         <div className="hidden lg:flex lg:flex-col lg:col-span-4 xl:col-span-4 2xl:col-span-3 gap-4 sticky top-24">
           {/* Thẻ tiến độ nằm ngay trên mục Gán nhóm */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
@@ -249,12 +263,18 @@ export function SeatingPage() {
             </div>
           </div>
 
-          {/* Panel Chọn nhóm */}
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
-            <h3 className="text-[18px] font-extrabold text-[#0F172A] pb-3 border-b border-[#E2E8F0] mb-4">
-              Gán nhóm cho hàng ghế
-            </h3>
-            {renderGroupSelector()}
+          {/* Hàng đang chọn + chỉ dẫn gán nhóm nhanh bên dưới sơ đồ */}
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3">
+            <h3 className="text-[16px] font-extrabold text-[#0F172A]">Gán nhóm cho hàng ghế</h3>
+            {renderGroupSelector({ part: 'info' })}
+            <button
+              type="button"
+              onClick={scrollToGroupPanel}
+              className="w-full min-h-[44px] px-3 rounded-xl border border-[#008BC5] text-[#008BC5] hover:bg-[#EAF6FF] flex items-center justify-center gap-2 text-[14px] font-bold transition-colors cursor-pointer"
+            >
+              <ArrowDown className="w-4 h-4 shrink-0" />
+              Gán nhóm nhanh ở bên dưới sơ đồ
+            </button>
           </div>
         </div>
       </div>

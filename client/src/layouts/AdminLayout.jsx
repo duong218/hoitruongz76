@@ -149,7 +149,7 @@ export function AdminLayout() {
         </aside>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-full overflow-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-full overflow-x-clip">
           {/* key theo đường dẫn: đổi trang thì các khối hiện dần lại từ trên xuống */}
           <div key={pathname} className="reveal-stack">
             <Outlet />

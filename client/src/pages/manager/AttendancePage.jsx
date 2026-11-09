@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { CountUp } from '../../components/ui/CountUp.jsx';
+import { Pagination } from '../../components/ui/Pagination.jsx';
 import { useAttendance } from '../../hooks/useAttendance.js';
 import { useEmployees } from '../../hooks/useEmployees.js';
 import { useGroups } from '../../hooks/useGroups.js';
@@ -29,6 +30,7 @@ import {
   UserPlus,
   X,
   FileText,
+  Loader2,
   AlertTriangle,
 } from 'lucide-react';
 
@@ -45,11 +47,13 @@ const TABS = [
   { id: 'DETAIL', label: 'Danh sách chi tiết', icon: FileText },
 ];
 
+const DETAIL_PAGE_SIZE = 15;
+
 export function AttendancePage() {
-  const { attendance, resetAttendance, refresh, manualCheckIn } = useAttendance();
-  const { employees } = useEmployees();
-  const { groups } = useGroups();
-  const { blocks, departments } = useOrg();
+  const { attendance, resetAttendance, refresh, manualCheckIn, loading: attLoading } = useAttendance();
+  const { employees, loading: empLoading } = useEmployees();
+  const { groups, loading: groupsLoading } = useGroups();
+  const { blocks, departments, loading: orgLoading } = useOrg();
   const { event } = useEventSettings();
   const toast = useToast();
   const { confirm } = useConfirm();
@@ -244,6 +248,63 @@ export function AttendancePage() {
     setFilterGroupId('ALL');
     setFilterStatus('ALL');
   };
+
+  // Trạng thái tải: chỉ chặn ở lần tải đầu, các lần làm mới sau không che màn hình
+  const dataLoading = attLoading || empLoading || groupsLoading || orgLoading;
+  const [loadedOnce, setLoadedOnce] = useState(false);
+  useEffect(() => {
+    if (!dataLoading) setLoadedOnce(true);
+  }, [dataLoading]);
+
+  // Danh sách lớn (hàng trăm, hàng nghìn dòng): cho khung "Đang tải" hiện ra trước rồi mới dựng bảng
+  const isHeavyList = employees.length > 200;
+  const [detailReady, setDetailReady] = useState(false);
+  useEffect(() => {
+    if (view !== 'DETAIL') {
+      setDetailReady(false);
+      return undefined;
+    }
+    const t = setTimeout(() => setDetailReady(true), 50);
+    return () => clearTimeout(t);
+  }, [view]);
+  const detailLoading = !loadedOnce || (isHeavyList && !detailReady);
+
+  // Gõ tìm kiếm / đổi bộ lọc: giữ bảng cũ (mờ đi) trong lúc dựng bảng mới
+  const shownDetailList = useDeferredValue(filteredDetailList);
+  const detailUpdating = shownDetailList !== filteredDetailList;
+
+  // Phân trang bảng chi tiết (15 dòng/trang); đổi tìm kiếm, bộ lọc hay tab thì về trang 1
+  const [detailPage, setDetailPage] = useState(1);
+  useEffect(() => {
+    setDetailPage(1);
+  }, [searchTerm, filterBlockId, filterDeptId, filterGroupId, filterStatus, view]);
+  const detailPages = Math.max(1, Math.ceil(shownDetailList.length / DETAIL_PAGE_SIZE));
+  const currentDetailPage = Math.min(detailPage, detailPages);
+  const pagedDetailList = shownDetailList.slice(
+    (currentDetailPage - 1) * DETAIL_PAGE_SIZE,
+    currentDetailPage * DETAIL_PAGE_SIZE
+  );
+  const goToDetailPage = (p) => {
+    setDetailPage(p);
+    // Cuộn lên đầu bảng, chừa chỗ cho thanh trên cùng và thanh lọc đang dính
+    const list = document.getElementById('detail-list-top');
+    if (!list) return;
+    const bar = document.getElementById('detail-filter-bar');
+    const headerH = window.innerWidth >= 1024 ? 72 : 64;
+    const barH = bar && window.innerWidth >= 768 ? bar.offsetHeight : 0;
+    window.scrollTo({ top: list.getBoundingClientRect().top + window.scrollY - headerH - barH - 12, behavior: 'smooth' });
+  };
+
+  // Bấm "Chỉ xem các dòng trùng": sau khi chuyển sang tab chi tiết thì tự cuộn xuống danh sách
+  const [pendingJump, setPendingJump] = useState(false);
+  useEffect(() => {
+    if (!pendingJump || view !== 'DETAIL') return;
+    const section = document.getElementById('detail-section');
+    if (!section) return;
+    const headerH = window.innerWidth >= 1024 ? 72 : 64;
+    window.scrollTo({ top: section.getBoundingClientRect().top + window.scrollY - headerH - 12, behavior: 'smooth' });
+    setPendingJump(false);
+  }, [pendingJump, view]);
 
   // Xuất file Excel theo đúng bộ lọc đang chọn (có viền, màu, ghi chú trùng ghế / điểm danh hộ)
   const handleExportExcel = async () => {
@@ -456,6 +517,7 @@ export function AttendancePage() {
               clearFilters();
               setFilterStatus('DUP');
               setView('DETAIL');
+              setPendingJump(true);
             }}
             className="px-4 min-h-[48px] text-[16px] font-bold text-[#B91C1C] bg-white border border-[#FCA5A5] rounded-[10px] cursor-pointer"
           >
@@ -522,7 +584,7 @@ export function AttendancePage() {
 
       {/* BẢNG CHI TIẾT ĐIỂM DANH */}
       {view === 'DETAIL' && (
-      <div className="space-y-4">
+      <div id="detail-section" className="space-y-4">
         <div>
           <h3 className="text-[18px] font-bold text-[#0F172A]">Danh sách chi tiết</h3>
           <p className="text-[16px] text-[#334155]">
@@ -530,8 +592,8 @@ export function AttendancePage() {
           </p>
         </div>
 
-        {/* Bộ lọc bảng chi tiết */}
-        <div className="bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-3">
+        {/* Bộ lọc bảng chi tiết: dính dưới thanh trên cùng khi cuộn (từ màn hình 768px) */}
+        <div id="detail-filter-bar" className="md:sticky md:top-16 lg:top-[72px] z-30 bg-white border border-[#E2E8F0] rounded-xl p-4 shadow-[0_2px_8px_rgba(15,23,42,0.12)] space-y-3">
           <div className="relative">
             <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#64748B]" />
             <input
@@ -614,6 +676,25 @@ export function AttendancePage() {
           </div>
         </div>
 
+        {detailLoading ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center justify-center gap-3 bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] py-16 px-4 text-center"
+          >
+            <Loader2 className="w-10 h-10 text-[#008BC5] animate-spin" aria-hidden="true" />
+            <p className="text-[18px] font-bold text-[#0F172A]">Đang tải dữ liệu, vui lòng đợi...</p>
+            <p className="text-[16px] text-[#334155]">Danh sách càng nhiều nhân viên thì càng cần thêm vài giây.</p>
+          </div>
+        ) : (
+        <>
+        {detailUpdating && (
+          <p role="status" aria-live="polite" className="flex items-center gap-2 text-[16px] text-[#334155]">
+            <Loader2 className="w-5 h-5 text-[#008BC5] animate-spin" aria-hidden="true" />
+            Đang cập nhật danh sách...
+          </p>
+        )}
+        <div id="detail-list-top" className={`space-y-4 transition-opacity ${detailUpdating ? 'opacity-60' : ''}`}>
         {/* Bảng dạng Desktop */}
         <div className="hidden sm:block overflow-x-auto bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
           <table className="w-full text-left border-collapse text-[15px]">
@@ -632,7 +713,7 @@ export function AttendancePage() {
               </tr>
             </thead>
             <tbody>
-              {filteredDetailList.map((emp, index) => {
+              {pagedDetailList.map((emp, index) => {
                 const g = resolveGroup(emp, groups);
                 const rec = attendanceMap.get(emp.code.toUpperCase());
                 const isChecked = !!rec;
@@ -699,7 +780,7 @@ export function AttendancePage() {
 
         {/* Danh sách thẻ trên Mobile */}
         <div className="sm:hidden space-y-3">
-          {filteredDetailList.map((emp) => {
+          {pagedDetailList.map((emp) => {
             const g = resolveGroup(emp, groups);
             const rec = attendanceMap.get(emp.code.toUpperCase());
             const isChecked = !!rec;
@@ -748,6 +829,17 @@ export function AttendancePage() {
             );
           })}
         </div>
+
+        <Pagination
+          page={currentDetailPage}
+          pages={detailPages}
+          total={shownDetailList.length}
+          limit={DETAIL_PAGE_SIZE}
+          onChange={goToDetailPage}
+        />
+        </div>
+        </>
+        )}
       </div>
       )}
 
