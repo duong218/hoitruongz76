@@ -5,7 +5,7 @@ import { ROLES, GUEST_GROUP_ID, GUEST_GROUP_NAME } from '../constants/roles.serv
 import { Employee, Group, EventSetting } from '../models/index.js';
 import { auditFailedLogin } from '../utils/audit.js';
 
-const SESSION_DURATION_HOURS = 8;
+const SESSION_DURATION_HOURS = 5;
 const ATTENDEE_SESSION_HOURS = 12;
 
 export const authController = {
