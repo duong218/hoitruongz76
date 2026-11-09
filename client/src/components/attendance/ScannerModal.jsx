@@ -266,18 +266,35 @@ export function ScannerModal({
               <label className="block text-[14px] font-bold text-white text-center">
                 Mã bảo mật 6 ký tự:
               </label>
-              <input
-                type="text"
-                maxLength={6}
-                value={manualCode}
-                onChange={(e) => {
-                  setManualCode(e.target.value.toUpperCase());
-                  setManualError('');
-                }}
-                placeholder="Ví dụ: K7M2QX"
-                className="w-full text-center tracking-[6px] sm:tracking-[8px] font-mono text-[28px] sm:text-[32px] font-black uppercase py-3.5 px-4 bg-black/60 border-2 border-white/30 rounded-2xl text-white placeholder:text-white/20 focus:outline-none focus:border-[#38BDF8] focus:ring-4 focus:ring-[#38BDF8]/20 transition-all shadow-inner"
-                autoFocus
-              />
+              <div className="relative">
+                <div className="grid grid-cols-6 gap-2 sm:gap-3">
+                  {Array.from({ length: 6 }, (_, k) => (
+                    <div
+                      key={k}
+                      className={`h-14 sm:h-16 flex items-center justify-center font-mono text-[28px] sm:text-[32px] font-black text-white bg-black/60 border-2 rounded-xl ${
+                        k === Math.min(manualCode.length, 5) ? 'border-[#38BDF8] ring-4 ring-[#38BDF8]/20' : 'border-white/30'
+                      }`}
+                    >
+                      {manualCode[k] || ''}
+                    </div>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={manualCode}
+                  onChange={(e) => {
+                    setManualCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''));
+                    setManualError('');
+                  }}
+                  aria-label="Mã ghế 6 ký tự"
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-text"
+                  autoFocus
+                />
+              </div>
               <p className="text-[12px] text-white/50 text-center">
                 (Bảng mã đã loại bỏ ký tự I, O, 0, 1 để tránh nhầm lẫn)
               </p>
