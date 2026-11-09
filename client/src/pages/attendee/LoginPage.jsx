@@ -8,7 +8,33 @@ import { ATTENDEE_LOGIN_CODES } from '../../services/attendeeService.js';
 import { Input } from '../../components/ui/Input.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { GuideAnimation } from '../../components/ui/GuideAnimation.jsx';
-import { UserCheck, User, ShieldAlert, IdCard, MapPin, QrCode, ScanLine, ShieldCheck, CircleHelp } from 'lucide-react';
+import { UserCheck, User, ShieldAlert, IdCard, MapPin, QrCode, ScanLine, ShieldCheck, CircleHelp, Clock } from 'lucide-react';
+
+// Giờ mở/đóng của sự kiện, nhỏ gọn dưới tên sự kiện. Chưa đặt lịch hoặc dữ liệu lỗi thì không hiện.
+const hhmm = (d) => d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+const dmy = (d) => d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+function EventWindow({ opensAt, closesAt }) {
+  const o = opensAt && new Date(opensAt);
+  const c = closesAt && new Date(closesAt);
+  if (!o || !c || isNaN(o) || isNaN(c)) return null;
+  const ended = Date.now() > c.getTime();
+  const text = ended
+    ? `Sự kiện đã kết thúc lúc ${hhmm(c)} ${dmy(c)}`
+    : dmy(o) === dmy(c)
+      ? `Mở ${hhmm(o)} · Đóng ${hhmm(c)} · ${dmy(o)}`
+      : `Mở ${hhmm(o)} ${dmy(o)} · Đóng ${hhmm(c)} ${dmy(c)}`;
+  return (
+    <p
+      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[16px] font-semibold leading-6 ${
+        ended ? 'bg-[#F1F5F9] border-[#CBD5E1] text-[#334155]' : 'bg-[#F0FDF4] border-[#22C55E] text-[#166534]'
+      }`}
+    >
+      <Clock className="w-4 h-4 shrink-0" aria-hidden="true" />
+      {text}
+    </p>
+  );
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -131,6 +157,7 @@ export function LoginPage() {
           <h1 className="text-balance text-[24px] sm:text-[32px] font-bold text-[#0F172A] leading-tight sm:leading-[40px]">
             {event.eventName || 'Hội nghị Triển khai Nhiệm vụ Z176'}
           </h1>
+          <EventWindow opensAt={event.opensAt} closesAt={event.closesAt} />
           <p className="text-[16px] text-[#334155] font-medium">
             Xem vị trí chỗ ngồi & Điểm danh
           </p>

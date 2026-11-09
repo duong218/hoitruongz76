@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge.jsx';
 import { seatBadgeText } from '../../utils/seatLabel.js';
 
 const fmt = (d) => (d ? new Date(d).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }) : '—');
-const CAUSE = { reset: 'Đặt lại điểm danh', start_new: 'Bắt đầu sự kiện mới' };
+const CAUSE = { reset: 'Đặt lại điểm danh', start_new: 'Bắt đầu sự kiện mới', auto_end: 'Tự lưu khi hết giờ' };
 
 // Chỉ xem + xuất Excel. Không có nút điểm danh hộ / đặt lại: sự kiện cũ không sửa được.
 export function EventHistoryPage() {

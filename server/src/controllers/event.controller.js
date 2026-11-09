@@ -134,6 +134,8 @@ export const eventController = {
         ev.startedAt = new Date();
         ev.opensAt = opensAt;
         ev.closesAt = closesAt;
+        ev.endHandledAt = null;
+        ev.archivedId = null;
         await ev.save();
         await audit(
           req,

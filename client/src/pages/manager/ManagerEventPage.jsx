@@ -76,15 +76,23 @@ export function ManagerEventPage() {
     }
   }, [event]);
 
-  // Trạng thái khung giờ theo dữ liệu đã lưu trên máy chủ
+  // Tự cập nhật trạng thái khi tới giờ mở/đóng mà không cần tải lại trang
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // MỘT trạng thái duy nhất cho sự kiện, suy ra từ khung giờ đã lưu trên máy chủ
   const windowState = (() => {
     const o = event.opensAt && new Date(event.opensAt).getTime();
     const c = event.closesAt && new Date(event.closesAt).getTime();
     const now = Date.now();
+    const short = (t) => new Date(t).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
     if (!o || !c) return { variant: 'warning', text: 'Chưa đặt giờ: người tham dự chưa vào được' };
-    if (now < o) return { variant: 'neutral', text: 'Chưa tới giờ mở' };
-    if (now >= c) return { variant: 'error', text: 'Đã hết giờ' };
-    return { variant: 'success', text: 'Đang trong giờ sự kiện' };
+    if (now < o) return { variant: 'neutral', text: `Chưa mở • mở lúc ${short(o)}` };
+    if (now >= c) return { variant: 'neutral', text: `Đã kết thúc • lúc ${short(c)}`, ended: true };
+    return { variant: 'success', text: `Đang diễn ra • đến ${short(c)}` };
   })();
 
   const newTimesOk = !!newOpensAt && !!newClosesAt && newClosesAt > newOpensAt;
@@ -324,9 +332,7 @@ export function ManagerEventPage() {
             <div className="flex items-center justify-between gap-3 flex-wrap">
               <span className="text-[14px] font-bold text-[#64748B] uppercase tracking-wide">Sự kiện hiện tại</span>
               {event.nameLocked ? (
-                <Badge variant="success" icon={Lock}>
-                  Đang diễn ra{event.startedAt ? ` • từ ${new Date(event.startedAt).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}` : ''}
-                </Badge>
+                <Badge variant={windowState.variant} icon={Lock}>{windowState.text}</Badge>
               ) : (
                 <Badge variant="warning" icon={Pencil}>Chưa chốt tên</Badge>
               )}
@@ -335,7 +341,10 @@ export function ManagerEventPage() {
             {event.nameLocked ? (
               <>
                 <h2 className="text-[24px] font-extrabold text-[#0F172A] leading-tight">{event.eventName}</h2>
-                <p className="text-[15px] text-[#64748B]">Tên đã chốt, không sửa được. Hiện có {attendance.length} người đã điểm danh.</p>
+                <p className="text-[15px] text-[#64748B]">
+                  Tên đã chốt, không sửa được. Hiện có {attendance.length} người đã điểm danh.
+                  {windowState.ended && ' Sự kiện đã được tự lưu vào mục Lịch sử sự kiện.'}
+                </p>
               </>
             ) : (
               <div className="flex flex-col sm:flex-row items-end gap-3">
@@ -368,7 +377,6 @@ export function ManagerEventPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <label className="block text-[16px] font-bold text-[#0F172A]">Giờ mở và đóng sự kiện</label>
-                <Badge variant={windowState.variant}>{windowState.text}</Badge>
               </div>
               <p className="text-[15px] font-semibold text-[#0F172A]">
                 {event.opensAt && event.closesAt ? `${fmtVN(event.opensAt)}  đến  ${fmtVN(event.closesAt)}` : 'Chưa đặt giờ.'}

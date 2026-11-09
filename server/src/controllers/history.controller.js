@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { EventArchive } from '../models/index.js';
 import { audit } from '../utils/audit.js';
+import { archiveIfEnded } from '../utils/archive.js';
 
 const found = async (req, res, projection) => {
   if (!mongoose.isValidObjectId(req.params.id)) {
@@ -16,6 +17,7 @@ export const historyController = {
   // Danh sách (không kèm rows cho nhẹ)
   async list(req, res, next) {
     try {
+      await archiveIfEnded(); // phòng khi bộ đếm giờ chưa kịp chạy
       res.json(await EventArchive.find({}, '-rows').sort({ archivedAt: -1 }).limit(200));
     } catch (err) {
       next(err);

@@ -14,6 +14,9 @@ const eventSettingSchema = new mongoose.Schema(
     // Khung giờ cho phép người tham dự vào (null = chưa đặt lịch = chưa mở cho ai)
     opensAt: { type: Date, default: null },
     closesAt: { type: Date, default: null },
+    // Đã tự lưu lịch sử khi hết giờ chưa (endHandledAt) và bản lưu nào (archivedId, null nếu không có ai điểm danh)
+    endHandledAt: { type: Date, default: null },
+    archivedId: { type: mongoose.Schema.Types.ObjectId, default: null },
   },
   { timestamps: true, toJSON: cleanJSON(['key', 'createdAt', 'updatedAt']) }
 );

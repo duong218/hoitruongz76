@@ -1,4 +1,4 @@
-import { Attendance, Employee, Group, Block, Department, EventSetting, EventArchive } from '../models/index.js';
+import { AuditLog, Attendance, Employee, Group, Block, Department, EventSetting, EventArchive } from '../models/index.js';
 
 // ponytail: khóa trong 1 tiến trình; chạy nhiều instance thì cần khóa trong DB.
 let busy = false;
@@ -17,11 +17,10 @@ export async function withArchiveLock(fn) {
 }
 
 /**
- * Chụp sự kiện hiện tại vào EventArchive RỒI mới xóa đúng những bản ghi đã chụp.
- * Lưu lỗi thì không xóa gì. Không có ai điểm danh thì không lưu (trả null, vẫn xóa nếu có gì).
- * @returns {Promise<object|null>} bản lưu (có rows) hoặc null
+ * Chụp sự kiện hiện tại vào EventArchive (KHÔNG xóa gì). Không có ai điểm danh thì trả null.
+ * @returns {Promise<{archive: object, ids: any[]}|null>}
  */
-export async function archiveAndClear(req, cause) {
+async function snapshot(req, cause) {
   const records = await Attendance.find().lean();
   if (!records.length) return null;
 
@@ -76,7 +75,7 @@ export async function archiveAndClear(req, cause) {
   const archive = await EventArchive.create({
     eventName: event?.eventName || 'Sự kiện',
     startedAt: event?.startedAt || null,
-    archivedBy: req.user?.code || '',
+    archivedBy: req?.user?.code || 'Hệ thống',
     cause,
     summary: {
       required: rows.filter((r) => r.required).length,
@@ -86,7 +85,56 @@ export async function archiveAndClear(req, cause) {
     rows,
   });
 
-  // Chỉ xóa đúng các bản ghi đã chụp: ai điểm danh sau lúc chụp không bị mất.
-  await Attendance.deleteMany({ _id: { $in: records.map((r) => r._id) } });
-  return archive;
+  return { archive, ids: records.map((r) => r._id) };
+}
+
+/**
+ * Lưu lịch sử RỒI mới xóa đúng những bản ghi đã chụp (ai điểm danh sau lúc chụp không bị mất).
+ * Lưu lỗi thì không xóa gì. Không có ai điểm danh thì không lưu (trả null).
+ * Nếu sự kiện đã được tự lưu lúc hết giờ và dữ liệu chưa đổi thì dùng lại bản đó, không tạo bản trùng.
+ * ponytail: so sánh bằng số lượt điểm danh; điểm danh hộ sau giờ đóng làm lệch số lượt thì sẽ lưu thêm một bản mới.
+ * @returns {Promise<object|null>} bản lưu (có rows) hoặc null
+ */
+export async function archiveAndClear(req, cause) {
+  const ev = await EventSetting.findOne({ key: 'main' }).lean();
+  if (ev?.archivedId) {
+    const existing = await EventArchive.findById(ev.archivedId);
+    if (existing && existing.summary.checked === (await Attendance.countDocuments())) {
+      await Attendance.deleteMany({});
+      return existing;
+    }
+  }
+  const snap = await snapshot(req, cause);
+  if (!snap) return null;
+  await Attendance.deleteMany({ _id: { $in: snap.ids } });
+  return snap.archive;
+}
+
+/**
+ * Hết giờ đóng thì tự lưu sự kiện vào lịch sử (giữ nguyên điểm danh để quản lý còn xem/xuất).
+ * Mỗi sự kiện chỉ xử lý một lần (endHandledAt). Lỗi thì thử lại ở lần kiểm tra sau.
+ */
+export async function archiveIfEnded() {
+  try {
+    const peek = await EventSetting.findOne({ key: 'main' }, 'closesAt endHandledAt').lean();
+    if (!peek?.closesAt || peek.endHandledAt || peek.closesAt > new Date()) return;
+    await withArchiveLock(async () => {
+      const ev = await EventSetting.findOne({ key: 'main' });
+      if (!ev || ev.endHandledAt || !ev.closesAt || ev.closesAt > new Date()) return;
+      const snap = await snapshot(null, 'auto_end');
+      ev.archivedId = snap?.archive._id || null;
+      ev.endHandledAt = new Date();
+      await ev.save();
+      await AuditLog.create({
+        action: 'event.auto_archive',
+        actorCode: null,
+        actorRole: null,
+        detail: String(
+          snap ? `Hết giờ, tự lưu "${ev.eventName}" vào lịch sử (${snap.archive.summary.checked} lượt)` : `Hết giờ "${ev.eventName}", không có ai điểm danh nên không lưu`
+        ).slice(0, 300),
+      });
+    });
+  } catch (err) {
+    console.error('Không tự lưu được lịch sử sự kiện:', err.message); // 409 khi đang bận cũng vào đây, lần sau thử lại
+  }
 }

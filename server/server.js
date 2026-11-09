@@ -1,6 +1,7 @@
 import app from './src/app.js';
 import { env } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
+import { archiveIfEnded } from './src/utils/archive.js';
 
 async function start() {
   try {
@@ -14,8 +15,13 @@ async function start() {
     console.log(`🚀 Server đang chạy tại http://localhost:${env.PORT}`);
   });
 
+  // Hết giờ đóng thì tự lưu lịch sử. ponytail: bộ đếm trong tiến trình, chạy nhiều bản server thì cần khóa trong DB.
+  archiveIfEnded();
+  const timer = setInterval(archiveIfEnded, 30 * 1000);
+
   const shutdown = async (signal) => {
     console.log(`\nNhận ${signal}, đang tắt server...`);
+    clearInterval(timer);
     server.close(async () => {
       try {
         await disconnectDB();

@@ -27,7 +27,7 @@ const archiveSchema = new mongoose.Schema(
     startedAt: { type: Date, default: null },
     archivedAt: { type: Date, default: Date.now },
     archivedBy: { type: String, default: '' }, // mã người bấm
-    cause: { type: String, enum: ['reset', 'start_new'], required: true },
+    cause: { type: String, enum: ['reset', 'start_new', 'auto_end'], required: true },
     summary: { required: Number, checked: Number, proxy: Number },
     rows: { type: [rowSchema], default: [] },
   },
