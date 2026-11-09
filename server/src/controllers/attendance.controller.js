@@ -3,6 +3,7 @@ import { eventGate } from '../utils/eventWindow.js';
 import { ROLES } from '../constants/roles.server.js';
 import { audit } from '../utils/audit.js';
 import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
+import { getCachedGroups, getCachedEvent } from '../utils/memoryCache.js';
 
 export const attendanceController = {
   // Lấy danh sách điểm danh
@@ -33,8 +34,8 @@ export const attendanceController = {
         return res.status(400).json({ message: 'Thiếu mã tem ghế. Hãy nhập mã 6 ký tự in trên tem hoặc quét QR.' });
       }
 
-      // 1. Kiểm tra sự kiện đã mở điểm danh chưa
-      const event = await EventSetting.findOne({ key: 'main' });
+      // 1. Kiểm tra sự kiện đã mở điểm danh chưa (dùng in-memory cache)
+      const event = await getCachedEvent();
       // Token đăng nhập còn hạn 12 giờ nên phải chặn theo khung giờ cả ở đây
       const gate = eventGate(event);
       if (gate) return res.status(403).json(gate);
@@ -48,8 +49,8 @@ export const attendanceController = {
         return res.status(404).json({ message: 'Không tìm thấy thông tin nhân viên.' });
       }
 
-      // 3. Tìm nhóm của nhân viên
-      const groups = await Group.find();
+      // 3. Tìm nhóm của nhân viên (dùng in-memory cache)
+      const groups = await getCachedGroups();
       const group = employee.blockId
         ? groups.find((g) => Array.isArray(g.blockIds) && g.blockIds.includes(employee.blockId))
         : null;

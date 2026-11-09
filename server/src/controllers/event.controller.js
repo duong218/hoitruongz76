@@ -1,6 +1,7 @@
 import { EventSetting, Seat } from '../models/index.js';
 import { audit } from '../utils/audit.js';
 import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
+import { invalidateCachedEvent } from '../utils/memoryCache.js';
 
 // Chỉ nhận http/https, tối đa 200 ký tự, không kèm tài khoản. Chuỗi rỗng = xóa đường dẫn.
 function validateAppUrl(value) {
@@ -97,6 +98,7 @@ export const eventController = {
       if (appUrl !== undefined) event.appUrl = appUrl.trim();
 
       await event.save();
+      invalidateCachedEvent();
       const parts = [];
       if (eventName !== undefined) parts.push('đổi tên sự kiện');
       if (guestEnabled !== undefined) parts.push(`khách mời=${guestEnabled ? 'bật' : 'tắt'}`);
@@ -137,6 +139,7 @@ export const eventController = {
         ev.endHandledAt = null;
         ev.archivedId = null;
         await ev.save();
+        invalidateCachedEvent();
         await audit(
           req,
           'event.start_new',

@@ -12,4 +12,7 @@ const seatSchema = new mongoose.Schema(
   { timestamps: true, toJSON: cleanJSON(['token', 'createdAt', 'updatedAt']) }
 );
 
+// Đánh chỉ mục token để tối ưu tra cứu ghế tức thì (O(1)) khi hàng trăm người quét QR cùng lúc
+seatSchema.index({ token: 1 });
+
 export const Seat = mongoose.model('Seat', seatSchema);

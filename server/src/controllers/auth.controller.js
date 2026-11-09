@@ -5,6 +5,7 @@ import { ROLES, GUEST_GROUP_ID, GUEST_GROUP_NAME } from '../constants/roles.serv
 import { Employee, Group, EventSetting } from '../models/index.js';
 import { auditFailedLogin } from '../utils/audit.js';
 import { eventGate, sendGate } from '../utils/eventWindow.js';
+import { getCachedGroups, getCachedEvent } from '../utils/memoryCache.js';
 
 const SESSION_DURATION_HOURS = 5;
 const ATTENDEE_SESSION_HOURS = 12;
@@ -70,8 +71,8 @@ export const authController = {
         return res.status(400).json({ message: 'Vui lòng nhập mã nhân viên.' });
       }
 
-      // Ngoài khung giờ sự kiện thì không ai vào được (chặn trước khi tra cứu cho nhẹ DB)
-      const gate = eventGate(await EventSetting.findOne({ key: 'main' }));
+      // Ngoài khung giờ sự kiện thì không ai vào được (chặn trước khi tra cứu cho nhẹ DB, dùng in-memory cache)
+      const gate = eventGate(await getCachedEvent());
       if (gate) return sendGate(res, gate);
 
       const employee = await Employee.findOne({ code: trimmedCode });
@@ -86,7 +87,7 @@ export const authController = {
         });
       }
 
-      const groups = await Group.find();
+      const groups = await getCachedGroups();
       const matchedGroup = employee.blockId
         ? groups.find((g) => Array.isArray(g.blockIds) && g.blockIds.includes(employee.blockId))
         : null;
