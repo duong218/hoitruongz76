@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useEmployees } from '../../hooks/useEmployees.js';
+import { useGroups } from '../../hooks/useGroups.js';
 import { useAuditLogs } from '../../hooks/useAuditLogs.js';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue.js';
 import { AuditFilters } from '../../components/audit/AuditFilters.jsx';
@@ -13,6 +14,7 @@ const PAGE_SIZE = 20;
 
 export function AuditPage() {
   const { employees } = useEmployees();
+  const { groups } = useGroups();
   const [range, setRange] = useState('7d');
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -32,6 +34,13 @@ export function AuditPage() {
     () => new Map(employees.map((e) => [String(e.code).toUpperCase(), e])),
     [employees]
   );
+
+  // Tra tên nhóm ghế từ id nhóm (ví dụ: group-agency -> "Khối cơ quan")
+  const groupMap = useMemo(
+    () => new Map(groups.map((g) => [g.id, g.name])),
+    [groups]
+  );
+
   const days = useMemo(() => groupByDay(items), [items]);
 
   // Đổi bộ lọc thì quay về trang 1
@@ -100,6 +109,7 @@ export function AuditPage() {
       <AuditList
         days={days}
         people={people}
+        groupMap={groupMap}
         loading={loading}
         error={error}
         onRetry={refresh}

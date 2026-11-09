@@ -24,10 +24,10 @@ function Skeleton() {
 }
 
 /**
- * @param {{ days: Array<{key:string,label:string,items:object[]}>, people: Map<string, object>,
+ * @param {{ days: Array<{key:string,label:string,items:object[]}>, people: Map<string, object>, groupMap?: Map<string, string>,
  *   loading: boolean, error: string|null, onRetry: () => void, filtered: boolean, onClearFilters: () => void }} props
  */
-export function AuditList({ days, people, loading, error, onRetry, filtered, onClearFilters }) {
+export function AuditList({ days, people, groupMap, loading, error, onRetry, filtered, onClearFilters }) {
   const hasItems = days.length > 0;
 
   if (error && !hasItems) {
@@ -74,7 +74,12 @@ export function AuditList({ days, people, loading, error, onRetry, filtered, onC
           <div className={CARD}>
             <ul className="divide-y divide-[#F1F5F9]">
               {day.items.map((log) => (
-                <AuditRow key={log.id} log={log} person={log.actorCode ? people.get(String(log.actorCode).toUpperCase()) : undefined} />
+                <AuditRow
+                  key={log.id}
+                  log={log}
+                  person={log.actorCode ? people.get(String(log.actorCode).toUpperCase()) : undefined}
+                  groupMap={groupMap}
+                />
               ))}
             </ul>
           </div>

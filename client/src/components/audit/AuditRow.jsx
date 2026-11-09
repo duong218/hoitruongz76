@@ -37,12 +37,29 @@ function Actor({ log, person }) {
 }
 
 /**
+ * Định dạng lại nội dung chi tiết nhật ký để hiển thị tên nhóm ghế thân thiện thay vì ID kỹ thuật (ví dụ: group-agency -> "Khối cơ quan")
+ */
+function formatAuditDetail(detail, groupMap) {
+  if (!detail) return '';
+
+  // Thay thế các ID nhóm ghế dạng group-[a-z0-9_-]+
+  return detail.replace(/\b(group-[a-zA-Z0-9_-]+)\b/g, (match) => {
+    if (groupMap && groupMap.has(match)) {
+      return `nhóm "${groupMap.get(match)}"`;
+    }
+    // Nếu là nhóm đã bị xóa hoặc chưa kịp tải, hiển thị gọn gàng tiếng Việt thay vì lộ ID thô
+    return 'nhóm ghế';
+  });
+}
+
+/**
  * Một dòng nhật ký. Mobile: xếp dọc (giờ + loại thao tác / người thực hiện / chi tiết).
  * Từ md trở lên: 1 hàng 4 cột. DOM giữ thứ tự desktop, mobile đổi thứ tự bằng `order`.
  */
-export function AuditRow({ log, person }) {
+export function AuditRow({ log, person, groupMap }) {
   const action = getAuditAction(log.action);
   const Icon = getAuditCategoryIcon(log.action);
+  const formattedDetail = formatAuditDetail(log.detail, groupMap);
 
   return (
     <li
@@ -67,7 +84,7 @@ export function AuditRow({ log, person }) {
       </div>
 
       <p className="order-4 col-span-2 md:order-4 md:col-span-1 text-[16px] text-[#334155] leading-normal break-words">
-        {log.detail || <span className="text-[#94A3B8]">Không có chi tiết</span>}
+        {formattedDetail || <span className="text-[#94A3B8]">Không có chi tiết</span>}
       </p>
     </li>
   );
