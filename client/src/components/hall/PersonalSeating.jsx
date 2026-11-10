@@ -8,6 +8,7 @@ import { ROLES, GUEST_GROUP_ID } from '../../constants/roles.js';
 import { useSeatAssignments } from '../../hooks/useSeatAssignments.js';
 import { TOTAL_ROWS, SEATS_PER_SIDE, seatId } from '../../constants/hall.js';
 import { HallMap } from './HallMap.jsx';
+import { SeatPickerMobile } from './SeatPickerMobile.jsx';
 import { SeatInfoTip, buildSeatTip } from './SeatInfoTip.jsx';
 import { useGroups } from '../../hooks/useGroups.js';
 import { useAttendance } from '../../hooks/useAttendance.js';
@@ -61,13 +62,15 @@ export function PersonalSeating() {
     return { ...groupSeats, ...Object.fromEntries(list.map((s) => [s.seatId, resolveGroup(byCode.get(s.employeeCode?.toUpperCase()), groups)?.id || ASSIGNED])) };
   }, [list, employees, groups, groupSeats]);
   const mapGroups = useMemo(() => [...groups, ...GROUPS], [groups]);
+  const colorOf = (gid) => mapGroups.find((g) => g.id === gid)?.color || '#008BC5';
+  const attended = useMemo(() => new Set(attendance.map((a) => a.seatId).filter(Boolean)), [attendance]);
   const renderTip = (id) => { const d = buildSeatTip({ seatId: id, ownerCode: ownerOf.get(id), nameOf, attendance }); return d && <SeatInfoTip data={d} />; };
 
   const pick = (id) => {
     setSelRows([]);
     setSel(id);
     setQ('');
-    if (window.innerWidth < 1024) panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.innerWidth < 1024) panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); // bảng gán nằm ngay dưới sơ đồ, chỉ cuộn vừa đủ thấy
   };
 
   // seat = null: bỏ gán. Người đang giữ ghế khác sẽ được chuyển sang ghế này; người đang giữ ghế này bị thay ra.
@@ -130,40 +133,23 @@ export function PersonalSeating() {
       <div>
         <h1 className="text-[26px] font-extrabold text-[#0F172A] leading-tight">Xếp chỗ theo từng người</h1>
         <p className="text-[15px] text-[#475569] mt-1">
-          Bấm vào một ghế trên sơ đồ, rồi nhập mã hoặc tên nhân viên ở bảng bên phải. Mỗi người chỉ được ngồi và điểm danh đúng ghế bạn gán. Ghế xanh là đã có người, rê chuột vào để xem tên.
+          Bấm vào một ghế trên sơ đồ, rồi nhập mã hoặc tên nhân viên ở bảng <span className="hidden lg:inline">bên phải</span><span className="lg:hidden">ngay bên dưới</span>. Mỗi người chỉ được ngồi và điểm danh đúng ghế bạn gán. Ghế có màu là đã có người, <span className="hidden lg:inline">rê chuột vào để xem tên.</span><span className="lg:hidden">chạm vào ghế để xem tên ở bảng gán.</span>
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
-        <div className="space-y-6 min-w-0">
-          <div className="overflow-x-auto rounded-xl">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+          <div className="hidden lg:block overflow-x-auto rounded-xl">
             <div className="min-w-[760px]">
               <HallMap seatGroups={seatGroups} mode="assign" selectedRows={selRows} onToggleRow={toggleRow} groups={mapGroups} onSeatClick={pick} selectedSeatId={sel} renderSeatTip={renderTip} />
             </div>
           </div>
-
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
-            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#EEF2F6]">
-              <span className="text-[13px] font-bold uppercase tracking-wider text-[#64748B]">Đã gán: {list.length} người</span>
-              <input className="h-9 w-56 rounded-lg border border-[#CBD5E1] px-3 text-[14px]" placeholder="Lọc theo mã, tên, hàng..." value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} />
-            </div>
-            <div className="divide-y divide-[#EEF2F6] ">
-              {pageRows.map((s) => (
-                <div key={s.seatId} className={`flex items-center justify-between gap-3 px-4 py-2 ${s.seatId === sel ? 'bg-[#EAF6FF]' : ''}`}>
-                  <button type="button" onClick={() => pick(s.seatId)} className="min-w-0 text-left cursor-pointer">
-                    <p className="text-[15px] font-bold text-[#0F172A] truncate">{nameOf.get(s.employeeCode) || s.employeeCode} <span className="font-mono text-[13px] font-medium text-[#64748B]">{s.employeeCode}</span></p>
-                    <p className="text-[14px] text-[#334155]">{seatLabel(s.seatId)}</p>
-                  </button>
-                  <button type="button" onClick={() => assign(s.employeeCode, null)} className="min-h-[36px] px-2 text-[13px] font-bold text-[#C53030] hover:underline cursor-pointer">Bỏ gán</button>
-                </div>
-              ))}
-              {rows.length === 0 && <p className="px-4 py-6 text-[14px] text-[#64748B]">{list.length ? 'Không có kết quả.' : 'Chưa gán ai.'}</p>}
-            </div>
-            <div className="px-4 py-3 border-t border-[#EEF2F6] empty:hidden"><Pagination page={cur} pages={pages} total={rows.length} limit={PAGE_SIZE} onChange={setPage} /></div>
+          <div className="lg:hidden">
+            <SeatPickerMobile seatGroups={seatGroups} colorOf={colorOf} ownerOf={ownerOf} nameOf={nameOf} attended={attended} sel={sel} onPick={pick} selRows={selRows} onToggleRow={toggleRow} />
           </div>
         </div>
 
-        <aside ref={panelRef} className="lg:sticky lg:top-24 scroll-mt-20 bg-white border border-[#E2E8F0] rounded-2xl p-4 space-y-3 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+        <aside ref={panelRef} className="lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:sticky lg:top-24 scroll-mt-20 bg-white border border-[#E2E8F0] rounded-2xl p-4 space-y-3 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
           {selRows.length ? (
             <>
               <div>
@@ -232,6 +218,28 @@ export function PersonalSeating() {
             </>
           )}
         </aside>
+
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-[#EEF2F6]">
+              <span className="text-[13px] font-bold uppercase tracking-wider text-[#64748B]">Đã gán: {list.length} người</span>
+              <input className="h-10 w-full sm:w-56 rounded-lg border border-[#CBD5E1] px-3 text-[14px]" placeholder="Lọc theo mã, tên, hàng..." value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} />
+            </div>
+            <div className="divide-y divide-[#EEF2F6] ">
+              {pageRows.map((s) => (
+                <div key={s.seatId} className={`flex items-center justify-between gap-3 px-4 py-2 ${s.seatId === sel ? 'bg-[#EAF6FF]' : ''}`}>
+                  <button type="button" onClick={() => pick(s.seatId)} className="min-w-0 text-left cursor-pointer">
+                    <p className="text-[15px] font-bold text-[#0F172A] truncate">{nameOf.get(s.employeeCode) || s.employeeCode} <span className="font-mono text-[13px] font-medium text-[#64748B]">{s.employeeCode}</span></p>
+                    <p className="text-[14px] text-[#334155]">{seatLabel(s.seatId)}</p>
+                  </button>
+                  <button type="button" onClick={() => assign(s.employeeCode, null)} className="min-h-[36px] px-2 text-[13px] font-bold text-[#C53030] hover:underline cursor-pointer">Bỏ gán</button>
+                </div>
+              ))}
+              {rows.length === 0 && <p className="px-4 py-6 text-[14px] text-[#64748B]">{list.length ? 'Không có kết quả.' : 'Chưa gán ai.'}</p>}
+            </div>
+            <div className="px-4 py-3 border-t border-[#EEF2F6] empty:hidden"><Pagination page={cur} pages={pages} total={rows.length} limit={PAGE_SIZE} onChange={setPage} /></div>
+          </div>
+        </div>
       </div>
     </div>
   );
