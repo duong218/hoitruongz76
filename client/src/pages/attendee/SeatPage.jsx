@@ -165,6 +165,8 @@ export function SeatPage() {
   // - Thuộc nhóm có checkInRequired = true
   // - Chưa điểm danh
   const needCheckIn = group && group.checkInRequired && !myAttendance;
+  // Đã điểm danh có ghế: bỏ chỉ dẫn đường đi, sơ đồ chỉ đánh dấu "Bạn đã ngồi đây"
+  const seated = !!myAttendance?.seatId;
 
   return (
     <div className={`space-y-3 sm:space-y-5 max-w-3xl mx-auto w-full ${needCheckIn ? 'pb-32' : 'pb-6'}`}>
@@ -218,6 +220,8 @@ export function SeatPage() {
         ) : hasSeats ? (
           /* TH2: Có nhóm và đã có ghế được sắp */
           <div className="space-y-3">
+            {!seated && (
+            <>
             <p className="flex items-center gap-2 text-[16px] leading-6 text-[#0F172A]">
               <Navigation className="w-5 h-5 shrink-0 text-[#008BC5]" />
               <span>Bạn thuộc <strong style={{ color: group.color }}>{group.name}</strong>. Hãy tới đây ngồi:</span>
@@ -245,6 +249,8 @@ export function SeatPage() {
             <p className="hidden sm:block text-[16px] leading-6 text-[#334155]">
               Tìm các ghế nhấp nháy màu <strong style={{ color: group.color }}>{group.name}</strong> và đi theo đường nét đứt từ Cửa vào.
             </p>
+            </>
+            )}
 
             {ttsSupported && viVoice !== false ? (
               <Button type="button" variant="primary" fullWidth icon={Volume2} onClick={handleSpeak} aria-pressed={speaking}>
@@ -262,7 +268,7 @@ export function SeatPage() {
               className="sm:!hidden !text-[#008BC5] !border-[#008BC5] !border-[1.5px]"
               onClick={() => mapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
-              Định vị chỗ ngồi trên sơ đồ
+              {seated ? 'Xem ghế của bạn trên sơ đồ' : 'Định vị chỗ ngồi trên sơ đồ'}
             </Button>
           </div>
         ) : (
@@ -292,7 +298,7 @@ export function SeatPage() {
             Sơ đồ định vị hội trường 2D
           </h3>
           <span className="text-[14px] text-[#334155]">
-            {hasSeats ? 'Theo dõi đường đi từ Cửa vào' : 'Hiện chưa phân bổ chỗ'}
+            {hasSeats ? (seated ? 'Ghế của bạn đã được đánh dấu' : 'Theo dõi đường đi từ Cửa vào') : 'Hiện chưa phân bổ chỗ'}
           </span>
         </div>
 
@@ -318,7 +324,11 @@ export function SeatPage() {
         </div>
         {hasSeats && (
           <p className="text-[16px] leading-6 text-[#334155]">
-            Ghế <strong>mờ</strong> là ghế đã có người điểm danh, hãy chọn ghế còn rõ màu.
+            {seated ? (
+              <>Ô <strong>xanh lá</strong> là ghế của bạn. Ghế <strong>mờ</strong> là ghế đã có người điểm danh.</>
+            ) : (
+              <>Ghế <strong>mờ</strong> là ghế đã có người điểm danh, hãy chọn ghế còn rõ màu.</>
+            )}
           </p>
         )}
       </div>

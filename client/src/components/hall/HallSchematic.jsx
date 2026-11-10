@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { ArrowUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TOTAL_ROWS, isVipRow, seatId } from '../../constants/hall.js';
+import { ArrowUp, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { TOTAL_ROWS, isVipRow, seatId, parseSeatId } from '../../constants/hall.js';
 import { formatSeatRanges } from '../../utils/seatSummary.js';
 
 // Sơ đồ rút gọn cho điện thoại: mỗi hàng 1 dòng, mỗi bên 1 ô, chữ to.
 // Sân khấu ở trên, Cửa vào ở dưới (giống sơ đồ 2D). Cột giữa là lối đi.
-function Block({ nums, color, side, delay = 0, taken }) {
+function Block({ nums, color, side, delay = 0, taken, sat = null }) {
   // Bên trái: ghế 10 sát tường (trái) -> ghế 1 sát lối đi. Bên phải ngược lại.
   const order = Array.from({ length: 10 }, (_, i) => (side === 'L' ? 10 - i : i + 1));
   const set = new Set(nums);
@@ -23,7 +23,7 @@ function Block({ nums, color, side, delay = 0, taken }) {
             key={n}
             className={`flex-1 rounded-[3px] ${mine ? 'h-2.5' : 'h-2'}`}
             style={{
-              background: set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0',
+              background: n === sat ? '#16A34A' : set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0',
               opacity: taken?.has(n) ? 0.25 : 1, // ghế đã có người điểm danh
               transition: 'opacity 0.6s ease',
             }}
@@ -31,9 +31,13 @@ function Block({ nums, color, side, delay = 0, taken }) {
         ))}
       </div>
       {mine && (
-        <span className="text-[16px] font-bold leading-5 text-center text-[#0F172A]">
-          {nums.length === 10 ? 'Cả bên này' : formatSeatRanges(nums)}
-        </span>
+        sat ? (
+          <span className="text-[16px] font-bold leading-5 text-center text-[#166534]">Bạn ngồi đây</span>
+        ) : (
+          <span className="text-[16px] font-bold leading-5 text-center text-[#0F172A]">
+            {nums.length === 10 ? 'Cả bên này' : formatSeatRanges(nums)}
+          </span>
+        )
       )}
     </div>
   );
@@ -55,6 +59,15 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
   const rowCount = Object.keys(mine).length;
   // Đường chỉ dẫn chảy từ Cửa vào lên tới hàng xa nhất (số nhỏ nhất) của nhóm
   const farthest = rowCount ? Math.min(...Object.keys(mine).map(Number)) : null;
+  // Đã điểm danh có ghế: bỏ chỉ dẫn đường đi, chỉ giữ khung ghế của mình với nhãn "Bạn ngồi đây"
+  const seatedAt = mySeatId ? parseSeatId(mySeatId) : null;
+  const rowOf = (r) => {
+    if (!seatedAt) return mine[r];
+    if (r !== seatedAt.row) return undefined;
+    const own = { L: [], R: [] };
+    own[seatedAt.side] = [...new Set([...(mine[r]?.[seatedAt.side] || []), seatedAt.n])].sort((a, b) => a - b);
+    return own;
+  };
   let order = 0; // thứ tự hiện dần các khung
   // Các số ghế đã có người điểm danh (trừ ghế của chính mình) trong từng khối
   const takenIn = (r, side, nums) =>
@@ -73,8 +86,8 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
         <span className="text-center text-[14px] font-semibold text-[#334155]">Bên phải</span>
 
         {rows.map((r) => {
-          const row = mine[r];
-          const flowing = farthest !== null && r >= farthest;
+          const row = rowOf(r);
+          const flowing = !seatedAt && farthest !== null && r >= farthest;
           const hasL = !!row?.L.length;
           const hasR = !!row?.R.length;
           return (
@@ -85,7 +98,7 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
                 </span>
                 {isVipRow(r) && <span className="text-[14px] leading-4 font-semibold text-[#B45309]">VIP</span>}
               </div>
-              <div className="h-12 py-0.5"><Block nums={row?.L || []} color={color} side="L" delay={hasL ? 150 + 90 * order++ : 0} taken={takenIn(r, 'L', row?.L)} /></div>
+              <div className="h-12 py-0.5"><Block nums={row?.L || []} color={color} side="L" delay={hasL ? 150 + 90 * order++ : 0} taken={takenIn(r, 'L', row?.L)} sat={seatedAt?.row === r && seatedAt.side === 'L' ? seatedAt.n : null} /></div>
               {/* Lối đi giữa: đường nét đứt chảy lên tới hàng của nhóm, mũi tên chỉ vào khung */}
               <div className="relative h-12 overflow-hidden" aria-hidden="true">
                 {flowing ? (
@@ -99,19 +112,19 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
                 {hasL && (
                   <ChevronLeft
                     className="arrow-nudge-l absolute top-1/2 -mt-[9px] h-[18px] w-[18px] right-1/2 mr-[1px]"
-                    style={{ color }}
+                    style={{ color: seatedAt ? '#16A34A' : color }}
                     strokeWidth={3.5}
                   />
                 )}
                 {hasR && (
                   <ChevronRight
                     className="arrow-nudge-r absolute top-1/2 -mt-[9px] h-[18px] w-[18px] left-1/2 ml-[1px]"
-                    style={{ color }}
+                    style={{ color: seatedAt ? '#16A34A' : color }}
                     strokeWidth={3.5}
                   />
                 )}
               </div>
-              <div className="h-12 py-0.5"><Block nums={row?.R || []} color={color} side="R" delay={hasR ? 150 + 90 * order++ : 0} taken={takenIn(r, 'R', row?.R)} /></div>
+              <div className="h-12 py-0.5"><Block nums={row?.R || []} color={color} side="R" delay={hasR ? 150 + 90 * order++ : 0} taken={takenIn(r, 'R', row?.R)} sat={seatedAt?.row === r && seatedAt.side === 'R' ? seatedAt.n : null} /></div>
             </React.Fragment>
           );
         })}
@@ -121,7 +134,12 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
         </div>
       </div>
 
-      {rowCount > 0 && (
+      {seatedAt ? (
+        <p className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[15px] leading-5 text-[#0F172A] fade-in-up">
+          <CheckCircle2 className="w-5 h-5 shrink-0 text-[#16A34A]" />
+          <span>Bạn đã ngồi ở ô <strong className="text-[#166534]">xanh lá</strong> trên sơ đồ. Ghế mờ là ghế đã có người.</span>
+        </p>
+      ) : rowCount > 0 && (
         <p className="flex items-center gap-2 rounded-lg bg-[#EAF6FF] px-3 py-2 text-[15px] leading-5 text-[#0F172A] fade-in-up">
           <ArrowUp className="w-5 h-5 shrink-0 text-[#008BC5]" />
           <span>Từ <strong>Cửa vào</strong> đi thẳng lên lối giữa, rẽ vào <strong>khung màu</strong> của bạn ({rowCount} hàng), ngồi ghế trống bất kỳ.</span>

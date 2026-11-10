@@ -5,6 +5,7 @@ import {
   VIP_ROWS,
   seatId,
   isVipRow,
+  parseSeatId,
 } from '../../constants/hall.js';
 import {
   HALL_LAYOUT,
@@ -15,6 +16,7 @@ import {
 } from './geometry.js';
 import { Seat } from './Seat.jsx';
 import { EntrancePath } from './EntrancePath.jsx';
+import { YouAreHere } from './YouAreHere.jsx';
 
 export function HallMap({
   mode = 'view', // 'view' | 'manage' | 'assign'
@@ -40,9 +42,13 @@ export function HallMap({
     return groupMap.get(highlightGroupId) || null;
   }, [highlightGroupId, groupMap]);
 
+  // Đã điểm danh có ghế: bỏ chỉ dẫn đường đi, chỉ đánh dấu "Bạn đã ngồi đây" tại ghế của mình
+  const seatedAt = mode === 'view' && mySeatId ? parseSeatId(mySeatId) : null;
+  const isSeated = !!seatedAt;
+
   // Phân tích các ghế được gán cho highlightGroup (chế độ view)
   const { highlightedRows, halos, nearestRowToEntrance, pathData } = useMemo(() => {
-    if (mode !== 'view' || !highlightGroupId) {
+    if (mode !== 'view' || !highlightGroupId || isSeated) {
       return { highlightedRows: new Set(), halos: [], nearestRowToEntrance: null, pathData: [] };
     }
 
@@ -96,7 +102,7 @@ export function HallMap({
       nearestRowToEntrance: nearest,
       pathData: paths,
     };
-  }, [mode, highlightGroupId, seatGroups]);
+  }, [mode, highlightGroupId, seatGroups, isSeated]);
 
   // Tạo mảng 1..10 hàng
   const rows = Array.from({ length: TOTAL_ROWS }, (_, i) => i + 1);
@@ -331,8 +337,8 @@ export function HallMap({
                     x={coords.x}
                     y={coords.y}
                     seatNumber={n}
-                    fill={fill}
-                    stroke={stroke}
+                    fill={mode === 'view' && sId === mySeatId ? '#16A34A' : fill}
+                    stroke={mode === 'view' && sId === mySeatId ? '#15803D' : stroke}
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                   />
                 );
@@ -366,8 +372,8 @@ export function HallMap({
                     x={coords.x}
                     y={coords.y}
                     seatNumber={n}
-                    fill={fill}
-                    stroke={stroke}
+                    fill={mode === 'view' && sId === mySeatId ? '#16A34A' : fill}
+                    stroke={mode === 'view' && sId === mySeatId ? '#15803D' : stroke}
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                   />
                 );
@@ -427,6 +433,9 @@ export function HallMap({
             className="hall-halo-pulse"
           />
         ))}
+
+        {/* Ghế của chính người xem sau khi điểm danh */}
+        {seatedAt && <YouAreHere row={seatedAt.row} side={seatedAt.side} n={seatedAt.n} />}
 
         {/* Khu vực CỬA VÀO dưới cùng giữa */}
         <g className="entrance-area">
