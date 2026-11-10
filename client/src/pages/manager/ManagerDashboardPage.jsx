@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { seatService } from '../../services/seatService.js';
 import { CountUp } from '../../components/ui/CountUp.jsx';
 import { Link } from 'react-router-dom';
 import { useGroups } from '../../hooks/useGroups.js';
@@ -33,10 +34,31 @@ const linkBtn =
 
 export function ManagerDashboardPage() {
   const { groups } = useGroups();
-  const { seatGroups } = useSeatAssignments();
-  const { event } = useEventSettings();
-  const { employees } = useEmployees();
-  const { attendance } = useAttendance();
+  const { seatGroups: groupSeats, refresh: refreshSeats } = useSeatAssignments();
+  const { event, refresh: refreshEvent } = useEventSettings();
+  const { employees, refresh: refreshEmployees } = useEmployees();
+  const { attendance, refresh: refreshAttendance } = useAttendance();
+  const [personal, setPersonal] = useState([]);
+  const individual = event.seatMode === 'individual';
+
+  // Tự cập nhật: tải lại mỗi 10s và khi quay lại tab (poll nhẹ, ponytail: đổi sang SSE nếu cần tức thì)
+  useEffect(() => {
+    const load = () => {
+      refreshEvent(); refreshSeats(); refreshEmployees(); refreshAttendance();
+      if (individual) seatService.getPersonal().then(setPersonal).catch(() => {});
+    };
+    load();
+    const t = setInterval(() => document.visibilityState === 'visible' && load(), 10000);
+    document.addEventListener('visibilitychange', load);
+    return () => { clearInterval(t); document.removeEventListener('visibilitychange', load); };
+  }, [individual]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Chế độ từng người: ghế -> nhóm của người ngồi ghế đó
+  const seatGroups = useMemo(() => {
+    if (!individual) return groupSeats;
+    const byCode = new Map(employees.map((e) => [e.code?.toUpperCase(), e]));
+    return Object.fromEntries(personal.map((s) => [s.seatId, resolveGroup(byCode.get(s.employeeCode?.toUpperCase()), groups)?.id]).filter(([, g]) => g));
+  }, [individual, groupSeats, personal, employees, groups]);
 
   const assignedSeatCount = Object.keys(seatGroups).length;
   const freeSeatCount = TOTAL_SEATS - assignedSeatCount;
