@@ -58,7 +58,7 @@ export function ManagerDashboardPage() {
   const seatGroups = useMemo(() => {
     if (!individual) return groupSeats;
     const byCode = new Map(employees.map((e) => [e.code?.toUpperCase(), e]));
-    return Object.fromEntries(personal.map((s) => [s.seatId, resolveGroup(byCode.get(s.employeeCode?.toUpperCase()), groups)?.id]).filter(([, g]) => g));
+    return { ...groupSeats, ...Object.fromEntries(personal.map((s) => [s.seatId, resolveGroup(byCode.get(s.employeeCode?.toUpperCase()), groups)?.id]).filter(([, g]) => g)) };
   }, [individual, groupSeats, personal, employees, groups]);
 
   const assignedSeatCount = Object.keys(seatGroups).length;
