@@ -4,6 +4,10 @@ export const TOTAL_SEATS_PER_ROW = SEATS_PER_SIDE * 2; // 20
 export const TOTAL_SEATS = TOTAL_ROWS * TOTAL_SEATS_PER_ROW; // 200
 export const VIP_ROWS = [1, 2];
 
+// Màu ghế của chính người điểm danh: đen, KHÔNG nằm trong bảng màu nhóm bên dưới (đừng thêm đen vào bảng)
+export const MY_SEAT_COLOR = '#111827';
+export const MY_SEAT_STROKE = '#000000';
+
 export const GROUP_COLOR_PALETTE = [
   { id: 'red', hex: '#DC2626', label: 'Đỏ cờ' },
   { id: 'crimson', hex: '#E11D48', label: 'Đỏ hồng' },

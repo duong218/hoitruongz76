@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ArrowUp, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TOTAL_ROWS, isVipRow, seatId, parseSeatId } from '../../constants/hall.js';
+import { TOTAL_ROWS, isVipRow, seatId, parseSeatId, MY_SEAT_COLOR } from '../../constants/hall.js';
 import { formatSeatRanges } from '../../utils/seatSummary.js';
 
 // Sơ đồ rút gọn cho điện thoại: mỗi hàng 1 dòng, mỗi bên 1 ô, chữ to.
@@ -23,7 +23,7 @@ function Block({ nums, color, side, delay = 0, taken, sat = null }) {
             key={n}
             className={`flex-1 rounded-[3px] ${mine ? 'h-2.5' : 'h-2'}`}
             style={{
-              background: n === sat ? '#16A34A' : set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0',
+              background: n === sat ? MY_SEAT_COLOR : set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0',
               opacity: taken?.has(n) ? 0.25 : 1, // ghế đã có người điểm danh
               transition: 'opacity 0.6s ease',
             }}
@@ -32,7 +32,7 @@ function Block({ nums, color, side, delay = 0, taken, sat = null }) {
       </div>
       {mine && (
         sat ? (
-          <span className="text-[16px] font-bold leading-5 text-center text-[#166534]">Bạn ngồi đây</span>
+          <span className="text-[16px] font-bold leading-5 text-center text-[#111827]">Bạn ngồi đây</span>
         ) : (
           <span className="text-[16px] font-bold leading-5 text-center text-[#0F172A]">
             {nums.length === 10 ? 'Cả bên này' : formatSeatRanges(nums)}
@@ -112,14 +112,14 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
                 {hasL && (
                   <ChevronLeft
                     className="arrow-nudge-l absolute top-1/2 -mt-[9px] h-[18px] w-[18px] right-1/2 mr-[1px]"
-                    style={{ color: seatedAt ? '#16A34A' : color }}
+                    style={{ color: seatedAt ? MY_SEAT_COLOR : color }}
                     strokeWidth={3.5}
                   />
                 )}
                 {hasR && (
                   <ChevronRight
                     className="arrow-nudge-r absolute top-1/2 -mt-[9px] h-[18px] w-[18px] left-1/2 ml-[1px]"
-                    style={{ color: seatedAt ? '#16A34A' : color }}
+                    style={{ color: seatedAt ? MY_SEAT_COLOR : color }}
                     strokeWidth={3.5}
                   />
                 )}
@@ -135,9 +135,9 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
       </div>
 
       {seatedAt ? (
-        <p className="flex items-center gap-2 rounded-lg bg-[#F0FDF4] px-3 py-2 text-[15px] leading-5 text-[#0F172A] fade-in-up">
-          <CheckCircle2 className="w-5 h-5 shrink-0 text-[#16A34A]" />
-          <span>Bạn đã ngồi ở ô <strong className="text-[#166534]">xanh lá</strong> trên sơ đồ. Ghế mờ là ghế đã có người.</span>
+        <p className="flex items-center gap-2 rounded-lg bg-[#F1F5F9] px-3 py-2 text-[15px] leading-5 text-[#0F172A] fade-in-up">
+          <CheckCircle2 className="w-5 h-5 shrink-0 text-[#111827]" />
+          <span>Bạn đã ngồi ở ô <strong className="text-[#111827]">màu đen</strong> trên sơ đồ. Ghế mờ là ghế đã có người.</span>
         </p>
       ) : rowCount > 0 && (
         <p className="flex items-center gap-2 rounded-lg bg-[#EAF6FF] px-3 py-2 text-[15px] leading-5 text-[#0F172A] fade-in-up">

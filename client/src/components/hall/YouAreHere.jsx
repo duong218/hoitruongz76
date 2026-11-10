@@ -1,7 +1,6 @@
 import React from 'react';
 import { getSeatCoords } from './geometry.js';
-
-const GREEN = '#16A34A';
+import { MY_SEAT_COLOR as GREEN } from '../../constants/hall.js'; // tên GREEN giữ nguyên, giá trị nay là màu đen
 
 /**
  * Đánh dấu ghế người xem đã điểm danh: viền nhấp nháy quanh ghế + mũi tên + nhãn "Bạn đã ngồi đây".

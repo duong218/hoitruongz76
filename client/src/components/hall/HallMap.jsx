@@ -6,6 +6,8 @@ import {
   seatId,
   isVipRow,
   parseSeatId,
+  MY_SEAT_COLOR,
+  MY_SEAT_STROKE,
 } from '../../constants/hall.js';
 import {
   HALL_LAYOUT,
@@ -337,8 +339,8 @@ export function HallMap({
                     x={coords.x}
                     y={coords.y}
                     seatNumber={n}
-                    fill={mode === 'view' && sId === mySeatId ? '#16A34A' : fill}
-                    stroke={mode === 'view' && sId === mySeatId ? '#15803D' : stroke}
+                    fill={mode === 'view' && sId === mySeatId ? MY_SEAT_COLOR : fill}
+                    stroke={mode === 'view' && sId === mySeatId ? MY_SEAT_STROKE : stroke}
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                   />
                 );
@@ -372,8 +374,8 @@ export function HallMap({
                     x={coords.x}
                     y={coords.y}
                     seatNumber={n}
-                    fill={mode === 'view' && sId === mySeatId ? '#16A34A' : fill}
-                    stroke={mode === 'view' && sId === mySeatId ? '#15803D' : stroke}
+                    fill={mode === 'view' && sId === mySeatId ? MY_SEAT_COLOR : fill}
+                    stroke={mode === 'view' && sId === mySeatId ? MY_SEAT_STROKE : stroke}
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                   />
                 );

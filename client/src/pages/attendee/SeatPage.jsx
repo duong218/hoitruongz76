@@ -325,7 +325,7 @@ export function SeatPage() {
         {hasSeats && (
           <p className="text-[16px] leading-6 text-[#334155]">
             {seated ? (
-              <>Ô <strong>xanh lá</strong> là ghế của bạn. Ghế <strong>mờ</strong> là ghế đã có người điểm danh.</>
+              <>Ô <strong>màu đen</strong> là ghế của bạn. Ghế <strong>mờ</strong> là ghế đã có người điểm danh.</>
             ) : (
               <>Ghế <strong>mờ</strong> là ghế đã có người điểm danh, hãy chọn ghế còn rõ màu.</>
             )}
