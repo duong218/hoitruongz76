@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   TOTAL_ROWS,
   SEATS_PER_SIDE,
@@ -33,7 +33,23 @@ export function HallMap({
   onSeatClick = null, // (seatId) => void: bấm vào ghế (dùng khi xếp chỗ từng người)
   selectedSeatId = '',
   seatTitles = null, // { [seatId]: 'chú thích khi rê chuột' }
+  renderSeatTip = null, // (seatId) => ReactNode | null: hiện sau khi rê chuột đứng yên 1,5s
 }) {
+  const [tip, setTip] = useState(null);
+  const timers = useRef({});
+  useEffect(() => () => Object.values(timers.current).forEach(clearTimeout), []);
+  const enter = (id) => (e) => {
+    if (!renderSeatTip) return;
+    clearTimeout(timers.current.hide);
+    clearTimeout(timers.current.show);
+    const { clientX: x, clientY: y } = e;
+    timers.current.show = setTimeout(() => setTip({ id, x, y }), 1500);
+  };
+  const leave = () => {
+    clearTimeout(timers.current.show);
+    timers.current.hide = setTimeout(() => setTip(null), 250); // chừa thời gian rê chuột sang bảng thông tin
+  };
+  const tipNode = tip && renderSeatTip?.(tip.id);
   // Map nhóm theo id để tra cứu nhanh
   const groupMap = useMemo(() => {
     const map = new Map();
@@ -347,6 +363,8 @@ export function HallMap({
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                     onClick={onSeatClick ? () => onSeatClick(sId) : undefined}
                     title={seatTitles?.[sId]}
+                    onEnter={enter(sId)}
+                    onLeave={leave}
                   />
                 );
               })}
@@ -384,6 +402,8 @@ export function HallMap({
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                     onClick={onSeatClick ? () => onSeatClick(sId) : undefined}
                     title={seatTitles?.[sId]}
+                    onEnter={enter(sId)}
+                    onLeave={leave}
                   />
                 );
               })}
@@ -477,6 +497,16 @@ export function HallMap({
           </text>
         </g>
       </svg>
+      {tipNode && (
+        <div
+          className="fixed z-50"
+          style={{ left: Math.min(tip.x + 8, window.innerWidth - 272), top: Math.min(tip.y + 4, window.innerHeight - 260) }}
+          onMouseEnter={() => clearTimeout(timers.current.hide)}
+          onMouseLeave={leave}
+        >
+          {tipNode}
+        </div>
+      )}
     </div>
   );
 }

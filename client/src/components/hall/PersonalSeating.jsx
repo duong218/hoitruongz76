@@ -7,6 +7,10 @@ import { useOrg } from '../../hooks/useOrg.js';
 import { ROLES } from '../../constants/roles.js';
 import { TOTAL_ROWS, SEATS_PER_SIDE, seatId } from '../../constants/hall.js';
 import { HallMap } from './HallMap.jsx';
+import { SeatInfoTip, buildSeatTip } from './SeatInfoTip.jsx';
+import { useGroups } from '../../hooks/useGroups.js';
+import { useAttendance } from '../../hooks/useAttendance.js';
+import { resolveGroup } from '../../utils/resolveGroup.js';
 import { Select } from '../ui/Select.jsx';
 import { Pagination } from '../ui/Pagination.jsx';
 
@@ -24,6 +28,8 @@ export function PersonalSeating() {
   const toast = useToast();
   const { employees } = useEmployees();
   const { blocks } = useOrg();
+  const { groups } = useGroups();
+  const { attendance, refresh: refreshAttendance } = useAttendance();
   const [list, setList] = useState([]); // [{ seatId, employeeCode }]
   const [sel, setSel] = useState('');
   const [q, setQ] = useState('');
@@ -37,12 +43,22 @@ export function PersonalSeating() {
     seatService.getPersonal().then(setList).catch((e) => toast.error(e.message));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const t = setInterval(() => document.visibilityState === 'visible' && refreshAttendance(), 10000);
+    return () => clearInterval(t);
+  }, [refreshAttendance]);
+
   const people = useMemo(() => employees.filter((e) => e.role === ROLES.EMPLOYEE), [employees]);
   const nameOf = useMemo(() => new Map(employees.map((e) => [e.code?.toUpperCase(), e.name])), [employees]);
   const ownerOf = useMemo(() => new Map(list.map((s) => [s.seatId, s.employeeCode])), [list]);
   const seatOf = useMemo(() => new Map(list.map((s) => [s.employeeCode, s.seatId])), [list]);
-  const seatGroups = useMemo(() => Object.fromEntries(list.map((s) => [s.seatId, ASSIGNED])), [list]);
-  const seatTitles = useMemo(() => Object.fromEntries(list.map((s) => [s.seatId, `${nameOf.get(s.employeeCode) || ''} (${s.employeeCode})`])), [list, nameOf]);
+  // Ghế tô theo màu nhóm của KHỐI người ngồi; chưa có nhóm thì màu xanh mặc định
+  const seatGroups = useMemo(() => {
+    const byCode = new Map(employees.map((e) => [e.code?.toUpperCase(), e]));
+    return Object.fromEntries(list.map((s) => [s.seatId, resolveGroup(byCode.get(s.employeeCode?.toUpperCase()), groups)?.id || ASSIGNED]));
+  }, [list, employees, groups]);
+  const mapGroups = useMemo(() => [...groups, ...GROUPS], [groups]);
+  const renderTip = (id) => { const d = buildSeatTip({ seatId: id, ownerCode: ownerOf.get(id), nameOf, attendance }); return d && <SeatInfoTip data={d} />; };
 
   const pick = (id) => {
     setSel(id);
@@ -101,7 +117,7 @@ export function PersonalSeating() {
         <div className="space-y-6 min-w-0">
           <div className="overflow-x-auto rounded-xl">
             <div className="min-w-[760px]">
-              <HallMap mode="manage" seatGroups={seatGroups} groups={GROUPS} onSeatClick={pick} selectedSeatId={sel} seatTitles={seatTitles} />
+              <HallMap mode="manage" seatGroups={seatGroups} groups={mapGroups} onSeatClick={pick} selectedSeatId={sel} renderSeatTip={renderTip} />
             </div>
           </div>
 

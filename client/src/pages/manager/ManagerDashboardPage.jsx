@@ -10,6 +10,7 @@ import { useAttendance } from '../../hooks/useAttendance.js';
 import { TOTAL_SEATS } from '../../constants/hall.js';
 import { resolveGroup } from '../../utils/resolveGroup.js';
 import { HallMap } from '../../components/hall/HallMap.jsx';
+import { SeatInfoTip, buildSeatTip } from '../../components/hall/SeatInfoTip.jsx';
 import { Armchair, UserCheck } from 'lucide-react';
 
 const pct = (n, d) => (d ? Math.min(100, Math.round((n / d) * 100)) : 0);
@@ -187,7 +188,17 @@ export function ManagerDashboardPage() {
             <h2 className="text-[18px] font-bold text-[#0F172A]">Sơ đồ phân bổ chỗ ngồi</h2>
             <p className="text-[14px] text-[#475569]">Hiện trạng các khối trên sơ đồ 2D hội trường.</p>
           </div>
-          <HallMap mode="manage" seatGroups={seatGroups} groups={groups} />
+          <HallMap
+            mode="manage"
+            seatGroups={seatGroups}
+            groups={groups}
+            renderSeatTip={(id) => {
+              const ownerCode = personal.find((s) => s.seatId === id)?.employeeCode;
+              const nameOf = new Map(employees.map((e) => [e.code?.toUpperCase(), e.name]));
+              const d = buildSeatTip({ seatId: id, ownerCode, nameOf, attendance });
+              return d && <SeatInfoTip data={d} />;
+            }}
+          />
         </section>
 
         <section className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-5">

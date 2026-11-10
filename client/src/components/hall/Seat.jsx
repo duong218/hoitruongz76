@@ -22,6 +22,8 @@ export function Seat({
   dim = false,
   onClick,
   title,
+  onEnter,
+  onLeave,
 }) {
   // Tự động tính màu chữ tương phản:
   // Nếu ghế màu xám nhạt (#E2E8F0) -> Chữ màu xanh đen đậm nét (#334155)
@@ -35,6 +37,8 @@ export function Seat({
       opacity={dim ? 0.28 : 1}
       style={{ transition: 'opacity 0.6s ease', cursor: onClick ? 'pointer' : undefined }}
       onClick={onClick}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
     >
       {title && <title>{title}</title>}
       <use

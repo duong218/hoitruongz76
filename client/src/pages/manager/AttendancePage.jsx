@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CountUp } from '../../components/ui/CountUp.jsx';
 import { Pagination } from '../../components/ui/Pagination.jsx';
 import { useAttendance } from '../../hooks/useAttendance.js';
@@ -11,7 +12,7 @@ import { findDuplicateSeats, recordNotes } from '../../utils/attendanceInsights.
 import { useToast } from '../../context/ToastContext.jsx';
 import { useConfirm } from '../../context/ConfirmContext.jsx';
 import { resolveGroup } from '../../utils/resolveGroup.js';
-import { seatBadgeText } from '../../utils/seatLabel.js';
+import { seatBadgeText, seatLabel } from '../../utils/seatLabel.js';
 import { GroupBadge } from '../../components/ui/GroupBadge.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
@@ -67,7 +68,9 @@ export function AttendancePage() {
   const [manualLoading, setManualLoading] = useState(false);
 
   // Tab đang xem: 'BLOCK' (theo Khối) | 'DEPT' (theo Phòng ban) | 'DETAIL' (danh sách chi tiết)
-  const [view, setView] = useState('BLOCK');
+  const seatFromNav = useLocation().state?.seat || ''; // đi từ cảnh báo trùng ghế trên sơ đồ
+  const [filterSeat, setFilterSeat] = useState(seatFromNav);
+  const [view, setView] = useState(seatFromNav ? 'DETAIL' : 'BLOCK');
   const summaryMode = view === 'DEPT' ? 'DEPT' : 'BLOCK';
 
   // Bộ lọc bảng chi tiết
@@ -218,7 +221,9 @@ export function AttendancePage() {
         (filterStatus === 'DUP' && !!attendanceMap.get(emp.code.toUpperCase())?.seatId && dupSeats.has(attendanceMap.get(emp.code.toUpperCase()).seatId)) ||
         (filterStatus === 'PROXY' && attendanceMap.get(emp.code.toUpperCase())?.method === 'PROXY');
 
-      return matchSearch && matchBlock && matchDept && matchGroup && matchStatus;
+      const matchSeat = !filterSeat || attendanceMap.get(emp.code.toUpperCase())?.seatId === filterSeat;
+
+      return matchSearch && matchBlock && matchDept && matchGroup && matchStatus && matchSeat;
     });
   }, [
     requiredEmployees,
@@ -229,6 +234,7 @@ export function AttendancePage() {
     filterDeptId,
     filterGroupId,
     filterStatus,
+    filterSeat,
     dupSeats,
   ]);
 
@@ -239,6 +245,7 @@ export function AttendancePage() {
     filterDeptId !== 'ALL' && `Phòng ban: ${deptMap.get(filterDeptId) || ''}`,
     filterGroupId !== 'ALL' && `Nhóm ghế: ${groups.find((g) => g.id === filterGroupId)?.name || ''}`,
     filterStatus !== 'ALL' && `Trạng thái: ${STATUS_LABEL[filterStatus]}`,
+    filterSeat && `Ghế: ${seatLabel(filterSeat)}`,
   ].filter(Boolean);
 
   const clearFilters = () => {
@@ -247,6 +254,7 @@ export function AttendancePage() {
     setFilterDeptId('ALL');
     setFilterGroupId('ALL');
     setFilterStatus('ALL');
+    setFilterSeat('');
   };
 
   // Trạng thái tải: chỉ chặn ở lần tải đầu, các lần làm mới sau không che màn hình
@@ -277,7 +285,7 @@ export function AttendancePage() {
   const [detailPage, setDetailPage] = useState(1);
   useEffect(() => {
     setDetailPage(1);
-  }, [searchTerm, filterBlockId, filterDeptId, filterGroupId, filterStatus, view]);
+  }, [searchTerm, filterBlockId, filterDeptId, filterGroupId, filterStatus, filterSeat, view]);
   const detailPages = Math.max(1, Math.ceil(shownDetailList.length / DETAIL_PAGE_SIZE));
   const currentDetailPage = Math.min(detailPage, detailPages);
   const pagedDetailList = shownDetailList.slice(
