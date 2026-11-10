@@ -41,14 +41,17 @@ function Strip({ side, color, nums, taken, mine }) {
         {order.map((n) => {
           const isMine = mine === n;
           const own = set.has(n);
+          const isTaken = taken.has(n) && !isMine;
           return (
             <span
               key={n}
-              className="flex h-9 items-center justify-center rounded-md text-[13px] font-bold tabular-nums"
+              role="img"
+              aria-label={`Ghế ${n}${isMine ? ', ghế của bạn' : isTaken ? ', đã có người' : own ? ', còn trống' : ''}`}
+              className="flex h-10 items-center justify-center rounded-md text-[14px] font-bold tabular-nums"
               style={{
-                background: isMine ? MY_SEAT_COLOR : own ? color : '#EEF2F6',
-                color: isMine || own ? '#fff' : '#94A3B8',
-                opacity: taken.has(n) && !isMine ? 0.3 : 1,
+                background: isMine ? MY_SEAT_COLOR : isTaken ? '#CBD5E1' : own ? color : '#EEF2F6',
+                color: isMine || (own && !isTaken) ? '#fff' : isTaken ? '#475569' : '#94A3B8',
+                textDecoration: isTaken ? 'line-through' : undefined,
                 boxShadow: isMine ? `0 0 0 2px #fff, 0 0 0 4px ${MY_SEAT_COLOR}` : undefined,
               }}
             >
@@ -85,6 +88,9 @@ export function HallMapMobile({ seatGroups = {}, highlightGroupId = null, color 
   const taken = (r, side) =>
     new Set(Array.from({ length: 10 }, (_, i) => i + 1).filter((n) => occupiedSeats?.has(seatId(r, side, n)) && seatId(r, side, n) !== mySeatId));
 
+  const ownIds = sel && mine[sel] ? ['L', 'R'].flatMap((s) => mine[sel][s].map((n) => seatId(sel, s, n))) : [];
+  const freeCount = ownIds.filter((id) => !occupiedSeats?.has(id)).length;
+
   const rows = Array.from({ length: TOTAL_ROWS }, (_, i) => i + 1);
   const pillW = 84;
   const pillX = me ? Math.min(Math.max(seatX(me.side, me.n) + SEAT_W / 2 - pillW / 2, LEFT_X), W - PAD - pillW) : 0;
@@ -119,7 +125,13 @@ export function HallMapMobile({ seatGroups = {}, highlightGroupId = null, color 
                   const own = row?.[side]?.includes(n);
                   const isMe = me && me.row === r && me.side === side && me.n === n;
                   const gone = own && !isMe && occupiedSeats?.has(seatId(r, side, n));
-                  return <rect key={side + n} x={seatX(side, n)} y={y} width={SEAT_W} height={SEAT_H} rx="3.5" fill={isMe ? MY_SEAT_COLOR : own ? color : '#E6EBF1'} opacity={gone ? 0.28 : 1} style={{ transition: 'opacity .6s' }} />;
+                  const x = seatX(side, n);
+                  return (
+                    <g key={side + n}>
+                      <rect x={x} y={y} width={SEAT_W} height={SEAT_H} rx="3.5" fill={isMe ? MY_SEAT_COLOR : gone ? '#CBD5E1' : own ? color : '#E6EBF1'} />
+                      {gone && <path d={`M ${x + 3} ${y + 5} L ${x + SEAT_W - 3} ${y + SEAT_H - 5} M ${x + SEAT_W - 3} ${y + 5} L ${x + 3} ${y + SEAT_H - 5}`} stroke="#475569" strokeWidth="1.4" strokeLinecap="round" />}
+                    </g>
+                  );
                 })
               )}
               {row?.L.length > 0 && !me && <polygon points={`${AISLE_X - 5},${cy - 4.5} ${AISLE_X - 11},${cy} ${AISLE_X - 5},${cy + 4.5}`} fill={color} className="arrow-nudge-l" />}
@@ -140,11 +152,14 @@ export function HallMapMobile({ seatGroups = {}, highlightGroupId = null, color 
         <text x={AISLE_X} y={ENT_Y + 15.5} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="700" letterSpacing="1" fill="#fff">CỬA VÀO ↑</text>
       </svg>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[#EEF2F6] px-3.5 py-2.5 text-[12px] font-medium text-[#475569]">
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-[3px]" style={{ background: color }} />Ghế của nhóm</span>
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-[3px] bg-[#E6EBF1]" />Ghế khác</span>
-        <span className="flex items-center gap-1.5"><i className="h-2.5 w-2.5 rounded-[3px] opacity-30" style={{ background: color }} />Đã có người</span>
-        <span className="flex items-center gap-1.5"><b className="text-[#B45309]">1 2</b>Hàng VIP</span>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2 border-t border-[#EEF2F6] px-3.5 py-3 text-[13px] font-medium text-[#334155]">
+        <span className="flex items-center gap-2"><i className="h-3.5 w-3.5 shrink-0 rounded-[4px]" style={{ background: color }} />Ghế trống của nhóm</span>
+        <span className="flex items-center gap-2">
+          <svg viewBox="0 0 14 14" className="h-3.5 w-3.5 shrink-0" aria-hidden="true"><rect width="14" height="14" rx="4" fill="#CBD5E1" /><path d="M4 4 L10 10 M10 4 L4 10" stroke="#475569" strokeWidth="1.6" strokeLinecap="round" /></svg>
+          Đã có người
+        </span>
+        <span className="flex items-center gap-2"><i className="h-3.5 w-3.5 shrink-0 rounded-[4px] bg-[#E6EBF1]" />Ghế khác</span>
+        <span className="flex items-center gap-2"><b className="text-[#B45309]">1 2</b>Hàng VIP</span>
       </div>
 
       {sel && (
@@ -153,6 +168,11 @@ export function HallMapMobile({ seatGroups = {}, highlightGroupId = null, color 
             <div className="flex items-center gap-2">
               <span className="text-[16px] font-bold text-[#0F172A]">Hàng {sel}</span>
               {isVipRow(sel) && <span className="rounded-full bg-[#FEF3C7] px-2 py-0.5 text-[11px] font-bold text-[#B45309]">VIP</span>}
+              {!me && ownIds.length > 0 && (
+                <span className={`text-[14px] font-semibold ${freeCount ? 'text-[#334155]' : 'text-[#B91C1C]'}`}>
+                  {freeCount ? <>Còn <b>{freeCount}/{ownIds.length}</b> ghế trống</> : 'Hết ghế trống'}
+                </span>
+              )}
             </div>
             {myRows.length > 1 && (
               <div className="flex gap-1.5" role="tablist" aria-label="Chọn hàng">

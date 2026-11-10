@@ -350,8 +350,8 @@ export function SeatPage() {
       {needCheckIn && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#E2E8F0] shadow-[0_-2px_10px_rgba(15,23,42,0.1)] px-4 pt-3 pb-[max(16px,env(safe-area-inset-bottom))] z-40">
           <div className="max-w-md mx-auto space-y-1 text-center">
-            <p className="text-[14px] text-[#334155]">
-              Bước 4: Ngồi vào ghế, bấm nút dưới rồi <strong>quét mã QR dán trên ghế</strong>.
+            <p className="text-[15px] leading-5 text-[#334155]">
+              Ngồi vào ghế, bấm nút dưới rồi quét <strong>mã QR ở lưng ghế phía trước mặt bạn</strong>.
             </p>
             <Button
               variant="primary"
