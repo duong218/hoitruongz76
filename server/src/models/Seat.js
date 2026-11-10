@@ -16,4 +16,7 @@ const seatSchema = new mongoose.Schema(
 // Đánh chỉ mục token để tối ưu tra cứu ghế tức thì (O(1)) khi hàng trăm người quét QR cùng lúc
 seatSchema.index({ token: 1 });
 
+// Đánh chỉ mục employeeCode phục vụ tra cứu nhanh ghế của nhân sự trong chế độ xếp chỗ từng người
+seatSchema.index({ employeeCode: 1 });
+
 export const Seat = mongoose.model('Seat', seatSchema);
