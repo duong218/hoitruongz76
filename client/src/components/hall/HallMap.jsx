@@ -30,6 +30,9 @@ export function HallMap({
   occupiedSeats = null, // Set mã ghế đã có người điểm danh (chế độ view)
   mySeatId = '', // ghế của chính người xem: không làm mờ
   className = '',
+  onSeatClick = null, // (seatId) => void: bấm vào ghế (dùng khi xếp chỗ từng người)
+  selectedSeatId = '',
+  seatTitles = null, // { [seatId]: 'chú thích khi rê chuột' }
 }) {
   // Map nhóm theo id để tra cứu nhanh
   const groupMap = useMemo(() => {
@@ -342,6 +345,8 @@ export function HallMap({
                     fill={mode === 'view' && sId === mySeatId ? MY_SEAT_COLOR : fill}
                     stroke={mode === 'view' && sId === mySeatId ? MY_SEAT_STROKE : stroke}
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
+                    onClick={onSeatClick ? () => onSeatClick(sId) : undefined}
+                    title={seatTitles?.[sId]}
                   />
                 );
               })}
@@ -377,6 +382,8 @@ export function HallMap({
                     fill={mode === 'view' && sId === mySeatId ? MY_SEAT_COLOR : fill}
                     stroke={mode === 'view' && sId === mySeatId ? MY_SEAT_STROKE : stroke}
                     dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
+                    onClick={onSeatClick ? () => onSeatClick(sId) : undefined}
+                    title={seatTitles?.[sId]}
                   />
                 );
               })}
@@ -419,6 +426,14 @@ export function HallMap({
             </g>
           );
         })}
+
+        {/* Ghế đang được chọn để gán */}
+        {selectedSeatId && (() => {
+          const p = parseSeatId(selectedSeatId);
+          if (!p) return null;
+          const c = getSeatCoords(p.row, p.side, p.n);
+          return <rect x={c.x - 3} y={c.y - 3} width={c.width + 6} height={c.height + 6} rx="6" fill="none" stroke="#0F172A" strokeWidth="2.5" pointerEvents="none" />;
+        })()}
 
         {/* Khung Halo nhấp nháy bao quanh các đoạn ghế được chỉ định trong chế độ VIEW */}
         {mode === 'view' && halos.map((halo, idx) => (

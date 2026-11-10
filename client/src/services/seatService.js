@@ -13,6 +13,19 @@ export const seatService = {
     return await api.post('/seats/assign-rows', { rowNumbers, groupId });
   },
 
+  // Chế độ từng người: ghế của chính mình / danh sách (quản lý) / gán 1 người vào 1 ghế (seatId null = bỏ)
+  async getMine() {
+    return await api.get('/seats/mine');
+  },
+
+  async getPersonal() {
+    return await api.get('/seats/personal');
+  },
+
+  async assignEmployee(employeeCode, seatId) {
+    return await api.post('/seats/assign-employee', { employeeCode, seatId });
+  },
+
   async unassignSeats(seatIds) {
     return this.assignSeats(seatIds, null);
   },

@@ -8,6 +8,7 @@ const eventSettingSchema = new mongoose.Schema(
     eventName: { type: String, required: true, trim: true },
     guestEnabled: { type: Boolean, default: true },
     checkInOpen: { type: Boolean, default: true },
+    seatMode: { type: String, enum: ['group', 'individual'], default: 'group' }, // group: theo nhóm | individual: mỗi người 1 ghế cố định
     appUrl: { type: String, default: '', trim: true },
     nameLocked: { type: Boolean, default: false }, // true sau khi bấm "Bắt đầu sự kiện mới"
     startedAt: { type: Date, default: null },

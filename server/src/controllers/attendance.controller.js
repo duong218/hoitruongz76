@@ -55,7 +55,8 @@ export const attendanceController = {
         ? groups.find((g) => Array.isArray(g.blockIds) && g.blockIds.includes(employee.blockId))
         : null;
 
-      if (!group || !group.checkInRequired || employee.role === ROLES.GUEST) {
+      const individual = event?.seatMode === 'individual'; // chế độ ghế cố định từng người: không cần nhóm
+      if (employee.role === ROLES.GUEST || (!individual && (!group || !group.checkInRequired))) {
         return res.status(400).json({ message: 'Nhóm của bạn không yêu cầu điểm danh.' });
       }
 
@@ -80,7 +81,10 @@ export const attendanceController = {
       }
 
       // 5. Kiểm tra ghế có thuộc nhóm của nhân sự không
-      if (!seat.groupId || seat.groupId !== group.id) {
+      if (individual && seat.employeeCode !== code) {
+        return res.status(400).json({ message: `Ghế "${seat.seatId}" không phải ghế được sắp cho bạn. Hãy tới đúng ghế đã được chỉ định.` });
+      }
+      if (!individual && (!seat.groupId || seat.groupId !== group.id)) {
         return res.status(400).json({
           message: `Ghế "${seat.seatId}" không thuộc khu vực của nhóm bạn (${group.name}). Hãy tới đúng hàng ghế được phân bổ.`,
         });

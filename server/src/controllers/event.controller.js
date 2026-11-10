@@ -125,6 +125,12 @@ export const eventController = {
       const windowMsg = windowError(opensAt, closesAt);
       if (windowMsg) return res.status(400).json({ message: windowMsg });
       if (closesAt <= new Date()) return res.status(400).json({ message: 'Giờ đóng đã qua. Hãy chọn giờ đóng sau thời điểm hiện tại.' });
+      // 3 công tắc của sự kiện mới (không gửi thì giữ nguyên)
+      const { guestEnabled, checkInOpen, seatMode } = req.body;
+      if ((guestEnabled !== undefined && typeof guestEnabled !== 'boolean') || (checkInOpen !== undefined && typeof checkInOpen !== 'boolean')) {
+        return res.status(400).json({ message: 'Công tắc khách mời / điểm danh phải là true hoặc false.' });
+      }
+      if (seatMode !== undefined && !['group', 'individual'].includes(seatMode)) return res.status(400).json({ message: 'Chế độ xếp chỗ không hợp lệ.' });
       const event = await withArchiveLock(async () => {
         let ev = await EventSetting.findOne({ key: 'main' });
         if (!ev) ev = new EventSetting({ key: 'main' });
@@ -138,12 +144,18 @@ export const eventController = {
         ev.closesAt = closesAt;
         ev.endHandledAt = null;
         ev.archivedId = null;
+        if (guestEnabled !== undefined) ev.guestEnabled = guestEnabled;
+        if (checkInOpen !== undefined) ev.checkInOpen = checkInOpen;
+        // Đổi chế độ xếp chỗ (nhóm <-> từng người): làm trống toàn bộ chỗ đã sắp để quản lý sắp lại từ đầu
+        const modeChanged = seatMode !== undefined && seatMode !== ev.seatMode;
+        if (seatMode !== undefined) ev.seatMode = seatMode;
         await ev.save();
+        if (modeChanged) await Seat.updateMany({}, { $set: { groupId: null, employeeCode: null } });
         invalidateCachedEvent();
         await audit(
           req,
           'event.start_new',
-          `Bắt đầu sự kiện mới "${name}" (giờ ${opensAt.toISOString()} - ${closesAt.toISOString()}; sự kiện trước "${oldName || ''}": ${archived ? `đã lưu lịch sử ${archived.summary.checked} lượt điểm danh` : 'không có ai điểm danh nên không lưu'})`
+          `Bắt đầu sự kiện mới "${name}"${modeChanged ? ' (đổi chế độ xếp chỗ, đã làm trống toàn bộ chỗ)' : ''} (giờ ${opensAt.toISOString()} - ${closesAt.toISOString()}; sự kiện trước "${oldName || ''}": ${archived ? `đã lưu lịch sử ${archived.summary.checked} lượt điểm danh` : 'không có ai điểm danh nên không lưu'})`
         );
         return ev;
       });

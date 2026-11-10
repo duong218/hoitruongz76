@@ -5,6 +5,8 @@ import { useToast } from '../../context/ToastContext.jsx';
 import { HallMap } from '../../components/hall/HallMap.jsx';
 import { SeatRowEditor } from '../../components/hall/SeatRowEditor.jsx';
 import { Button } from '../../components/ui/Button.jsx';
+import { PersonalSeating } from '../../components/hall/PersonalSeating.jsx';
+import { useEventSettings } from '../../hooks/useEventSettings.js';
 import { BottomSheet } from '../../components/ui/BottomSheet.jsx';
 import { TOTAL_SEATS } from '../../constants/hall.js';
 import { Edit3, XCircle, Info, CheckSquare, ArrowDown } from 'lucide-react';
@@ -13,6 +15,7 @@ export function SeatingPage() {
   const { groups } = useGroups();
   const { seatGroups, assignRows, assignSeats } = useSeatAssignments();
   const toast = useToast();
+  const { event } = useEventSettings();
 
   const [selectedRows, setSelectedRows] = useState([]);
   const [editingRowNumber, setEditingRowNumber] = useState(null);
@@ -200,6 +203,8 @@ export function SeatingPage() {
   // Cuộn xuống bảng gán nhóm nhanh nằm dưới sơ đồ
   const scrollToGroupPanel = () =>
     document.getElementById('seating-group-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  if (event.seatMode === 'individual') return <PersonalSeating />;
 
   return (
     <div className="space-y-6 max-w-full">

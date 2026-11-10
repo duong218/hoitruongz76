@@ -11,7 +11,8 @@ import { GroupBadge } from '../../components/ui/GroupBadge.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { HallMap } from '../../components/hall/HallMap.jsx';
-import { HallSchematic } from '../../components/hall/HallSchematic.jsx';
+import { HallMapMobile } from '../../components/hall/HallMapMobile.jsx';
+import { seatService } from '../../services/seatService.js';
 import { ScannerModal } from '../../components/attendance/ScannerModal.jsx';
 import { summarizeSeats } from '../../utils/seatSummary.js';
 import { seatLabel } from '../../utils/seatLabel.js';
@@ -31,7 +32,7 @@ import {
 export function SeatPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { seatGroups } = useSeatAssignments();
+  const { seatGroups: groupSeats } = useSeatAssignments();
   const { groups } = useGroups();
   const { attendance, checkIn } = useAttendance();
   const occupiedSeats = useOccupiedSeats(); // ghế đã có người điểm danh, tự cập nhật tức thì
@@ -42,9 +43,21 @@ export function SeatPage() {
   const mapRef = useRef(null);
 
   // Nhóm của người dùng được xác định theo Khối (hoặc Khách mời)
-  const group = useMemo(() => {
-    return resolveGroup(user, groups);
-  }, [user, groups]);
+  const realGroup = useMemo(() => resolveGroup(user, groups), [user, groups]);
+
+  // Chế độ "mỗi người một ghế cố định": dựng 1 nhóm ảo chỉ có đúng ghế của mình,
+  // nhờ đó sơ đồ, đường chỉ dẫn và quét điểm danh dùng lại nguyên code cũ.
+  const personal = event.seatMode === 'individual' && !!user && !realGroup?.isSystem;
+  const [mySeat, setMySeat] = useState(null);
+  useEffect(() => {
+    if (!personal) return;
+    seatService.getMine().then((r) => setMySeat(r.seatId)).catch(() => setMySeat(null));
+  }, [personal]);
+  const group = useMemo(
+    () => (personal ? { id: '__me__', name: realGroup?.name || 'Bạn', color: realGroup?.color || '#008BC5', checkInRequired: true } : realGroup),
+    [personal, realGroup]
+  );
+  const seatGroups = useMemo(() => (personal ? (mySeat ? { [mySeat]: '__me__' } : {}) : groupSeats), [personal, mySeat, groupSeats]);
 
   // Kiểm tra nhân viên này đã điểm danh chưa
   const myAttendance = useMemo(() => {
@@ -281,7 +294,7 @@ export function SeatPage() {
             </div>
             <div className="p-4 bg-[#FEF9EE] border-l-4 border-l-[#F6AD37] border-y border-r border-[#FDE68A] rounded-r-lg space-y-1">
               <p className="text-[18px] font-bold text-[#B45309]">
-                Ban tổ chức chưa sắp chỗ cho nhóm của bạn.
+                {personal ? 'Ban tổ chức chưa sắp chỗ ngồi cho bạn.' : 'Ban tổ chức chưa sắp chỗ cho nhóm của bạn.'}
               </p>
               <p className="text-[16px] text-[#78350F]">
                 Vui lòng liên hệ ban tổ chức tại bàn lễ tân để được hướng dẫn chi tiết.
@@ -304,7 +317,7 @@ export function SeatPage() {
 
         {/* Điện thoại: sơ đồ rút gọn chữ to. Màn hình lớn: sơ đồ 2D đầy đủ. */}
         <div className="sm:hidden">
-          <HallSchematic
+          <HallMapMobile
             seatGroups={seatGroups}
             highlightGroupId={hasSeats ? group?.id : null}
             color={group?.color}
@@ -316,7 +329,7 @@ export function SeatPage() {
           <HallMap
             mode="view"
             seatGroups={seatGroups}
-            groups={groups}
+            groups={personal ? [group] : groups}
             highlightGroupId={hasSeats ? group?.id : null}
             occupiedSeats={occupiedSeats}
             mySeatId={myAttendance?.seatId || ''}

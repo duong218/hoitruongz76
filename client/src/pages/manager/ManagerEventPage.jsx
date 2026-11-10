@@ -49,9 +49,10 @@ export function ManagerEventPage() {
 
   // Form cài đặt
   const [eventName, setEventName] = useState('');
-  const [guestEnabled, setGuestEnabled] = useState(true);
-  const [checkInOpen, setCheckInOpen] = useState(true);
-  const [savingSettings, setSavingSettings] = useState(false);
+  // 3 công tắc chỉ chỉnh được khi bắt đầu sự kiện mới
+  const [newGuest, setNewGuest] = useState(true);
+  const [newCheckIn, setNewCheckIn] = useState(true);
+  const [newIndividual, setNewIndividual] = useState(false);
 
   // Cấu hình QR
   const [appUrl, setAppUrl] = useState('');
@@ -67,8 +68,6 @@ export function ManagerEventPage() {
   useEffect(() => {
     if (event) {
       setEventName(event.eventName || '');
-      setGuestEnabled(event.guestEnabled !== undefined ? event.guestEnabled : true);
-      setCheckInOpen(event.checkInOpen !== undefined ? event.checkInOpen : true);
       const defaultUrl =
         event.appUrl ||
         (typeof window !== 'undefined' ? `${window.location.origin}/login` : '');
@@ -99,22 +98,14 @@ export function ManagerEventPage() {
 
   const isLocalhost = appUrl.includes('localhost') || appUrl.includes('127.0.0.1');
 
-  // Lưu cài đặt sự kiện
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    try {
-      setSavingSettings(true);
-      await updateEvent({
-        guestEnabled,
-        checkInOpen,
-      });
-      toast.success('Đã lưu cấu hình sự kiện thành công.');
-    } catch (err) {
-      toast.error(err.message || 'Lỗi khi lưu cấu hình.');
-    } finally {
-      setSavingSettings(false);
-    }
+  // Mở hộp thoại: các công tắc bắt đầu từ cài đặt hiện tại
+  const openNewModal = () => {
+    setNewGuest(event.guestEnabled !== false);
+    setNewCheckIn(event.checkInOpen !== false);
+    setNewIndividual(event.seatMode === 'individual');
+    setShowNewModal(true);
   };
+  const seatModeChanging = newIndividual !== (event.seatMode === 'individual');
 
   // Lưu riêng tên sự kiện (chỉ khi tên chưa bị khóa)
   const handleSaveName = async () => {
@@ -135,7 +126,11 @@ export function ManagerEventPage() {
   const handleStartNew = async () => {
     try {
       setStartingNew(true);
-      await startNewEvent(newEventName.trim(), fromLocalInput(newOpensAt), fromLocalInput(newClosesAt));
+      await startNewEvent(newEventName.trim(), fromLocalInput(newOpensAt), fromLocalInput(newClosesAt), {
+        guestEnabled: newGuest,
+        checkInOpen: newCheckIn,
+        seatMode: newIndividual ? 'individual' : 'group',
+      });
       setShowNewModal(false);
       setNewEventName('');
       setNewOpensAt('');
@@ -364,16 +359,13 @@ export function ManagerEventPage() {
 
             <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-between gap-3 flex-wrap">
               <p className="text-[14px] text-[#64748B]">Chuyển sang sự kiện khác? Điểm danh cũ sẽ được làm sạch.</p>
-              <Button variant="secondary" icon={CalendarPlus} onClick={() => setShowNewModal(true)}>
+              <Button variant="secondary" icon={CalendarPlus} onClick={openNewModal}>
                 Bắt đầu sự kiện mới
               </Button>
             </div>
           </section>
 
-          <form
-            onSubmit={handleSaveSettings}
-            className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-6"
-          >
+          <section className="bg-white border border-[#E2E8F0] rounded-xl p-6 shadow-[0_1px_3px_rgba(15,23,42,0.08)] space-y-5">
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3 flex-wrap">
                 <label className="block text-[16px] font-bold text-[#0F172A]">Giờ mở và đóng sự kiện</label>
@@ -387,35 +379,25 @@ export function ManagerEventPage() {
             </div>
 
             <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
-              <label className="block text-[16px] font-bold text-[#0F172A]">Tiếp đón khách mời tham dự</label>
-              <p className="text-[14px] text-[#64748B]">
-                Bật nút "Tôi là khách mời" trên màn hình đăng nhập để tiếp đón đại biểu ngoài danh sách.
-              </p>
-              <Switch checked={guestEnabled} onChange={(val) => setGuestEnabled(val)} label="Chức năng khách mời:" />
+              <h3 className="text-[16px] font-bold text-[#0F172A]">Sự kiện này đang áp dụng</h3>
+              <ul className="divide-y divide-[#EEF2F6]">
+              <li className="flex items-center justify-between gap-3 py-2.5"><span className="text-[15px] text-[#334155]">Khách mời tham dự</span><Badge variant={event.guestEnabled === false ? "neutral" : "success"}>{event.guestEnabled === false ? "Tắt" : "Bật"}</Badge></li>
+              <li className="flex items-center justify-between gap-3 py-2.5"><span className="text-[15px] text-[#334155]">Cổng điểm danh tại ghế</span><Badge variant={event.checkInOpen === false ? "neutral" : "success"}>{event.checkInOpen === false ? "Đóng" : "Mở"}</Badge></li>
+              <li className="flex items-center justify-between gap-3 py-2.5"><span className="text-[15px] text-[#334155]">Cách xếp chỗ</span><Badge variant="neutral">{event.seatMode === "individual" ? "Mỗi người một ghế cố định" : "Theo nhóm"}</Badge></li>
+              </ul>
+              <p className="text-[14px] text-[#64748B]">Muốn đổi các cài đặt này, bấm "Bắt đầu sự kiện mới" và chọn lại cho sự kiện mới.</p>
             </div>
-
-            <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
-              <label className="block text-[16px] font-bold text-[#0F172A]">Cổng điểm danh tại ghế</label>
-              <p className="text-[14px] text-[#64748B]">
-                Khi bật, đại biểu quét mã QR ở lưng ghế phía trước mặt để xác nhận có mặt. Khi đóng, nút điểm danh bị khóa.
-              </p>
-              <Switch checked={checkInOpen} onChange={(val) => setCheckInOpen(val)} label="Cổng điểm danh:" />
-            </div>
-
-            <div className="pt-4 border-t border-[#E2E8F0] flex justify-end">
-              <Button type="submit" variant="primary" loading={savingSettings} icon={Save}>
-                Lưu cài đặt
-              </Button>
-            </div>
-          </form>
+          </section>
 
           {/* Hộp thoại bắt đầu sự kiện mới */}
           <Modal
             isOpen={showNewModal}
             onClose={() => { setShowNewModal(false); setAckDelete(false); }}
             title="Bắt đầu sự kiện mới"
+            maxWidth="max-w-4xl"
           >
-            <div className="space-y-4">
+            <div className="grid gap-5 lg:grid-cols-2 lg:gap-8">
+              <div className="space-y-4">
               <Input
                 label="Tên sự kiện mới"
                 id="new-event-title-input"
@@ -431,9 +413,20 @@ export function ManagerEventPage() {
               <p className="text-[13px] text-[#64748B] -mt-2">
                 Giờ Việt Nam. Ngoài khung giờ này, nhân viên và khách mời không vào và không điểm danh được. Quản lý vẫn xếp chỗ bình thường.
               </p>
+              <div className="space-y-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                <Switch checked={newGuest} onChange={setNewGuest} label="Tiếp đón khách mời:" />
+                <Switch checked={newCheckIn} onChange={setNewCheckIn} label="Mở cổng điểm danh tại ghế:" />
+                <div>
+                  <Switch checked={newIndividual} onChange={setNewIndividual} label="Mỗi người một ghế cố định:" />
+                  <p className="mt-1.5 text-[13px] text-[#64748B]">Tắt: xếp theo nhóm, người trong nhóm ngồi ghế nào của nhóm cũng được. Bật: quản lý chỉ định từng người một ghế, chỉ điểm danh và được chỉ dẫn tới đúng ghế đó.</p>
+                </div>
+              </div>
+              </div>
+              <div className="space-y-4">
               <ul className="p-4 bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg space-y-2 text-[15px] text-[#7F1D1D] list-disc pl-9">
                 <li>Tên sự kiện mới sẽ <strong>bị khóa</strong>, không sửa lại được.</li>
                 <li><strong>{attendance.length} lượt điểm danh</strong> của "{event.eventName}" sẽ được <strong>lưu vào Lịch sử sự kiện</strong> (chỉ xem và xuất Excel, không điểm danh hộ được nữa).</li>
+                {seatModeChanging && <li><strong>Đổi chế độ xếp chỗ: toàn bộ chỗ đã sắp sẽ được làm trống</strong> để bạn sắp lại từ đầu theo {newIndividual ? 'từng người' : 'nhóm'}.</li>}
                 <li>Điểm danh của sự kiện mới bắt đầu lại từ 0. Không có ai điểm danh thì không lưu.</li>
               </ul>
               <label className="flex items-start gap-3 text-[15px] text-[#0F172A] cursor-pointer select-none">
@@ -461,6 +454,7 @@ export function ManagerEventPage() {
                   {newOpensAt && newClosesAt ? 'Giờ đóng phải sau giờ mở.' : 'Nhập đủ giờ mở và giờ đóng để bắt đầu sự kiện mới.'}
                 </p>
               )}
+              </div>
             </div>
           </Modal>
         </div>

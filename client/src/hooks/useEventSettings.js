@@ -6,6 +6,7 @@ export function useEventSettings() {
     eventName: '',
     guestEnabled: true,
     checkInOpen: true,
+    seatMode: 'group',
     appUrl: '',
     seatTokens: {},
   });
@@ -51,8 +52,8 @@ export function useEventSettings() {
     return updated;
   };
 
-  const startNewEvent = async (eventName, opensAt, closesAt) => {
-    const updated = await eventService.startNewEvent(eventName, opensAt, closesAt);
+  const startNewEvent = async (eventName, opensAt, closesAt, options) => {
+    const updated = await eventService.startNewEvent(eventName, opensAt, closesAt, options);
     setEvent(updated);
     return updated;
   };

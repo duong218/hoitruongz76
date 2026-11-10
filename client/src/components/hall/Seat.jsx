@@ -20,6 +20,8 @@ export function Seat({
   stroke = '#CBD5E1',
   textColor,
   dim = false,
+  onClick,
+  title,
 }) {
   // Tự động tính màu chữ tương phản:
   // Nếu ghế màu xám nhạt (#E2E8F0) -> Chữ màu xanh đen đậm nét (#334155)
@@ -31,8 +33,10 @@ export function Seat({
     <g
       transform={`translate(${x}, ${y})`}
       opacity={dim ? 0.28 : 1}
-      style={{ transition: 'opacity 0.6s ease' }}
+      style={{ transition: 'opacity 0.6s ease', cursor: onClick ? 'pointer' : undefined }}
+      onClick={onClick}
     >
+      {title && <title>{title}</title>}
       <use
         href="#hall-seat-symbol"
         fill={fill}

@@ -6,6 +6,7 @@ const seatSchema = new mongoose.Schema(
   {
     seatId: { type: String, required: true, unique: true, match: SEAT_ID_REGEX }, // "3-L-5"
     groupId: { type: String, default: null }, // trỏ tới Group.id, rỗng = chưa gán
+    employeeCode: { type: String, default: null, uppercase: true }, // chế độ 'individual': ghế dành riêng cho 1 người
     // Token dán trên ghế (QR). select:false: chỉ đọc khi thật sự cần (in tem, kiểm tra điểm danh).
     token: { type: String, required: true, select: false },
   },
