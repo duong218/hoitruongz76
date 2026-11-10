@@ -7,6 +7,10 @@ import { useOrg } from '../../hooks/useOrg.js';
 import { ROLES } from '../../constants/roles.js';
 import { TOTAL_ROWS, SEATS_PER_SIDE, seatId } from '../../constants/hall.js';
 import { HallMap } from './HallMap.jsx';
+import { Select } from '../ui/Select.jsx';
+import { Pagination } from '../ui/Pagination.jsx';
+
+const PAGE_SIZE = 20;
 
 // Chế độ "mỗi người một ghế cố định": bấm ghế trên sơ đồ -> bảng bên phải gán nhân viên (nhập mã hoặc tìm tên).
 const ASSIGNED = '__assigned__';
@@ -24,6 +28,7 @@ export function PersonalSeating() {
   const [sel, setSel] = useState('');
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState('');
+  const [page, setPage] = useState(1);
   const [block, setBlock] = useState(''); // lọc theo khối
   const [auto, setAuto] = useState(true); // gán xong tự nhảy sang ghế trống kế tiếp
   const panelRef = useRef(null);
@@ -79,6 +84,10 @@ export function PersonalSeating() {
     .sort((a, b) => a.seatId.localeCompare(b.seatId, undefined, { numeric: true }))
     .filter((s) => !filter.trim() || plain(`${s.employeeCode} ${nameOf.get(s.employeeCode) || ''} ${seatLabel(s.seatId)}`).includes(plain(filter.trim())));
 
+  const pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const cur = Math.min(page, pages);
+  const pageRows = rows.slice((cur - 1) * PAGE_SIZE, cur * PAGE_SIZE);
+
   return (
     <div className="space-y-5 max-w-full">
       <div>
@@ -99,10 +108,10 @@ export function PersonalSeating() {
           <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
             <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-[#EEF2F6]">
               <span className="text-[13px] font-bold uppercase tracking-wider text-[#64748B]">Đã gán: {list.length} người</span>
-              <input className="h-9 w-56 rounded-lg border border-[#CBD5E1] px-3 text-[14px]" placeholder="Lọc theo mã, tên, hàng..." value={filter} onChange={(e) => setFilter(e.target.value)} />
+              <input className="h-9 w-56 rounded-lg border border-[#CBD5E1] px-3 text-[14px]" placeholder="Lọc theo mã, tên, hàng..." value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} />
             </div>
-            <div className="divide-y divide-[#EEF2F6] max-h-80 overflow-y-auto">
-              {rows.map((s) => (
+            <div className="divide-y divide-[#EEF2F6] ">
+              {pageRows.map((s) => (
                 <div key={s.seatId} className={`flex items-center justify-between gap-3 px-4 py-2 ${s.seatId === sel ? 'bg-[#EAF6FF]' : ''}`}>
                   <button type="button" onClick={() => pick(s.seatId)} className="min-w-0 text-left cursor-pointer">
                     <p className="text-[15px] font-bold text-[#0F172A] truncate">{nameOf.get(s.employeeCode) || s.employeeCode} <span className="font-mono text-[13px] font-medium text-[#64748B]">{s.employeeCode}</span></p>
@@ -113,6 +122,7 @@ export function PersonalSeating() {
               ))}
               {rows.length === 0 && <p className="px-4 py-6 text-[14px] text-[#64748B]">{list.length ? 'Không có kết quả.' : 'Chưa gán ai.'}</p>}
             </div>
+            <div className="px-4 py-3 border-t border-[#EEF2F6] empty:hidden"><Pagination page={cur} pages={pages} total={rows.length} limit={PAGE_SIZE} onChange={setPage} /></div>
           </div>
         </div>
 
@@ -137,10 +147,7 @@ export function PersonalSeating() {
                 <p className="text-[14px] font-semibold text-[#64748B]">Ghế đang trống.</p>
               )}
               <div className="space-y-1.5">
-                <select className="h-10 w-full rounded-lg border border-[#CBD5E1] bg-white px-3 text-[14px]" value={block} onChange={(e) => setBlock(e.target.value)} aria-label="Lọc theo khối">
-                  <option value="">Tất cả các khối</option>
-                  {blocks.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
+                <Select size="sm" value={block} onChange={(e) => setBlock(e.target.value)} options={[{ value: '', label: 'Tất cả các khối' }, ...blocks.map((b) => ({ value: b.id, label: b.name }))]} />
                 {block && <p className="text-[13px] text-[#64748B]">Còn {unseated}/{pool.length} người chưa có ghế (xếp lên đầu danh sách).</p>}
                 <label htmlFor="pick-emp" className="text-[14px] font-bold text-[#0F172A]">{owner ? 'Đổi sang người khác' : 'Gán cho'}</label>
                 <input
