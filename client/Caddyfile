@@ -1,11 +1,18 @@
 # SITE_ADDRESS để trống = chạy HTTP cổng 80 (mạng nội bộ).
 # Đặt SITE_ADDRESS=hoitruong.z76.vn thì Caddy tự xin và gia hạn HTTPS.
 {$SITE_ADDRESS::80} {
-	encode gzip
+	# Luồng cập nhật ghế (SSE): KHÔNG nén, đẩy tin đi ngay, không để Caddy giữ đệm
+	handle /api/seats/stream {
+		reverse_proxy server:5000 {
+			flush_interval -1
+		}
+	}
 	handle /api/* {
+		encode gzip
 		reverse_proxy server:5000
 	}
 	handle {
+		encode gzip
 		root * /srv
 		try_files {path} /index.html
 		file_server

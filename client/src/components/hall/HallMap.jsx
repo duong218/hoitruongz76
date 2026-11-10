@@ -23,6 +23,8 @@ export function HallMap({
   highlightGroupId = null,
   selectedRows = [],
   onToggleRow = () => {},
+  occupiedSeats = null, // Set mã ghế đã có người điểm danh (chế độ view)
+  mySeatId = '', // ghế của chính người xem: không làm mờ
   className = '',
 }) {
   // Map nhóm theo id để tra cứu nhanh
@@ -124,8 +126,9 @@ export function HallMap({
             viewBox="0 0 10 10"
             refX="6"
             refY="5"
-            markerWidth="8"
-            markerHeight="8"
+            markerUnits="userSpaceOnUse"
+            markerWidth="18"
+            markerHeight="18"
             orient="auto-start-reverse"
           >
             <path
@@ -134,6 +137,15 @@ export function HallMap({
             />
           </marker>
         </defs>
+
+        {/* Đường nét đứt đi qua khoảng trống TRƯỚC hàng ghế, mũi tên chỉ xuống (vẽ trước để chữ, ghế nằm trên) */}
+        {mode === 'view' && pathData.length > 0 && (
+          <EntrancePath
+            pathData={pathData}
+            color={highlightGroup?.color || '#008BC5'}
+          />
+        )}
+
 
         {/* Nền sân khấu */}
         <g className="stage-area">
@@ -168,6 +180,9 @@ export function HallMap({
           fontSize="12"
           fontWeight="700"
           letterSpacing="1"
+          stroke="#FFFFFF"
+          strokeWidth="4"
+          paintOrder="stroke"
         >
           LỐI ĐI GIỮA
         </text>
@@ -178,12 +193,15 @@ export function HallMap({
           fill="#008BC5"
           fontSize="10.5"
           fontWeight="700"
+          stroke="#FFFFFF"
+          strokeWidth="4"
+          paintOrder="stroke"
         >
           (Ghế 1 sát lối đi ↔ Ghế 10 sát tường)
         </text>
 
         {/* Thanh thước kẻ số ghế phía trên Hàng 1 (Header cột ghế) */}
-        <g className="column-headers" opacity="0.85">
+        <g className="column-headers" opacity="0.85" stroke="#FFFFFF" strokeWidth="3" paintOrder="stroke">
           {/* Bên Trái: Ghế 10 ngoài cùng -> Ghế 1 sát lối đi */}
           {Array.from({ length: SEATS_PER_SIDE }, (_, i) => 10 - i).map((n) => {
             const coords = getSeatCoords(1, 'L', n);
@@ -315,6 +333,7 @@ export function HallMap({
                     seatNumber={n}
                     fill={fill}
                     stroke={stroke}
+                    dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                   />
                 );
               })}
@@ -349,6 +368,7 @@ export function HallMap({
                     seatNumber={n}
                     fill={fill}
                     stroke={stroke}
+                    dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
                   />
                 );
               })}
@@ -407,14 +427,6 @@ export function HallMap({
             className="hall-halo-pulse"
           />
         ))}
-
-        {/* Đường nét đứt từ cửa vào tới hàng ghế gần nhất */}
-        {mode === 'view' && pathData.length > 0 && (
-          <EntrancePath
-            pathData={pathData}
-            color={highlightGroup?.color || '#008BC5'}
-          />
-        )}
 
         {/* Khu vực CỬA VÀO dưới cùng giữa */}
         <g className="entrance-area">

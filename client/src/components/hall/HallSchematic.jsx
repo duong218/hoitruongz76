@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
 import { ArrowUp, ChevronLeft, ChevronRight } from 'lucide-react';
-import { TOTAL_ROWS, isVipRow } from '../../constants/hall.js';
+import { TOTAL_ROWS, isVipRow, seatId } from '../../constants/hall.js';
 import { formatSeatRanges } from '../../utils/seatSummary.js';
 
 // Sơ đồ rút gọn cho điện thoại: mỗi hàng 1 dòng, mỗi bên 1 ô, chữ to.
 // Sân khấu ở trên, Cửa vào ở dưới (giống sơ đồ 2D). Cột giữa là lối đi.
-function Block({ nums, color, side, delay = 0 }) {
+function Block({ nums, color, side, delay = 0, taken }) {
   // Bên trái: ghế 10 sát tường (trái) -> ghế 1 sát lối đi. Bên phải ngược lại.
   const order = Array.from({ length: 10 }, (_, i) => (side === 'L' ? 10 - i : i + 1));
   const set = new Set(nums);
@@ -22,7 +22,11 @@ function Block({ nums, color, side, delay = 0 }) {
           <span
             key={n}
             className={`flex-1 rounded-[3px] ${mine ? 'h-2.5' : 'h-2'}`}
-            style={{ background: set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0' }}
+            style={{
+              background: set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0',
+              opacity: taken?.has(n) ? 0.25 : 1, // ghế đã có người điểm danh
+              transition: 'opacity 0.6s ease',
+            }}
           />
         ))}
       </div>
@@ -35,7 +39,7 @@ function Block({ nums, color, side, delay = 0 }) {
   );
 }
 
-export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color = '#008BC5' }) {
+export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color = '#008BC5', occupiedSeats = null, mySeatId = '' }) {
   const mine = useMemo(() => {
     const m = {}; // { [row]: { L: [], R: [] } }
     Object.entries(seatGroups).forEach(([id, g]) => {
@@ -52,6 +56,9 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
   // Đường chỉ dẫn chảy từ Cửa vào lên tới hàng xa nhất (số nhỏ nhất) của nhóm
   const farthest = rowCount ? Math.min(...Object.keys(mine).map(Number)) : null;
   let order = 0; // thứ tự hiện dần các khung
+  // Các số ghế đã có người điểm danh (trừ ghế của chính mình) trong từng khối
+  const takenIn = (r, side, nums) =>
+    new Set((nums || []).filter((n) => occupiedSeats?.has(seatId(r, side, n)) && seatId(r, side, n) !== mySeatId));
 
   return (
     <div className="bg-white border border-[#E2E8F0] rounded-xl shadow-[0_1px_3px_rgba(15,23,42,0.08)] p-2.5 space-y-2">
@@ -78,7 +85,7 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
                 </span>
                 {isVipRow(r) && <span className="text-[14px] leading-4 font-semibold text-[#B45309]">VIP</span>}
               </div>
-              <div className="h-12 py-0.5"><Block nums={row?.L || []} color={color} side="L" delay={hasL ? 150 + 90 * order++ : 0} /></div>
+              <div className="h-12 py-0.5"><Block nums={row?.L || []} color={color} side="L" delay={hasL ? 150 + 90 * order++ : 0} taken={takenIn(r, 'L', row?.L)} /></div>
               {/* Lối đi giữa: đường nét đứt chảy lên tới hàng của nhóm, mũi tên chỉ vào khung */}
               <div className="relative h-12 overflow-hidden" aria-hidden="true">
                 {flowing ? (
@@ -104,7 +111,7 @@ export function HallSchematic({ seatGroups = {}, highlightGroupId = null, color 
                   />
                 )}
               </div>
-              <div className="h-12 py-0.5"><Block nums={row?.R || []} color={color} side="R" delay={hasR ? 150 + 90 * order++ : 0} /></div>
+              <div className="h-12 py-0.5"><Block nums={row?.R || []} color={color} side="R" delay={hasR ? 150 + 90 * order++ : 0} taken={takenIn(r, 'R', row?.R)} /></div>
             </React.Fragment>
           );
         })}

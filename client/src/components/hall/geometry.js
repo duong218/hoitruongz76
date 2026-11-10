@@ -113,21 +113,22 @@ export function getEntrancePathData(targetRow, hasLeftSeats, hasRightSeats, left
   const startY = HALL_LAYOUT.ENTRANCE.topY; // 685
 
   const rowY = getRowY(targetRow);
-  // Điểm rẽ ngang nằm ngay dưới hàng ghế
-  const turnY = rowY + HALL_LAYOUT.ROW_HEIGHT + 13;
-  const targetArrowY = rowY + HALL_LAYOUT.ROW_HEIGHT + 4;
+  // Điểm rẽ ngang nằm ở khoảng trống TRƯỚC hàng ghế (phía sân khấu), rồi mũi tên chỉ XUỐNG hàng ghế.
+  // Hàng 1 sát dãy số ghế nên rẽ cao hơn một chút để không đè lên số.
+  const turnY = rowY - (targetRow === 1 ? 19 : 16);
+  const targetArrowY = rowY - 8;
 
   const paths = [];
 
   // Nếu có ghế bên trái
   if (hasLeftSeats && leftMidX) {
-    // Đi từ cửa lên đến turnY, rẽ trái sang leftMidX, rồi đi lên targetArrowY
+    // Đi từ cửa lên đến turnY (trước hàng ghế), rẽ trái sang leftMidX, rồi đi xuống targetArrowY
     paths.push(`M ${startX} ${startY} L ${startX} ${turnY} L ${leftMidX} ${turnY} L ${leftMidX} ${targetArrowY}`);
   }
 
   // Nếu có ghế bên phải
   if (hasRightSeats && rightMidX) {
-    // Đi từ cửa lên đến turnY, rẽ phải sang rightMidX, rồi đi lên targetArrowY
+    // Đi từ cửa lên đến turnY (trước hàng ghế), rẽ phải sang rightMidX, rồi đi xuống targetArrowY
     paths.push(`M ${startX} ${startY} L ${startX} ${turnY} L ${rightMidX} ${turnY} L ${rightMidX} ${targetArrowY}`);
   }
 

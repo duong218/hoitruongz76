@@ -9,6 +9,7 @@ import React from 'react';
  *   fill?: string,
  *   stroke?: string,
  *   textColor?: string,
+ *   dim?: boolean,
  * }} props
  */
 export function Seat({
@@ -18,6 +19,7 @@ export function Seat({
   fill = '#E2E8F0',
   stroke = '#CBD5E1',
   textColor,
+  dim = false,
 }) {
   // Tự động tính màu chữ tương phản:
   // Nếu ghế màu xám nhạt (#E2E8F0) -> Chữ màu xanh đen đậm nét (#334155)
@@ -26,7 +28,11 @@ export function Seat({
   const autoTextColor = textColor || (isLight ? '#334155' : '#FFFFFF');
 
   return (
-    <g transform={`translate(${x}, ${y})`}>
+    <g
+      transform={`translate(${x}, ${y})`}
+      opacity={dim ? 0.28 : 1}
+      style={{ transition: 'opacity 0.6s ease' }}
+    >
       <use
         href="#hall-seat-symbol"
         fill={fill}

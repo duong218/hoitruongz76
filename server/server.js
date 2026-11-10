@@ -2,6 +2,7 @@ import app from './src/app.js';
 import { env } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
 import { archiveIfEnded } from './src/utils/archive.js';
+import { closeStreams } from './src/utils/seatEvents.js';
 
 async function start() {
   try {
@@ -22,6 +23,7 @@ async function start() {
   const shutdown = async (signal) => {
     console.log(`\nNhận ${signal}, đang tắt server...`);
     clearInterval(timer);
+    closeStreams(); // luồng SSE đang mở sẽ chặn server.close()
     server.close(async () => {
       try {
         await disconnectDB();

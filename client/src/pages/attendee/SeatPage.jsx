@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import { useSeatAssignments } from '../../hooks/useSeatAssignments.js';
 import { useGroups } from '../../hooks/useGroups.js';
 import { useAttendance } from '../../hooks/useAttendance.js';
+import { useOccupiedSeats } from '../../hooks/useOccupiedSeats.js';
 import { useEventSettings } from '../../hooks/useEventSettings.js';
 import { useToast } from '../../context/ToastContext.jsx';
 import { GroupBadge } from '../../components/ui/GroupBadge.jsx';
@@ -33,6 +34,7 @@ export function SeatPage() {
   const { seatGroups } = useSeatAssignments();
   const { groups } = useGroups();
   const { attendance, checkIn } = useAttendance();
+  const occupiedSeats = useOccupiedSeats(); // ghế đã có người điểm danh, tự cập nhật tức thì
   const { event } = useEventSettings();
   const toast = useToast();
 
@@ -296,7 +298,13 @@ export function SeatPage() {
 
         {/* Điện thoại: sơ đồ rút gọn chữ to. Màn hình lớn: sơ đồ 2D đầy đủ. */}
         <div className="sm:hidden">
-          <HallSchematic seatGroups={seatGroups} highlightGroupId={hasSeats ? group?.id : null} color={group?.color} />
+          <HallSchematic
+            seatGroups={seatGroups}
+            highlightGroupId={hasSeats ? group?.id : null}
+            color={group?.color}
+            occupiedSeats={occupiedSeats}
+            mySeatId={myAttendance?.seatId || ''}
+          />
         </div>
         <div className="hidden sm:block">
           <HallMap
@@ -304,8 +312,15 @@ export function SeatPage() {
             seatGroups={seatGroups}
             groups={groups}
             highlightGroupId={hasSeats ? group?.id : null}
+            occupiedSeats={occupiedSeats}
+            mySeatId={myAttendance?.seatId || ''}
           />
         </div>
+        {hasSeats && (
+          <p className="text-[16px] leading-6 text-[#334155]">
+            Ghế <strong>mờ</strong> là ghế đã có người điểm danh, hãy chọn ghế còn rõ màu.
+          </p>
+        )}
       </div>
 
       {/* Thanh hành động điểm danh cố định đáy màn hình (chỉ hiện khi nhân viên cần điểm danh và chưa điểm danh) */}
