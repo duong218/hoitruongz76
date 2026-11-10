@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { ArrowUp, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowUp, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TOTAL_ROWS, isVipRow, seatId, parseSeatId, MY_SEAT_COLOR } from '../../constants/hall.js';
 import { formatSeatRanges } from '../../utils/seatSummary.js';
 
@@ -17,11 +17,18 @@ function Block({ nums, color, side, delay = 0, taken, sat = null }) {
       }`}
       style={mine ? { borderColor: color, background: `color-mix(in srgb, ${color} 10%, white)`, '--stagger-delay': `${delay}ms` } : undefined}
     >
-      <div className="flex gap-[3px]" aria-hidden="true">
+      <div className="relative flex items-center gap-[3px]" aria-hidden="true">
+        {sat && (
+          <ChevronDown
+            className="arrow-nudge-d absolute -top-[15px] h-3.5 w-3.5 -ml-[7px]"
+            style={{ left: `${(order.indexOf(sat) + 0.5) * 10}%`, color: MY_SEAT_COLOR }}
+            strokeWidth={4}
+          />
+        )}
         {order.map((n) => (
           <span
             key={n}
-            className={`flex-1 rounded-[3px] ${mine ? 'h-2.5' : 'h-2'}`}
+            className={`flex-1 rounded-[3px] ${n === sat ? 'h-4' : mine ? 'h-2.5' : 'h-2'}`}
             style={{
               background: n === sat ? MY_SEAT_COLOR : set.has(n) ? color : mine ? '#CBD5E1' : '#E2E8F0',
               opacity: taken?.has(n) ? 0.25 : 1, // ghế đã có người điểm danh
