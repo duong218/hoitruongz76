@@ -113,7 +113,7 @@ export function ScannerModal({
         onScanResult({
           seat: '',
           token: '',
-          error: 'Đây là mã QR ở Cửa (dành để mở web). Bạn hãy quét mã tem dán trên Ghế ngồi (có chữ Hàng... Ghế...).',
+          error: 'Đây là mã QR ở Cửa (dành để mở web). Bạn hãy quét mã tem dán ở lưng ghế phía trước mặt bạn (có chữ Hàng... Ghế...).',
         });
         return;
       }
@@ -204,10 +204,10 @@ export function ScannerModal({
           <>
             <div className="text-center px-4">
               <p className="text-[19px] sm:text-[20px] font-extrabold text-white leading-tight">
-                Hướng camera vào mã QR dán trên ghế của bạn
+                Hướng camera vào mã QR ở lưng ghế phía trước mặt bạn
               </p>
               <p className="text-[13px] text-white/70 mt-1">
-                Mã QR được in và dán ngay phía trước thành tựa hoặc tay vịn của ghế.
+                Tem QR dán sau lưng ghế hàng trước, ngay trước mặt bạn. Ngồi hàng 1 thì không cần quét.
               </p>
             </div>
 
@@ -248,10 +248,10 @@ export function ScannerModal({
           <form onSubmit={handleManualSubmit} className="w-full bg-[#1E293B] border border-white/20 rounded-2xl p-6 space-y-5 shadow-2xl">
             <div className="text-center pb-2 border-b border-white/10 space-y-1">
               <h3 className="text-[20px] font-extrabold text-white">
-                Nhập mã tem dán trên ghế
+                Nhập mã tem ở lưng ghế trước mặt
               </h3>
               <p className="text-[13px] text-white/70">
-                Xem dòng chữ in <strong className="text-[#38BDF8]">"Mã: ......"</strong> ngay dưới mã QR trên ghế bạn đang ngồi.
+                Xem dòng chữ in <strong className="text-[#38BDF8]">"Mã: ......"</strong> ngay dưới mã QR ở lưng ghế phía trước mặt bạn.
               </p>
             </div>
 

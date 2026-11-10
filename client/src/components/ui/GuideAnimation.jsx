@@ -5,7 +5,7 @@ const CAPTIONS = [
   'Quét mã QR ở cửa vào bằng camera điện thoại',
   'Nhập mã nhân viên ghi trên thẻ',
   'Xem chỗ ngồi, đi theo đường chấm trên bản đồ',
-  'Ngồi vào ghế, quét mã QR dán trên ghế để điểm danh',
+  'Ngồi vào ghế, quét mã QR ở lưng ghế phía trước để điểm danh',
 ];
 const B = '#008BC5';
 

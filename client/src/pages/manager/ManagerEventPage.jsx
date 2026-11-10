@@ -58,8 +58,8 @@ export function ManagerEventPage() {
   const [savingUrl, setSavingUrl] = useState(false);
   const qrLoginRef = useRef(null);
 
-  // Chọn hàng in tem dán ghế (mặc định chọn hàng 3-10, bỏ hàng 1-2 VIP)
-  const [selectedPrintRows, setSelectedPrintRows] = useState([3, 4, 5, 6, 7, 8, 9, 10]);
+  // Chọn hàng in tem. Tem ghế hàng N dán ở LƯNG ghế hàng N-1 (người ngồi sau quét). Hàng 1 không quét nên mặc định bỏ.
+  const [selectedPrintRows, setSelectedPrintRows] = useState([2, 3, 4, 5, 6, 7, 8, 9, 10]);
 
   // Cấu hình kích cỡ tem dán ghế (M: 24 tem/A4, L: 12 tem/A4, XL: 6 tem/A4)
   const [stickerSize, setStickerSize] = useState('L'); // 'M' | 'L' | 'XL'
@@ -397,7 +397,7 @@ export function ManagerEventPage() {
             <div className="pt-4 border-t border-[#E2E8F0] space-y-2">
               <label className="block text-[16px] font-bold text-[#0F172A]">Cổng điểm danh tại ghế</label>
               <p className="text-[14px] text-[#64748B]">
-                Khi bật, đại biểu quét mã QR trên ghế để xác nhận có mặt. Khi đóng, nút điểm danh bị khóa.
+                Khi bật, đại biểu quét mã QR ở lưng ghế phía trước mặt để xác nhận có mặt. Khi đóng, nút điểm danh bị khóa.
               </p>
               <Switch checked={checkInOpen} onChange={(val) => setCheckInOpen(val)} label="Cổng điểm danh:" />
             </div>
@@ -683,12 +683,16 @@ export function ManagerEventPage() {
                         className="w-5 h-5 rounded border-[#CBD5E1] text-[#008BC5] focus:ring-[#008BC5] cursor-pointer"
                       />
                       <span className="text-[15px]">
-                        Hàng {r} {isVip && <span className="text-[12px] text-[#B45309] font-semibold">(VIP)</span>}
+                        Hàng {r} {isVip && <span className="text-[12px] text-[#B45309] font-semibold">(VIP)</span>}{r === 1 && <span className="text-[12px] text-[#64748B] font-semibold"> không quét</span>}
                       </span>
                     </label>
                   );
                 })}
               </div>
+
+              <p className="p-3 bg-[#FFFBEB] border border-[#FDE68A] rounded-lg text-[14px] text-[#78350F]">
+                <strong>Cách dán:</strong> tem ghế hàng N dán ở <strong>lưng ghế hàng N-1</strong> (cùng bên, cùng số ghế) để người ngồi sau quét. Ví dụ tem "Hàng 5 - Trái - Ghế 3" dán lưng ghế Hàng 4, Trái, Ghế 3. Hàng 1 không cần quét nên không in tem; lưng ghế hàng 10 không cần dán.
+              </p>
 
               <div className="p-3 bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg text-[14px] text-[#334155] flex items-center justify-between">
                 <span>
@@ -745,7 +749,7 @@ export function ManagerEventPage() {
                 />
                 <span className="sticker-title">{item.label}</span>
                 <span className="sticker-code">Mã: {item.token}</span>
-                <span className="sticker-sub">Z176 • Điểm danh</span>
+                <span className="sticker-sub">Dán lưng ghế hàng {item.row - 1}</span>
               </div>
             ))}
           </div>
