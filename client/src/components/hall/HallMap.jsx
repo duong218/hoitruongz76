@@ -32,6 +32,7 @@ export function HallMap({
   className = '',
   onSeatClick = null, // (seatId) => void: bấm vào ghế (dùng khi xếp chỗ từng người)
   selectedSeatId = '',
+  highlightSeatIds = [], // danh sách seatId cần nhấp nháy nổi bật khi tìm kiếm
   seatTitles = null, // { [seatId]: 'chú thích khi rê chuột' }
   renderSeatTip = null, // (seatId) => ReactNode | null: hiện sau khi rê chuột đứng yên 1,5s
 }) {
@@ -454,6 +455,40 @@ export function HallMap({
           const c = getSeatCoords(p.row, p.side, p.n);
           return <rect x={c.x - 3} y={c.y - 3} width={c.width + 6} height={c.height + 6} rx="6" fill="none" stroke="#0F172A" strokeWidth="2.5" pointerEvents="none" />;
         })()}
+
+        {/* Ghế được tìm thấy: khung nhấp nháy + hào quang nổi bật */}
+        {highlightSeatIds.map((id) => {
+          const p = parseSeatId(id);
+          if (!p) return null;
+          const c = getSeatCoords(p.row, p.side, p.n);
+          const cx = c.x + c.width / 2;
+          const cy = c.y + c.height / 2;
+          return (
+            <g key={`hl-${id}`} pointerEvents="none">
+              <circle
+                cx={cx}
+                cy={cy}
+                r={c.width * 0.95}
+                fill="rgba(239, 68, 68, 0.22)"
+                stroke="#EF4444"
+                strokeWidth="2.5"
+                className="animate-ping"
+                style={{ transformOrigin: `${cx}px ${cy}px` }}
+              />
+              <rect
+                x={c.x - 6}
+                y={c.y - 6}
+                width={c.width + 12}
+                height={c.height + 12}
+                rx="8"
+                fill="rgba(250, 204, 21, 0.25)"
+                stroke="#DC2626"
+                strokeWidth="4"
+                className="hall-halo-pulse"
+              />
+            </g>
+          );
+        })}
 
         {/* Khung Halo nhấp nháy bao quanh các đoạn ghế được chỉ định trong chế độ VIEW */}
         {mode === 'view' && halos.map((halo, idx) => (

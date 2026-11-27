@@ -143,9 +143,23 @@ export function PersonalSeating() {
       <EmployeeChangeNotice />
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
-        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1 space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="search"
+              value={filter}
+              onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+              placeholder="Tìm vị trí ghế trên sơ đồ (nhập mã NV hoặc tên)..."
+              className="h-10 flex-1 min-w-[220px] rounded-xl border border-[#CBD5E1] bg-white px-3.5 text-[14px] focus:outline-none focus:ring-2 focus:ring-[#008BC5]"
+            />
+            {filter.trim() && (
+              <span className="text-[13px] font-semibold text-[#B45309] bg-[#FEF9EE] border border-[#FDE68A] px-3 py-1.5 rounded-lg">
+                {rows.length > 0 ? `Đang làm nổi bật ${rows.length} ghế khớp` : 'Không tìm thấy ghế nào khớp'}
+              </span>
+            )}
+          </div>
           <div className="hidden lg:block rounded-xl">
-            <HallMap seatGroups={seatGroups} mode="assign" selectedRows={selRows} onToggleRow={toggleRow} groups={mapGroups} onSeatClick={pick} selectedSeatId={sel} renderSeatTip={renderTip} />
+            <HallMap seatGroups={seatGroups} mode="assign" selectedRows={selRows} onToggleRow={toggleRow} groups={mapGroups} onSeatClick={pick} selectedSeatId={sel} highlightSeatIds={filter.trim() ? rows.map((r) => r.seatId) : []} renderSeatTip={renderTip} />
           </div>
           <div className="lg:hidden">
             <SeatPickerMobile seatGroups={seatGroups} colorOf={colorOf} ownerOf={ownerOf} nameOf={nameOf} attended={attended} sel={sel} onPick={pick} selRows={selRows} onToggleRow={toggleRow} />
