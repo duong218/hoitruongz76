@@ -252,7 +252,7 @@ SEED_MANAGER_PASSWORD=your_initial_manager_password
 Kiểm tra file `client/.env` (nếu cần thay đổi cổng API):
 
 ```env
-VITE_API_URL=/api
+[VITE_API_URL=/api](http://localhost:5000/api)
 ```
 
 ### 4. Khởi tạo dữ liệu ban đầu (Seed Database)
