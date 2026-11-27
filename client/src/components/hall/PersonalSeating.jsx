@@ -30,7 +30,7 @@ const plain = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').rep
 export function PersonalSeating() {
   const toast = useToast();
   const { employees } = useEmployees();
-  const { blocks } = useOrg();
+  const { blocks, departments } = useOrg();
   const { groups } = useGroups();
   const { seatGroups: groupSeats, assignSeats } = useSeatAssignments(); // ghế gán theo nhóm (dùng cho khách mời)
   const [selRows, setSelRows] = useState([]); // các hàng đang chọn để gán khách mời
@@ -41,6 +41,7 @@ export function PersonalSeating() {
   const [filter, setFilter] = useState('');
   const [page, setPage] = useState(1);
   const [block, setBlock] = useState(''); // lọc theo khối
+  const [dept, setDept] = useState(''); // lọc theo phòng ban
   const [auto, setAuto] = useState(true); // gán xong tự nhảy sang ghế trống kế tiếp
   const panelRef = useRef(null);
 
@@ -107,8 +108,9 @@ export function PersonalSeating() {
   const guestBtn = 'w-full min-h-[44px] rounded-lg text-[15px] font-bold cursor-pointer';
 
   const t = plain(q.trim());
-  const pool = block ? people.filter((e) => e.blockId === block) : people;
-  const matches = (t ? pool.filter((e) => plain(e.code).includes(t) || plain(e.name).includes(t)) : block ? pool : [])
+  const visibleDepts = block ? departments.filter((d) => d.blockId === block) : departments;
+  const pool = people.filter((e) => (!block || e.blockId === block) && (!dept || e.departmentId === dept));
+  const matches = (t ? pool.filter((e) => plain(e.code).includes(t) || plain(e.name).includes(t)) : (block || dept) ? pool : [])
     .sort((a, b) => seatOf.has(a.code) - seatOf.has(b.code) || a.name.localeCompare(b.name, 'vi')) // người chưa có ghế lên trước
     .slice(0, t ? 8 : 40);
   const unseated = pool.filter((e) => !seatOf.has(e.code)).length;
@@ -182,8 +184,9 @@ export function PersonalSeating() {
                 <p className="text-[14px] font-semibold text-[#64748B]">Ghế đang trống.</p>
               )}
               <div className="space-y-1.5">
-                <Select size="sm" value={block} onChange={(e) => setBlock(e.target.value)} options={[{ value: '', label: 'Tất cả các khối' }, ...blocks.map((b) => ({ value: b.id, label: b.name }))]} />
-                {block && <p className="text-[13px] text-[#64748B]">Còn {unseated}/{pool.length} người chưa có ghế (xếp lên đầu danh sách).</p>}
+                <Select size="sm" value={block} onChange={(e) => { setBlock(e.target.value); setDept(''); }} options={[{ value: '', label: 'Tất cả các khối' }, ...blocks.map((b) => ({ value: b.id, label: b.name }))]} />
+                <Select size="sm" value={dept} onChange={(e) => setDept(e.target.value)} options={[{ value: '', label: 'Tất cả phòng ban' }, ...visibleDepts.map((d) => ({ value: d.id, label: d.name }))]} />
+                {(block || dept) && <p className="text-[13px] text-[#64748B]">Còn {unseated}/{pool.length} người chưa có ghế (xếp lên đầu danh sách).</p>}
                 {!owner && (groupSeats[sel] === GUEST_GROUP_ID
                   ? <button type="button" onClick={() => assignGuest([sel], false)} className={`${guestBtn} border border-[#CBD5E1] text-[#C53030] bg-white`}>Bỏ gán Khách mời</button>
                   : <button type="button" disabled={!guest} onClick={() => assignGuest([sel], true)} className={`${guestBtn} text-white disabled:opacity-50`} style={{ background: guest?.color || '#475569' }}>Gán ghế này cho Khách mời</button>)}
