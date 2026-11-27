@@ -20,4 +20,12 @@ export const employeeService = {
   async importEmployees(validRows) {
     return await api.post('/employees/import', { rows: validRows });
   },
+
+  async getChangeLogs() {
+    return await api.get('/employees/change-logs');
+  },
+
+  async clearChangeLogs() {
+    return await api.delete('/employees/change-logs');
+  },
 };

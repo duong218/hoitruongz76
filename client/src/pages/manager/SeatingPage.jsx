@@ -6,6 +6,7 @@ import { HallMap } from '../../components/hall/HallMap.jsx';
 import { SeatRowEditor } from '../../components/hall/SeatRowEditor.jsx';
 import { Button } from '../../components/ui/Button.jsx';
 import { PersonalSeating } from '../../components/hall/PersonalSeating.jsx';
+import { EmployeeChangeNotice } from '../../components/hall/EmployeeChangeNotice.jsx';
 import { useEventSettings } from '../../hooks/useEventSettings.js';
 import { BottomSheet } from '../../components/ui/BottomSheet.jsx';
 import { TOTAL_SEATS } from '../../constants/hall.js';
@@ -217,6 +218,8 @@ export function SeatingPage() {
           </span>
         </p>
       </div>
+
+      <EmployeeChangeNotice />
 
       {/* Bố cục 2 cột trên Desktop (>= 1024px): Cột trái bản đồ linh hoạt, cột phải bảng nhóm */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

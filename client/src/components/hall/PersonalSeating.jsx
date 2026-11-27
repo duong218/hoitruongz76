@@ -15,6 +15,7 @@ import { useAttendance } from '../../hooks/useAttendance.js';
 import { resolveGroup } from '../../utils/resolveGroup.js';
 import { Select } from '../ui/Select.jsx';
 import { Pagination } from '../ui/Pagination.jsx';
+import { EmployeeChangeNotice } from './EmployeeChangeNotice.jsx';
 
 const PAGE_SIZE = 20;
 
@@ -136,6 +137,8 @@ export function PersonalSeating() {
           Bấm vào một ghế trên sơ đồ, rồi nhập mã hoặc tên nhân viên ở bảng <span className="hidden lg:inline">bên phải</span><span className="lg:hidden">ngay bên dưới</span>. Mỗi người chỉ được ngồi và điểm danh đúng ghế bạn gán. Ghế có màu là đã có người, <span className="hidden lg:inline">rê chuột vào để xem tên.</span><span className="lg:hidden">chạm vào ghế để xem tên ở bảng gán.</span>
         </p>
       </div>
+
+      <EmployeeChangeNotice />
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">

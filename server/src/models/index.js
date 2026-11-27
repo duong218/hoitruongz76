@@ -7,3 +7,4 @@ export { EventSetting } from './EventSetting.js';
 export { Attendance } from './Attendance.js';
 export { AuditLog } from './AuditLog.js';
 export { EventArchive } from './EventArchive.js';
+export { EmployeeChangeLog } from './EmployeeChangeLog.js';

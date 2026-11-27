@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { Employee } from '../models/index.js';
+import { Employee, Block, Department, EmployeeChangeLog } from '../models/index.js';
 import { ROLES } from '../constants/roles.server.js';
 import { audit } from '../utils/audit.js';
 
@@ -92,6 +92,29 @@ export const employeeController = {
       }
 
       const updatedEmp = await Employee.updateByCode(code, updates);
+
+      // Ghi nhận thay đổi Tên / Phòng ban / Khối để thông báo cho Quản lý ở trang Sắp chỗ
+      const nameChanged = updates.name && updates.name !== emp.name;
+      const deptChanged = updates.departmentId !== undefined && updates.departmentId !== emp.departmentId;
+      const blockChanged = updates.blockId !== undefined && updates.blockId !== emp.blockId;
+      if (nameChanged || deptChanged || blockChanged) {
+        const [oldDeptDoc, newDeptDoc, oldBlockDoc, newBlockDoc] = await Promise.all([
+          deptChanged && emp.departmentId ? Department.findById(emp.departmentId) : null,
+          deptChanged && updates.departmentId ? Department.findById(updates.departmentId) : null,
+          blockChanged && emp.blockId ? Block.findById(emp.blockId) : null,
+          blockChanged && updates.blockId ? Block.findById(updates.blockId) : null,
+        ]);
+        await EmployeeChangeLog.create({
+          employeeCode: code,
+          oldName: nameChanged ? emp.name : null,
+          newName: nameChanged ? updates.name : null,
+          oldDept: deptChanged ? (oldDeptDoc?.name || 'Chưa có') : null,
+          newDept: deptChanged ? (newDeptDoc?.name || 'Chưa có') : null,
+          oldBlock: blockChanged ? (oldBlockDoc?.name || 'Chưa có') : null,
+          newBlock: blockChanged ? (newBlockDoc?.name || 'Chưa có') : null,
+        });
+      }
+
       // Chỉ ghi TÊN các trường đã đổi, không ghi mật khẩu
       const changed = [];
       if (name) changed.push('tên');
@@ -145,6 +168,26 @@ export const employeeController = {
       const staffRows = validRows.filter((r) => r.role === ROLES.ADMIN || r.role === ROLES.MANAGER).length;
       await audit(req, 'employee.import', `Nhập ${validRows.length} dòng${staffRows ? `, trong đó ${staffRows} dòng có vai trò quản trị` : ''}`);
       res.json({ importedCount: validRows.length });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Lấy danh sách thay đổi thông tin nhân viên (cho trang Sắp chỗ)
+  async getChangeLogs(req, res, next) {
+    try {
+      const logs = await EmployeeChangeLog.findAll();
+      res.json(logs);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Đánh dấu đã xem / xóa thông báo thay đổi nhân viên
+  async clearChangeLogs(req, res, next) {
+    try {
+      await EmployeeChangeLog.clearAll();
+      res.json({ message: 'Đã đánh dấu đã xem.' });
     } catch (err) {
       next(err);
     }
