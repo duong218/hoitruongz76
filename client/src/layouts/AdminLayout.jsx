@@ -8,7 +8,7 @@ import {
   ADMIN_NAV_ITEMS,
   MANAGER_NAV_ITEMS,
 } from '../constants/navConfig.js';
-import { LogOut, ExternalLink, ArrowLeftRight, PanelLeftClose, PanelLeftOpen, KeyRound } from 'lucide-react';
+import { LogOut, ExternalLink, Tv, ArrowLeftRight, PanelLeftClose, PanelLeftOpen, KeyRound } from 'lucide-react';
 import { ChangePasswordModal } from '../components/ChangePasswordModal.jsx';
 
 export function AdminLayout() {
@@ -144,6 +144,16 @@ export function AdminLayout() {
             >
               <ExternalLink className="w-4 h-4 shrink-0" />
               {!collapsed && <span>Xem trang Người quét</span>}
+            </a>
+            <a
+              href="/display"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Mở màn hình TV"
+              className={`flex items-center ${collapsed ? 'justify-center' : 'px-4'} gap-2 py-3 text-[15px] font-medium text-[#64748B] hover:text-[#008BC5] hover:bg-[#EAF6FF] rounded-lg transition-colors min-h-[48px]`}
+            >
+              <Tv className="w-4 h-4 shrink-0" />
+              {!collapsed && <span>Mở màn hình TV</span>}
             </a>
           </div>
         </aside>

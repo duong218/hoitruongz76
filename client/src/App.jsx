@@ -14,6 +14,7 @@ import { AdminLayout } from './layouts/AdminLayout.jsx';
 import { LoginPage } from './pages/attendee/LoginPage.jsx';
 import { SeatPage } from './pages/attendee/SeatPage.jsx';
 import { DirectCheckInPage } from './pages/attendee/DirectCheckInPage.jsx';
+import { DisplayPage } from './pages/attendee/DisplayPage.jsx';
 
 // Staff Auth Page
 import { StaffLoginPage } from './pages/auth/StaffLoginPage.jsx';
@@ -43,6 +44,9 @@ export default function App() {
               {/* Trang Đăng nhập quản trị riêng biệt */}
               <Route path="/quan-tri/login" element={<StaffLoginPage />} />
               <Route path="/quan-tri" element={<Navigate to="/quan-tri/login" replace />} />
+
+              {/* Màn hình trình chiếu TV / Máy chiếu ở sảnh (công khai, tự cập nhật) */}
+              <Route path="/display" element={<DisplayPage />} />
 
               {/* Tuyến người tham dự & Quét mã */}
               <Route element={<AttendeeLayout />}>

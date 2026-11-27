@@ -1,4 +1,4 @@
-import { EventSetting, Seat } from '../models/index.js';
+import { EventSetting, Seat, Employee, Group, Attendance } from '../models/index.js';
 import { audit } from '../utils/audit.js';
 import { archiveAndClear, withArchiveLock } from '../utils/archive.js';
 import { invalidateCachedEvent } from '../utils/memoryCache.js';
@@ -162,6 +162,42 @@ export const eventController = {
         return savedEv;
       });
       res.json(event);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  // Thống kê công khai cho màn hình trình chiếu (TV / Máy chiếu): không lộ thông tin cá nhân
+  async getLiveStats(req, res, next) {
+    try {
+      const [employees, groups, attendance, seats] = await Promise.all([
+        Employee.findAll(),
+        Group.findAll(),
+        Attendance.findAll(),
+        Seat.findAll(),
+      ]);
+      const checkedCodes = new Set(attendance.map((a) => a.employeeCode.toUpperCase()));
+      const empByCode = new Map(employees.map((e) => [e.code.toUpperCase(), e]));
+      let requiredCount = 0;
+      let checkedInCount = 0;
+      employees.forEach((emp) => {
+        if (emp.role !== 'EMPLOYEE') return;
+        const g = groups.find((grp) => Array.isArray(grp.blockIds) && grp.blockIds.includes(emp.blockId));
+        if (g && g.checkInRequired) {
+          requiredCount++;
+          if (checkedCodes.has(emp.code.toUpperCase())) checkedInCount++;
+        }
+      });
+      // Map ghế cố định -> groupId của người ngồi ghế đó (không lộ tên/mã NV)
+      const personalSeatGroups = {};
+      seats.forEach((s) => {
+        if (!s.employeeCode) return;
+        const emp = empByCode.get(s.employeeCode.toUpperCase());
+        const g = emp && groups.find((grp) => Array.isArray(grp.blockIds) && grp.blockIds.includes(emp.blockId));
+        if (g) personalSeatGroups[s.seatId] = g.id;
+      });
+      const occupiedSeats = [...new Set(attendance.map((a) => a.seatId).filter(Boolean))];
+      res.json({ requiredCount, checkedInCount, occupiedSeats, personalSeatGroups });
     } catch (err) {
       next(err);
     }
