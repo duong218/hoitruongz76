@@ -1,25 +1,111 @@
-import mongoose from 'mongoose';
-import { cleanJSON } from './_clean.js';
+import { getPool, sql } from '../config/db.js';
 
-// Chỉ có 1 bản ghi duy nhất (key = 'main')
-const eventSettingSchema = new mongoose.Schema(
-  {
-    key: { type: String, default: 'main', unique: true, immutable: true },
-    eventName: { type: String, required: true, trim: true },
-    guestEnabled: { type: Boolean, default: true },
-    checkInOpen: { type: Boolean, default: true },
-    seatMode: { type: String, enum: ['group', 'individual'], default: 'group' }, // group: theo nhóm | individual: mỗi người 1 ghế cố định
-    appUrl: { type: String, default: '', trim: true },
-    nameLocked: { type: Boolean, default: false }, // true sau khi bấm "Bắt đầu sự kiện mới"
-    startedAt: { type: Date, default: null },
-    // Khung giờ cho phép người tham dự vào (null = chưa đặt lịch = chưa mở cho ai)
-    opensAt: { type: Date, default: null },
-    closesAt: { type: Date, default: null },
-    // Đã tự lưu lịch sử khi hết giờ chưa (endHandledAt) và bản lưu nào (archivedId, null nếu không có ai điểm danh)
-    endHandledAt: { type: Date, default: null },
-    archivedId: { type: mongoose.Schema.Types.ObjectId, default: null },
+function parseEventSetting(row) {
+  if (!row) return null;
+  return {
+    eventName: row.eventName,
+    guestEnabled: Boolean(row.guestEnabled),
+    checkInOpen: Boolean(row.checkInOpen),
+    seatMode: row.seatMode,
+    appUrl: row.appUrl,
+    nameLocked: Boolean(row.nameLocked),
+    startedAt: row.startedAt,
+    opensAt: row.opensAt,
+    closesAt: row.closesAt,
+    endHandledAt: row.endHandledAt,
+    archivedId: row.archivedId,
+  };
+}
+
+export const EventSetting = {
+  async getMain() {
+    const res = await getPool()
+      .request()
+      .query(
+        'SELECT eventName, guestEnabled, checkInOpen, seatMode, appUrl, nameLocked, startedAt, opensAt, closesAt, endHandledAt, archivedId FROM EventSettings WHERE [key] = \'main\''
+      );
+    return parseEventSetting(res.recordset[0]);
   },
-  { timestamps: true, toJSON: cleanJSON(['key', 'createdAt', 'updatedAt']) }
-);
 
-export const EventSetting = mongoose.model('EventSetting', eventSettingSchema);
+  async upsertMain(data) {
+    const existing = await this.getMain();
+    const pool = getPool();
+    if (!existing) {
+      const res = await pool
+        .request()
+        .input('eventName', sql.NVarChar(255), (data.eventName || 'Sự kiện').trim())
+        .input('guestEnabled', sql.Bit, data.guestEnabled !== false ? 1 : 0)
+        .input('checkInOpen', sql.Bit, data.checkInOpen !== false ? 1 : 0)
+        .input('seatMode', sql.NVarChar(50), data.seatMode || 'group')
+        .input('appUrl', sql.NVarChar(500), (data.appUrl || '').trim())
+        .input('nameLocked', sql.Bit, data.nameLocked ? 1 : 0)
+        .input('startedAt', sql.DateTime2, data.startedAt || null)
+        .input('opensAt', sql.DateTime2, data.opensAt || null)
+        .input('closesAt', sql.DateTime2, data.closesAt || null)
+        .input('endHandledAt', sql.DateTime2, data.endHandledAt || null)
+        .input('archivedId', sql.NVarChar(100), data.archivedId ? String(data.archivedId) : null)
+        .query(
+          `INSERT INTO EventSettings ([key], eventName, guestEnabled, checkInOpen, seatMode, appUrl, nameLocked, startedAt, opensAt, closesAt, endHandledAt, archivedId)
+           OUTPUT INSERTED.eventName, INSERTED.guestEnabled, INSERTED.checkInOpen, INSERTED.seatMode, INSERTED.appUrl, INSERTED.nameLocked, INSERTED.startedAt, INSERTED.opensAt, INSERTED.closesAt, INSERTED.endHandledAt, INSERTED.archivedId
+           VALUES ('main', @eventName, @guestEnabled, @checkInOpen, @seatMode, @appUrl, @nameLocked, @startedAt, @opensAt, @closesAt, @endHandledAt, @archivedId)`
+        );
+      return parseEventSetting(res.recordset[0]);
+    }
+
+    const sets = ['updatedAt = SYSUTCDATETIME()'];
+    const req = pool.request();
+    if (data.eventName !== undefined) {
+      sets.push('eventName = @eventName');
+      req.input('eventName', sql.NVarChar(255), (data.eventName || '').trim());
+    }
+    if (data.guestEnabled !== undefined) {
+      sets.push('guestEnabled = @guestEnabled');
+      req.input('guestEnabled', sql.Bit, data.guestEnabled ? 1 : 0);
+    }
+    if (data.checkInOpen !== undefined) {
+      sets.push('checkInOpen = @checkInOpen');
+      req.input('checkInOpen', sql.Bit, data.checkInOpen ? 1 : 0);
+    }
+    if (data.seatMode !== undefined) {
+      sets.push('seatMode = @seatMode');
+      req.input('seatMode', sql.NVarChar(50), data.seatMode);
+    }
+    if (data.appUrl !== undefined) {
+      sets.push('appUrl = @appUrl');
+      req.input('appUrl', sql.NVarChar(500), (data.appUrl || '').trim());
+    }
+    if (data.nameLocked !== undefined) {
+      sets.push('nameLocked = @nameLocked');
+      req.input('nameLocked', sql.Bit, data.nameLocked ? 1 : 0);
+    }
+    if (data.startedAt !== undefined) {
+      sets.push('startedAt = @startedAt');
+      req.input('startedAt', sql.DateTime2, data.startedAt);
+    }
+    if (data.opensAt !== undefined) {
+      sets.push('opensAt = @opensAt');
+      req.input('opensAt', sql.DateTime2, data.opensAt);
+    }
+    if (data.closesAt !== undefined) {
+      sets.push('closesAt = @closesAt');
+      req.input('closesAt', sql.DateTime2, data.closesAt);
+    }
+    if (data.endHandledAt !== undefined) {
+      sets.push('endHandledAt = @endHandledAt');
+      req.input('endHandledAt', sql.DateTime2, data.endHandledAt);
+    }
+    if (data.archivedId !== undefined) {
+      sets.push('archivedId = @archivedId');
+      req.input('archivedId', sql.NVarChar(100), data.archivedId ? String(data.archivedId) : null);
+    }
+
+    const res = await req.query(
+      `UPDATE EventSettings SET ${sets.join(', ')} OUTPUT INSERTED.eventName, INSERTED.guestEnabled, INSERTED.checkInOpen, INSERTED.seatMode, INSERTED.appUrl, INSERTED.nameLocked, INSERTED.startedAt, INSERTED.opensAt, INSERTED.closesAt, INSERTED.endHandledAt, INSERTED.archivedId WHERE [key] = 'main'`
+    );
+    return parseEventSetting(res.recordset[0]);
+  },
+
+  async deleteAll() {
+    await getPool().request().query('DELETE FROM EventSettings');
+  },
+};

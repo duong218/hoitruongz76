@@ -21,8 +21,10 @@ async function run() {
 
   await connectDB();
 
-  const models = [Block, Department, Employee, Group, Seat, EventSetting, Attendance];
-  const existing = (await Promise.all(models.map((m) => m.estimatedDocumentCount()))).reduce((s, n) => s + n, 0);
+  const models = [Block, Department, Employee, Group, Seat, Attendance];
+  const existingBlocks = await Block.findAll();
+  const existingEmployees = await Employee.findAll();
+  const existing = existingBlocks.length + existingEmployees.length;
 
   if (existing > 0 && !FORCE) {
     console.log('Database đã có dữ liệu, không nạp lại. Muốn xóa và nạp lại, chạy: npm run seed:force');
@@ -30,12 +32,9 @@ async function run() {
   }
 
   if (FORCE) {
-    await Promise.all(models.map((m) => m.deleteMany({})));
+    await Promise.all([...models, EventSetting].map((m) => m.deleteAll()));
     console.log('Đã xóa dữ liệu cũ.');
   }
-
-  // Đồng bộ index (unique, collation) trước khi ghi
-  await Promise.all(models.map((m) => m.syncIndexes()));
 
   const [adminPasswordHash, managerPasswordHash] = await Promise.all([
     bcrypt.hash(env.SEED_ADMIN_PASSWORD, 10),
@@ -43,12 +42,12 @@ async function run() {
   ]);
 
   const seats = buildSeats();
-  await Block.insertMany(BLOCKS);
-  await Department.insertMany(DEPARTMENTS);
-  await Group.insertMany(GROUPS);
-  await Employee.insertMany(buildEmployees({ adminPasswordHash, managerPasswordHash }));
-  await Seat.insertMany(seats);
-  await EventSetting.create(EVENT);
+  for (const b of BLOCKS) await Block.create(b);
+  for (const d of DEPARTMENTS) await Department.create(d);
+  for (const g of GROUPS) await Group.create(g);
+  for (const e of buildEmployees({ adminPasswordHash, managerPasswordHash })) await Employee.create(e);
+  for (const s of seats) await Seat.upsert(s.seatId, s);
+  await EventSetting.upsertMain(EVENT);
 
   console.log(
     `Đã nạp: ${BLOCKS.length} khối, ${DEPARTMENTS.length} phòng ban, ${GROUPS.length} nhóm, ` +

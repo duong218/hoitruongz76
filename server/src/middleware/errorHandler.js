@@ -18,10 +18,9 @@ export function errorHandler(err, req, res, next) {
   if (err.status) {
     return res.status(err.status).json({ message: err.message });
   }
-  // Trùng giá trị unique (mã nhân viên, tên khối...)
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyPattern || {})[0] || 'dữ liệu';
-    return res.status(409).json({ message: `Giá trị của "${field}" đã tồn tại trên hệ thống.` });
+  // Trùng giá trị unique (mã nhân viên, tên khối...) - SQL Server 2627 / 2601
+  if (err.number === 2627 || err.number === 2601) {
+    return res.status(409).json({ message: 'Dữ liệu đã tồn tại trên hệ thống (trùng giá trị duy nhất).' });
   }
   // Dữ liệu không hợp lệ theo schema
   if (err.name === 'ValidationError') {

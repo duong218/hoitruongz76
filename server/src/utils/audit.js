@@ -20,7 +20,7 @@ const FAILED_LOGIN_MAX_PER_MINUTE = 5;
 export async function auditFailedLogin(attemptedCode) {
   try {
     const since = new Date(Date.now() - 60 * 1000);
-    const recent = await AuditLog.countDocuments({ action: 'auth.login_failed', createdAt: { $gte: since } });
+    const recent = await AuditLog.count({ action: 'auth.login_failed', since });
     if (recent >= FAILED_LOGIN_MAX_PER_MINUTE) return;
     await AuditLog.create({
       action: 'auth.login_failed',

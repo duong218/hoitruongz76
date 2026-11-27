@@ -21,15 +21,15 @@ export async function withArchiveLock(fn) {
  * @returns {Promise<{archive: object, ids: any[]}|null>}
  */
 async function snapshot(req, cause) {
-  const records = await Attendance.find().lean();
+  const records = await Attendance.findAll();
   if (!records.length) return null;
 
   const [event, employees, groups, blocks, depts] = await Promise.all([
-    EventSetting.findOne({ key: 'main' }).lean(),
-    Employee.find().lean(),
-    Group.find().lean(),
-    Block.find().lean(),
-    Department.find().lean(),
+    EventSetting.getMain(),
+    Employee.findAll(),
+    Group.findAll(),
+    Block.findAll(),
+    Department.findAll(),
   ]);
   const blockName = new Map(blocks.map((b) => [b.id, b.name]));
   const deptName = new Map(depts.map((d) => [d.id, d.name]));
@@ -85,46 +85,39 @@ async function snapshot(req, cause) {
     rows,
   });
 
-  return { archive, ids: records.map((r) => r._id) };
+  return { archive, codes: records.map((r) => r.employeeCode) };
 }
 
-/**
- * Lưu lịch sử RỒI mới xóa đúng những bản ghi đã chụp (ai điểm danh sau lúc chụp không bị mất).
- * Lưu lỗi thì không xóa gì. Không có ai điểm danh thì không lưu (trả null).
- * Nếu sự kiện đã được tự lưu lúc hết giờ và dữ liệu chưa đổi thì dùng lại bản đó, không tạo bản trùng.
- * ponytail: so sánh bằng số lượt điểm danh; điểm danh hộ sau giờ đóng làm lệch số lượt thì sẽ lưu thêm một bản mới.
- * @returns {Promise<object|null>} bản lưu (có rows) hoặc null
- */
 export async function archiveAndClear(req, cause) {
-  const ev = await EventSetting.findOne({ key: 'main' }).lean();
+  const ev = await EventSetting.getMain();
   if (ev?.archivedId) {
     const existing = await EventArchive.findById(ev.archivedId);
-    if (existing && existing.summary.checked === (await Attendance.countDocuments())) {
-      await Attendance.deleteMany({});
+    const allAtt = await Attendance.findAll();
+    if (existing && existing.summary.checked === allAtt.length) {
+      await Attendance.deleteAll();
       return existing;
     }
   }
   const snap = await snapshot(req, cause);
   if (!snap) return null;
-  await Attendance.deleteMany({ _id: { $in: snap.ids } });
+  for (const code of snap.codes) {
+    await Attendance.deleteByEmployeeCode(code);
+  }
   return snap.archive;
 }
 
-/**
- * Hết giờ đóng thì tự lưu sự kiện vào lịch sử (giữ nguyên điểm danh để quản lý còn xem/xuất).
- * Mỗi sự kiện chỉ xử lý một lần (endHandledAt). Lỗi thì thử lại ở lần kiểm tra sau.
- */
 export async function archiveIfEnded() {
   try {
-    const peek = await EventSetting.findOne({ key: 'main' }, 'closesAt endHandledAt').lean();
+    const peek = await EventSetting.getMain();
     if (!peek?.closesAt || peek.endHandledAt || peek.closesAt > new Date()) return;
     await withArchiveLock(async () => {
-      const ev = await EventSetting.findOne({ key: 'main' });
+      const ev = await EventSetting.getMain();
       if (!ev || ev.endHandledAt || !ev.closesAt || ev.closesAt > new Date()) return;
       const snap = await snapshot(null, 'auto_end');
-      ev.archivedId = snap?.archive._id || null;
-      ev.endHandledAt = new Date();
-      await ev.save();
+      await EventSetting.upsertMain({
+        archivedId: snap?.archive.id || null,
+        endHandledAt: new Date(),
+      });
       await AuditLog.create({
         action: 'event.auto_archive',
         actorCode: null,
@@ -135,6 +128,6 @@ export async function archiveIfEnded() {
       });
     });
   } catch (err) {
-    console.error('Không tự lưu được lịch sử sự kiện:', err.message); // 409 khi đang bận cũng vào đây, lần sau thử lại
+    console.error('Không tự lưu được lịch sử sự kiện:', err.message);
   }
 }

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import { getPool } from '../config/db.js';
 
 // Danh sách ghế đã có người điểm danh, giữ trong bộ nhớ và đẩy tới trình duyệt qua SSE
 // (Server-Sent Events: 1 kết nối mở sẵn, server tự đẩy tin khi có người quét).
@@ -33,8 +33,8 @@ const broadcast = (payload) => send(`data: ${JSON.stringify(payload)}\n\n`);
 
 // Nạp lại toàn bộ từ DB (khi khởi động, đặt lại điểm danh, lưu trữ sự kiện, gỡ bản ghi...)
 async function rebuild() {
-  const ids = await mongoose.model('Attendance').distinct('seatId');
-  occupied = new Set(ids.filter(Boolean));
+  const res = await getPool().request().query("SELECT DISTINCT seatId FROM Attendances WHERE seatId <> ''");
+  occupied = new Set(res.recordset.map((r) => r.seatId).filter(Boolean));
   ready = true;
   version += 1;
   broadcast({ type: 'reset', v: version, seats: [...occupied] });

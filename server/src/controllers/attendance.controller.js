@@ -13,8 +13,13 @@ export const attendanceController = {
       const { user } = req;
       const isStaff = user && (user.role === ROLES.ADMIN || user.role === ROLES.MANAGER);
       if (!user) return res.json([]);
-      const filter = isStaff ? {} : { employeeCode: user.code };
-      const list = await Attendance.find(filter).sort({ checkedInAt: -1 });
+      let list;
+      if (isStaff) {
+        list = await Attendance.findAll();
+      } else {
+        const mine = await Attendance.findByEmployeeCode(user.code);
+        list = mine ? [mine] : [];
+      }
       res.json(list);
     } catch (err) {
       next(err);
@@ -44,7 +49,7 @@ export const attendanceController = {
       }
 
       // 2. Tìm nhân viên
-      const employee = await Employee.findOne({ code });
+      const employee = await Employee.findByCode(code);
       if (!employee) {
         return res.status(404).json({ message: 'Không tìm thấy thông tin nhân viên.' });
       }
@@ -65,7 +70,7 @@ export const attendanceController = {
       // - Nếu không có seatId (người dùng chỉ gõ mã token): tra cứu ghế theo token
       let seat;
       if (typeof seatId === 'string' && seatId.trim()) {
-        seat = await Seat.findOne({ seatId: seatId.trim() }).select('+token');
+        seat = await Seat.findBySeatId(seatId.trim(), { includeToken: true });
         if (!seat) {
           return res.status(400).json({ message: `Không tìm thấy ghế "${seatId}" trong hội trường.` });
         }
@@ -73,7 +78,7 @@ export const attendanceController = {
           return res.status(400).json({ message: 'Mã QR không khớp với ghế này. Hãy quét đúng mã dán trên ghế.' });
         }
       } else {
-        seat = await Seat.findOne({ token: trimmedToken }).select('+token');
+        seat = await Seat.findByToken(trimmedToken);
         if (!seat) {
           return res.status(400).json({ message: 'Mã ghế không hợp lệ hoặc không tồn tại trong hội trường. Vui lòng kiểm tra lại 6 ký tự trên tem.' });
         }
@@ -91,7 +96,7 @@ export const attendanceController = {
       }
 
       // 6. Kiểm tra đã điểm danh chưa
-      const existing = await Attendance.findOne({ employeeCode: code });
+      const existing = await Attendance.findByEmployeeCode(code);
       if (existing) {
         return res.status(409).json({
           message: 'Bạn đã điểm danh rồi.',
@@ -109,7 +114,7 @@ export const attendanceController = {
         });
       } catch (err) {
         // Bấm hai lần cùng lúc: bản ghi thứ hai bị chặn bởi chỉ mục unique
-        if (err.code === 11000) {
+        if (err.number === 2627 || err.number === 2601) {
           return res.status(409).json({ message: 'Bạn đã điểm danh rồi.' });
         }
         throw err;
@@ -137,13 +142,13 @@ export const attendanceController = {
       }
 
       // 1. Tìm thông tin nhân viên
-      const employee = await Employee.findOne({ code: targetCode });
+      const employee = await Employee.findByCode(targetCode);
       if (!employee) {
         return res.status(404).json({ message: `Không tìm thấy nhân sự có mã "${targetCode}".` });
       }
 
       // 2. Kiểm tra đã điểm danh chưa
-      const existing = await Attendance.findOne({ employeeCode: targetCode });
+      const existing = await Attendance.findByEmployeeCode(targetCode);
       if (existing) {
         return res.status(409).json({
           message: `Nhân sự "${employee.name}" (${targetCode}) đã được điểm danh trước đó tại ghế ${existing.seatId}.`,
@@ -153,7 +158,7 @@ export const attendanceController = {
       }
 
       // 3. Ghế là tùy chọn; nếu nhập thì phải tồn tại. Không tự gán ghế giả.
-      if (targetSeatId && !(await Seat.findOne({ seatId: targetSeatId }))) {
+      if (targetSeatId && !(await Seat.findBySeatId(targetSeatId))) {
         return res.status(400).json({ message: `Ghế \"${targetSeatId}\" không tồn tại trong hội trường.` });
       }
 
@@ -178,7 +183,7 @@ export const attendanceController = {
         record: newRecord,
       });
     } catch (err) {
-      if (err.code === 11000) {
+      if (err.number === 2627 || err.number === 2601) {
         return res.status(409).json({ message: 'Nhân sự này đã được điểm danh rồi.' });
       }
       next(err);
@@ -199,8 +204,9 @@ export const attendanceController = {
           );
           return { archive };
         }
-        const result = await Attendance.deleteMany({});
-        await audit(req, 'attendance.reset', `Đặt lại điểm danh, KHÔNG lưu lịch sử, xóa ${result.deletedCount} bản ghi`);
+        const allAtt = await Attendance.findAll();
+        await Attendance.deleteAll();
+        await audit(req, 'attendance.reset', `Đặt lại điểm danh, KHÔNG lưu lịch sử, xóa ${allAtt.length} bản ghi`);
         return { archive: null };
       });
       res.json({ message: 'Đã đặt lại dữ liệu điểm danh thành công.', archive: out.archive });

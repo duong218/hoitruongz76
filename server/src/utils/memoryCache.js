@@ -18,7 +18,7 @@ export async function getCachedGroups() {
   if (cachedGroups && now - cachedGroupsTime < CACHE_TTL_MS) {
     return cachedGroups;
   }
-  const groups = await Group.find();
+  const groups = await Group.findAll();
   cachedGroups = groups;
   cachedGroupsTime = now;
   return groups;
@@ -40,7 +40,7 @@ export async function getCachedEvent() {
   if (cachedEvent && now - cachedEventTime < CACHE_TTL_MS) {
     return cachedEvent;
   }
-  const event = await EventSetting.findOne({ key: 'main' });
+  const event = await EventSetting.getMain();
   cachedEvent = event;
   cachedEventTime = now;
   return event;

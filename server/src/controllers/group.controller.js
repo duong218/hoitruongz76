@@ -7,7 +7,7 @@ export const groupController = {
   // Lấy danh sách nhóm
   async getAll(req, res, next) {
     try {
-      const groups = await Group.find().sort({ createdAt: 1 });
+      const groups = await Group.findAll();
       res.json(groups);
     } catch (err) {
       next(err);
@@ -18,17 +18,17 @@ export const groupController = {
   async getUsage(req, res, next) {
     try {
       const { id } = req.params;
-      const group = await Group.findOne({ id });
+      const group = await Group.findById(id);
       if (!group) return res.status(404).json({ message: 'Không tìm thấy nhóm.' });
 
       let employeeCount = 0;
       if (group.id === GUEST_GROUP_ID || group.isSystem) {
-        employeeCount = await Employee.countDocuments({ role: ROLES.GUEST });
+        employeeCount = await Employee.countByRole(ROLES.GUEST);
       } else if (Array.isArray(group.blockIds) && group.blockIds.length > 0) {
-        employeeCount = await Employee.countDocuments({ blockId: { $in: group.blockIds } });
+        employeeCount = await Employee.countByBlockIds(group.blockIds);
       }
 
-      const seatCount = await Seat.countDocuments({ groupId: id });
+      const seatCount = await Seat.countByGroupId(id);
       res.json({ employeeCount, seatCount });
     } catch (err) {
       next(err);
@@ -66,20 +66,21 @@ export const groupController = {
       const { id } = req.params;
       const { name, color, checkInRequired, blockIds } = req.body;
 
-      const group = await Group.findOne({ id });
+      const group = await Group.findById(id);
       if (!group) return res.status(404).json({ message: 'Không tìm thấy nhóm cần cập nhật.' });
 
+      const updates = {};
       if (!group.isSystem) {
-        if (name) group.name = name.trim();
-        if (checkInRequired !== undefined) group.checkInRequired = checkInRequired;
-        if (blockIds !== undefined) group.blockIds = blockIds;
+        if (name) updates.name = name.trim();
+        if (checkInRequired !== undefined) updates.checkInRequired = checkInRequired;
+        if (blockIds !== undefined) updates.blockIds = blockIds;
       }
-      if (color) group.color = color;
+      if (color) updates.color = color;
 
-      await group.save();
-      await audit(req, 'group.update', `Sửa nhóm "${group.name}" (${id})`);
+      const updatedGroup = await Group.updateById(id, updates);
+      await audit(req, 'group.update', `Sửa nhóm "${updatedGroup.name}" (${id})`);
       invalidateCachedGroups();
-      res.json(group);
+      res.json(updatedGroup);
     } catch (err) {
       next(err);
     }
@@ -89,14 +90,14 @@ export const groupController = {
   async delete(req, res, next) {
     try {
       const { id } = req.params;
-      const group = await Group.findOne({ id });
+      const group = await Group.findById(id);
       if (!group) return res.status(404).json({ message: 'Không tìm thấy nhóm cần xóa.' });
       if (group.isSystem || group.id === GUEST_GROUP_ID) {
         return res.status(400).json({ message: 'Không thể xóa nhóm hệ thống Khách mời.' });
       }
 
-      await Group.deleteOne({ id });
-      await Seat.updateMany({ groupId: id }, { $set: { groupId: null } });
+      await Group.deleteById(id);
+      await Seat.clearGroup(id);
       await audit(req, 'group.delete', `Xóa nhóm "${group.name}" (${id})`);
       invalidateCachedGroups();
 

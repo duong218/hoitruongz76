@@ -1,17 +1,55 @@
-import mongoose from 'mongoose';
-import { cleanJSON } from './_clean.js';
+import { getPool, sql } from '../config/db.js';
 
-// Nhật ký thao tác: chỉ thêm, không sửa, không xóa qua API
-const auditLogSchema = new mongoose.Schema(
-  {
-    action: { type: String, required: true, index: true }, // ví dụ: attendance.reset
-    actorCode: { type: String, default: null }, // mã người thực hiện (lấy từ phiên đăng nhập)
-    actorRole: { type: String, default: null },
-    detail: { type: String, default: '', maxlength: 300 },
+export const AuditLog = {
+  async create({ action, actorCode = null, actorRole = null, detail = '' }) {
+    const res = await getPool()
+      .request()
+      .input('action', sql.NVarChar(100), action)
+      .input('actorCode', sql.NVarChar(100), actorCode)
+      .input('actorRole', sql.NVarChar(50), actorRole)
+      .input('detail', sql.NVarChar(300), (detail || '').slice(0, 300))
+      .query(
+        `INSERT INTO AuditLogs (action, actorCode, actorRole, detail)
+         OUTPUT INSERTED.id, INSERTED.action, INSERTED.actorCode, INSERTED.actorRole, INSERTED.detail, INSERTED.createdAt
+         VALUES (@action, @actorCode, @actorRole, @detail)`
+      );
+    return res.recordset[0];
   },
-  { timestamps: { createdAt: true, updatedAt: false }, toJSON: cleanJSON() }
-);
 
-auditLogSchema.index({ createdAt: -1 });
+  async findRecent({ action, limit = 50, page = 1 } = {}) {
+    const req = getPool()
+      .request()
+      .input('offset', sql.Int, (page - 1) * limit)
+      .input('limit', sql.Int, limit);
+    const where = action ? 'WHERE action = @action' : '';
+    if (action) req.input('action', sql.NVarChar(100), action);
 
-export const AuditLog = mongoose.model('AuditLog', auditLogSchema);
+    const res = await req.query(
+      `SELECT id, action, actorCode, actorRole, detail, createdAt
+       FROM AuditLogs ${where}
+       ORDER BY createdAt DESC
+       OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
+    );
+    return res.recordset;
+  },
+
+  async count({ action, since } = {}) {
+    const req = getPool().request();
+    const conditions = [];
+    if (action) {
+      conditions.push('action = @action');
+      req.input('action', sql.NVarChar(100), action);
+    }
+    if (since) {
+      conditions.push('createdAt >= @since');
+      req.input('since', sql.DateTime2, since);
+    }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const res = await req.query(`SELECT COUNT(*) AS cnt FROM AuditLogs ${where}`);
+    return res.recordset[0].cnt;
+  },
+
+  async deleteAll() {
+    await getPool().request().query('DELETE FROM AuditLogs');
+  },
+};

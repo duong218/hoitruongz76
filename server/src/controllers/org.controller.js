@@ -4,7 +4,7 @@ export const orgController = {
   // =================== KHỐI (BLOCKS) ===================
   async getBlocks(req, res, next) {
     try {
-      const blocks = await Block.find().sort({ createdAt: 1 });
+      const blocks = await Block.findAll();
       res.json(blocks);
     } catch (err) {
       next(err);
@@ -34,11 +34,8 @@ export const orgController = {
       const trimmed = (name || '').trim();
       if (!trimmed) return res.status(400).json({ message: 'Vui lòng nhập tên Khối.' });
 
-      const block = await Block.findOne({ id });
+      const block = await Block.updateById(id, { name: trimmed });
       if (!block) return res.status(404).json({ message: 'Không tìm thấy Khối cần cập nhật.' });
-
-      block.name = trimmed;
-      await block.save();
       res.json(block);
     } catch (err) {
       next(err);
@@ -48,31 +45,32 @@ export const orgController = {
   async deleteBlock(req, res, next) {
     try {
       const { id } = req.params;
-      const block = await Block.findOne({ id });
+      const block = await Block.findById(id);
       if (!block) return res.status(404).json({ message: 'Không tìm thấy Khối cần xóa.' });
 
-      const employeeCount = await Employee.countDocuments({ blockId: id });
+      const employeeCount = await Employee.countByBlockIds([id]);
       if (employeeCount > 0) {
         return res.status(400).json({
           message: `"${block.name}" còn ${employeeCount} nhân viên, hãy chuyển họ sang Khối khác trước khi xóa.`,
         });
       }
 
-      const deptsCount = await Department.countDocuments({ blockId: id });
+      const deptsCount = await Department.countByBlockId(id);
       if (deptsCount > 0) {
         return res.status(400).json({
           message: `"${block.name}" đang là Khối mặc định của ${deptsCount} phòng ban. Vui lòng chuyển phòng ban sang Khối khác trước.`,
         });
       }
 
-      const groupUsing = await Group.findOne({ blockIds: id });
+      const allGroups = await Group.findAll();
+      const groupUsing = allGroups.find((g) => Array.isArray(g.blockIds) && g.blockIds.includes(id));
       if (groupUsing) {
         return res.status(400).json({
           message: `"${block.name}" đang thuộc nhóm ghế "${groupUsing.name}". Hãy gỡ Khối khỏi nhóm ghế trước khi xóa.`,
         });
       }
 
-      await Block.deleteOne({ id });
+      await Block.deleteById(id);
       res.json({ message: 'Đã xóa khối thành công.' });
     } catch (err) {
       next(err);
@@ -82,7 +80,7 @@ export const orgController = {
   // =================== PHÒNG BAN (DEPARTMENTS) ===================
   async getDepartments(req, res, next) {
     try {
-      const departments = await Department.find().sort({ createdAt: 1 });
+      const departments = await Department.findAll();
       res.json(departments);
     } catch (err) {
       next(err);
@@ -115,12 +113,8 @@ export const orgController = {
       if (!trimmed) return res.status(400).json({ message: 'Vui lòng nhập tên Phòng ban / Phân xưởng.' });
       if (!blockId) return res.status(400).json({ message: 'Vui lòng chọn Khối mặc định.' });
 
-      const dept = await Department.findOne({ id });
+      const dept = await Department.updateById(id, { name: trimmed, blockId });
       if (!dept) return res.status(404).json({ message: 'Không tìm thấy phòng ban cần sửa.' });
-
-      dept.name = trimmed;
-      dept.blockId = blockId;
-      await dept.save();
       res.json(dept);
     } catch (err) {
       next(err);
@@ -130,17 +124,17 @@ export const orgController = {
   async deleteDepartment(req, res, next) {
     try {
       const { id } = req.params;
-      const dept = await Department.findOne({ id });
+      const dept = await Department.findById(id);
       if (!dept) return res.status(404).json({ message: 'Không tìm thấy phòng ban cần xóa.' });
 
-      const employeeCount = await Employee.countDocuments({ departmentId: id });
+      const employeeCount = await Employee.countByDepartmentId(id);
       if (employeeCount > 0) {
         return res.status(400).json({
           message: `"${dept.name}" còn ${employeeCount} nhân viên, hãy chuyển họ sang phòng ban khác trước khi xóa.`,
         });
       }
 
-      await Department.deleteOne({ id });
+      await Department.deleteById(id);
       res.json({ message: 'Đã xóa phòng ban thành công.' });
     } catch (err) {
       next(err);

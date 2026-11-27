@@ -7,7 +7,7 @@ export const employeeController = {
   // Lấy danh sách nhân viên
   async getAll(req, res, next) {
     try {
-      const employees = await Employee.find().sort({ code: 1 });
+      const employees = await Employee.findAll();
       res.json(employees);
     } catch (err) {
       next(err);
@@ -24,7 +24,7 @@ export const employeeController = {
       if (!trimmedCode) return res.status(400).json({ message: 'Vui lòng nhập mã nhân viên.' });
       if (!trimmedName) return res.status(400).json({ message: 'Vui lòng nhập họ và tên nhân viên.' });
 
-      const exists = await Employee.findOne({ code: trimmedCode });
+      const exists = await Employee.findByCode(trimmedCode);
       if (exists) {
         return res.status(409).json({ message: `Mã nhân viên "${trimmedCode}" đã tồn tại trên hệ thống.` });
       }
@@ -63,33 +63,35 @@ export const employeeController = {
       const code = req.params.code.trim().toUpperCase();
       const { name, role, departmentId, blockId, password } = req.body;
 
-      const emp = await Employee.findOne({ code }).select('+passwordHash');
+      const emp = await Employee.findByCode(code, { includePasswordHash: true });
       if (!emp) return res.status(404).json({ message: 'Không tìm thấy nhân viên cần cập nhật.' });
 
-      if (name) emp.name = name.trim();
-      if (role) emp.role = role;
-      if (departmentId !== undefined) emp.departmentId = departmentId || null;
-      if (blockId !== undefined) emp.blockId = blockId || null;
+      const updates = {};
+      if (name) updates.name = name.trim();
+      if (role) updates.role = role;
+      if (departmentId !== undefined) updates.departmentId = departmentId || null;
+      if (blockId !== undefined) updates.blockId = blockId || null;
 
+      const targetRole = updates.role || emp.role;
       let passwordChanged = false;
-      const isStaff = emp.role === ROLES.ADMIN || emp.role === ROLES.MANAGER;
+      const isStaff = targetRole === ROLES.ADMIN || targetRole === ROLES.MANAGER;
       if (isStaff) {
         if (password && password.trim()) {
           const trimmedPass = password.trim();
           if (trimmedPass.length < 8) {
             return res.status(400).json({ message: 'Mật khẩu quản trị phải có tối thiểu 8 ký tự.' });
           }
-          emp.passwordHash = await bcrypt.hash(trimmedPass, 10);
-          emp.passwordChangedAt = new Date();
+          updates.passwordHash = await bcrypt.hash(trimmedPass, 10);
+          updates.passwordChangedAt = new Date();
           passwordChanged = true;
         } else if (!emp.passwordHash) {
           return res.status(400).json({ message: 'Tài khoản quản trị bắt buộc phải có mật khẩu (tối thiểu 8 ký tự).' });
         }
       } else {
-        emp.passwordHash = undefined;
+        updates.passwordHash = null;
       }
 
-      await emp.save();
+      const updatedEmp = await Employee.updateByCode(code, updates);
       // Chỉ ghi TÊN các trường đã đổi, không ghi mật khẩu
       const changed = [];
       if (name) changed.push('tên');
@@ -98,7 +100,7 @@ export const employeeController = {
       if (blockId !== undefined) changed.push('khối');
       if (passwordChanged) changed.push('mật khẩu');
       await audit(req, 'employee.update', `Sửa ${code}: ${changed.join(', ') || 'không đổi gì'}`);
-      res.json(emp);
+      res.json(updatedEmp);
     } catch (err) {
       next(err);
     }
@@ -108,7 +110,7 @@ export const employeeController = {
   async delete(req, res, next) {
     try {
       const code = req.params.code.trim().toUpperCase();
-      const result = await Employee.findOneAndDelete({ code });
+      const result = await Employee.deleteByCode(code);
       if (!result) return res.status(404).json({ message: 'Không tìm thấy nhân viên để xóa.' });
       await audit(req, 'employee.delete', `Xóa ${code}`);
       res.json({ message: 'Đã xóa nhân viên thành công.' });
@@ -125,22 +127,21 @@ export const employeeController = {
         return res.status(400).json({ message: 'Dữ liệu danh sách import không hợp lệ.' });
       }
 
-      const bulkOps = validRows.map((row) => ({
-        updateOne: {
-          filter: { code: row.code.trim().toUpperCase() },
-          update: {
-            $set: {
-              name: row.name.trim(),
-              role: row.role || ROLES.EMPLOYEE,
-              departmentId: row.departmentId || null,
-              blockId: row.blockId || null,
-            },
-          },
-          upsert: true,
-        },
-      }));
-
-      await Employee.bulkWrite(bulkOps);
+      for (const row of validRows) {
+        const empCode = row.code.trim().toUpperCase();
+        const existing = await Employee.findByCode(empCode);
+        const data = {
+          name: row.name.trim(),
+          role: row.role || ROLES.EMPLOYEE,
+          departmentId: row.departmentId || null,
+          blockId: row.blockId || null,
+        };
+        if (existing) {
+          await Employee.updateByCode(empCode, data);
+        } else {
+          await Employee.create({ code: empCode, ...data });
+        }
+      }
       const staffRows = validRows.filter((r) => r.role === ROLES.ADMIN || r.role === ROLES.MANAGER).length;
       await audit(req, 'employee.import', `Nhập ${validRows.length} dòng${staffRows ? `, trong đó ${staffRows} dòng có vai trò quản trị` : ''}`);
       res.json({ importedCount: validRows.length });

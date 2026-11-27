@@ -24,10 +24,8 @@ async function run() {
     await connectDB();
 
     // Tìm tài khoản ADMIN (hoặc theo mã ADMIN hoặc vai trò ADMIN)
-    let admin = await Employee.findOne({ role: ROLES.ADMIN });
-    if (!admin) {
-      admin = await Employee.findOne({ code: 'ADMIN' });
-    }
+    const allEmployees = await Employee.findAll();
+    let admin = allEmployees.find((e) => e.role === ROLES.ADMIN) || (await Employee.findByCode('ADMIN'));
 
     if (!admin) {
       console.error('\n❌ Không tìm thấy tài khoản Quản trị viên (ADMIN) trong cơ sở dữ liệu!');
@@ -36,8 +34,7 @@ async function run() {
     }
 
     const passwordHash = await bcrypt.hash(newPassword.trim(), 10);
-    admin.passwordHash = passwordHash;
-    await admin.save();
+    await Employee.updateByCode(admin.code, { passwordHash, passwordChangedAt: new Date() });
 
     console.log('\n======================================================');
     console.log('✅ ĐẶT LẠI MẬT KHẨU ADMIN THÀNH CÔNG!');

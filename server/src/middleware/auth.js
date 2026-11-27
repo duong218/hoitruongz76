@@ -28,7 +28,7 @@ function verify(token) {
 // Token chỉ còn giá trị khi tài khoản còn tồn tại, vai trò không đổi
 // và mật khẩu không bị đổi sau thời điểm cấp token (iat tính bằng giây).
 async function isSessionLive(payload) {
-  const emp = await Employee.findOne({ code: payload.code }).select('role passwordChangedAt').lean();
+  const emp = await Employee.findByCode(payload.code, { includePasswordHash: true });
   if (!emp || emp.role !== payload.role) return false;
   if (emp.passwordChangedAt && Math.floor(emp.passwordChangedAt.getTime() / 1000) > payload.iat) return false;
   return true;

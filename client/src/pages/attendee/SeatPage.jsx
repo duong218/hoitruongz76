@@ -51,7 +51,12 @@ export function SeatPage() {
   const [mySeat, setMySeat] = useState(null);
   useEffect(() => {
     if (!personal) return;
-    seatService.getMine().then((r) => setMySeat(r.seatId)).catch(() => setMySeat(null));
+    const fetchMine = () => {
+      seatService.getMine().then((r) => setMySeat(r.seatId)).catch(() => {});
+    };
+    fetchMine();
+    window.addEventListener('focus', fetchMine);
+    return () => window.removeEventListener('focus', fetchMine);
   }, [personal]);
   const group = useMemo(
     () => (personal ? { id: '__me__', name: realGroup?.name || 'Bạn', color: realGroup?.color || '#008BC5', checkInRequired: true } : realGroup),

@@ -1,28 +1,59 @@
-import mongoose from 'mongoose';
-import { cleanJSON } from './_clean.js';
-import { SEAT_ID_REGEX } from '../constants/hall.server.js';
+import { getPool, sql } from '../config/db.js';
 import { seatTaken, scheduleRebuild } from '../utils/seatEvents.js';
 
-const attendanceSchema = new mongoose.Schema(
-  {
-    // unique: mỗi người chỉ điểm danh một lần
-    employeeCode: { type: String, required: true, unique: true, uppercase: true, trim: true },
-    // Điểm danh hộ có thể không có ghế
-    seatId: { type: String, default: '', validate: { validator: (v) => v === '' || SEAT_ID_REGEX.test(v) } },
-    method: { type: String, enum: ['SELF', 'PROXY'], default: 'SELF' }, // bản ghi cũ coi là SELF
-    checkedInBy: { type: String, default: '' }, // mã người bấm điểm danh hộ
-    reason: { type: String, default: '', trim: true },
-    checkedInAt: { type: Date, default: Date.now },
+export const Attendance = {
+  async findAll() {
+    const res = await getPool()
+      .request()
+      .query('SELECT employeeCode, seatId, method, checkedInBy, reason, checkedInAt FROM Attendances ORDER BY checkedInAt DESC');
+    return res.recordset;
   },
-  { timestamps: false, toJSON: cleanJSON() }
-);
 
-// Ghế nào có người điểm danh thì báo ngay cho những người đang xem sơ đồ (xem utils/seatEvents.js).
-// Đặt ở model để mọi đường ghi/xóa (quét, điểm danh hộ, đặt lại, lưu trữ) đều được tính, không sót chỗ nào.
-attendanceSchema.post('save', (doc) => seatTaken(doc.seatId));
-attendanceSchema.post(
-  ['deleteMany', 'deleteOne', 'findOneAndDelete', 'findOneAndUpdate', 'updateOne', 'updateMany'],
-  () => scheduleRebuild()
-);
+  async findByEmployeeCode(employeeCode) {
+    const res = await getPool()
+      .request()
+      .input('employeeCode', sql.NVarChar(100), (employeeCode || '').trim().toUpperCase())
+      .query('SELECT employeeCode, seatId, method, checkedInBy, reason, checkedInAt FROM Attendances WHERE employeeCode = @employeeCode');
+    return res.recordset[0] || null;
+  },
 
-export const Attendance = mongoose.model('Attendance', attendanceSchema);
+  async findBySeatId(seatId) {
+    const res = await getPool()
+      .request()
+      .input('seatId', sql.NVarChar(50), seatId)
+      .query('SELECT employeeCode, seatId, method, checkedInBy, reason, checkedInAt FROM Attendances WHERE seatId = @seatId');
+    return res.recordset[0] || null;
+  },
+
+  async create({ employeeCode, seatId = '', method = 'SELF', checkedInBy = '', reason = '' }) {
+    const res = await getPool()
+      .request()
+      .input('employeeCode', sql.NVarChar(100), (employeeCode || '').trim().toUpperCase())
+      .input('seatId', sql.NVarChar(50), seatId || '')
+      .input('method', sql.NVarChar(20), method)
+      .input('checkedInBy', sql.NVarChar(100), checkedInBy || '')
+      .input('reason', sql.NVarChar(500), (reason || '').trim())
+      .query(
+        `INSERT INTO Attendances (employeeCode, seatId, method, checkedInBy, reason)
+         OUTPUT INSERTED.employeeCode, INSERTED.seatId, INSERTED.method, INSERTED.checkedInBy, INSERTED.reason, INSERTED.checkedInAt
+         VALUES (@employeeCode, @seatId, @method, @checkedInBy, @reason)`
+      );
+    const created = res.recordset[0];
+    seatTaken(created.seatId);
+    return created;
+  },
+
+  async deleteByEmployeeCode(employeeCode) {
+    const res = await getPool()
+      .request()
+      .input('employeeCode', sql.NVarChar(100), (employeeCode || '').trim().toUpperCase())
+      .query('DELETE FROM Attendances OUTPUT DELETED.employeeCode WHERE employeeCode = @employeeCode');
+    if (res.recordset.length > 0) scheduleRebuild();
+    return res.recordset[0] || null;
+  },
+
+  async deleteAll() {
+    await getPool().request().query('DELETE FROM Attendances');
+    scheduleRebuild();
+  },
+};

@@ -38,17 +38,16 @@ export const eventController = {
   // Cài đặt sự kiện (công khai). KHÔNG chứa token ghế.
   async getSettings(req, res, next) {
     try {
-      let event = await EventSetting.findOne({ key: 'main' });
+      let event = await EventSetting.getMain();
       if (!event) {
-        event = await EventSetting.create({
-          key: 'main',
+        event = await EventSetting.upsertMain({
           eventName: 'Hội nghị Triển khai Nhiệm vụ Z176',
           guestEnabled: true,
           checkInOpen: true,
           appUrl: '',
         });
       }
-      res.json(event.toJSON());
+      res.json(event);
     } catch (err) {
       next(err);
     }
@@ -57,7 +56,7 @@ export const eventController = {
   // Token ghế (chỉ ADMIN / MANAGER, dùng để in QR)
   async getSeatTokens(req, res, next) {
     try {
-      const seats = await Seat.find().select('+token');
+      const seats = await Seat.findAll({ includeToken: true });
       const seatTokens = {};
       seats.forEach((s) => {
         seatTokens[s.seatId] = s.token;
@@ -82,22 +81,23 @@ export const eventController = {
         const urlError = validateAppUrl(appUrl);
         if (urlError) return bad(urlError);
       }
-      let event = await EventSetting.findOne({ key: 'main' });
+      let event = await EventSetting.getMain();
       if (!event) {
-        event = new EventSetting({ key: 'main' });
+        event = await EventSetting.upsertMain({});
       }
 
+      const updates = {};
       if (eventName !== undefined && eventName.trim() !== event.eventName) {
         if (event.nameLocked) {
-          return res.status(400).json({ message: 'Sự kiện đã bắt đầu nên không thể đổi tên. Hãy bấm \"Bắt đầu sự kiện mới\" nếu muốn tạo sự kiện khác.' });
+          return res.status(400).json({ message: 'Sự kiện đã bắt đầu nên không thể đổi tên. Hãy bấm "Bắt đầu sự kiện mới" nếu muốn tạo sự kiện khác.' });
         }
-        event.eventName = eventName.trim();
+        updates.eventName = eventName.trim();
       }
-      if (guestEnabled !== undefined) event.guestEnabled = guestEnabled;
-      if (checkInOpen !== undefined) event.checkInOpen = checkInOpen;
-      if (appUrl !== undefined) event.appUrl = appUrl.trim();
+      if (guestEnabled !== undefined) updates.guestEnabled = guestEnabled;
+      if (checkInOpen !== undefined) updates.checkInOpen = checkInOpen;
+      if (appUrl !== undefined) updates.appUrl = appUrl.trim();
 
-      await event.save();
+      const updatedEvent = await EventSetting.upsertMain(updates);
       invalidateCachedEvent();
       const parts = [];
       if (eventName !== undefined) parts.push('đổi tên sự kiện');
@@ -105,7 +105,7 @@ export const eventController = {
       if (checkInOpen !== undefined) parts.push(`điểm danh=${checkInOpen ? 'mở' : 'đóng'}`);
       if (appUrl !== undefined) parts.push('đổi đường dẫn');
       await audit(req, 'event.update', `Cập nhật sự kiện: ${parts.join(', ') || 'không đổi gì'}`);
-      res.json(event.toJSON());
+      res.json(updatedEvent);
     } catch (err) {
       next(err);
     }
@@ -124,6 +124,7 @@ export const eventController = {
       if (!opensAt || !closesAt) return res.status(400).json({ message: 'Vui lòng nhập giờ mở và giờ đóng của sự kiện mới.' });
       const windowMsg = windowError(opensAt, closesAt);
       if (windowMsg) return res.status(400).json({ message: windowMsg });
+      if (opensAt < new Date(Date.now() - 60 * 1000)) return res.status(400).json({ message: 'Giờ mở không được nằm trong quá khứ. Hãy chọn từ thời điểm hiện tại trở đi.' });
       if (closesAt <= new Date()) return res.status(400).json({ message: 'Giờ đóng đã qua. Hãy chọn giờ đóng sau thời điểm hiện tại.' });
       // 3 công tắc của sự kiện mới (không gửi thì giữ nguyên)
       const { guestEnabled, checkInOpen, seatMode } = req.body;
@@ -132,34 +133,35 @@ export const eventController = {
       }
       if (seatMode !== undefined && !['group', 'individual'].includes(seatMode)) return res.status(400).json({ message: 'Chế độ xếp chỗ không hợp lệ.' });
       const event = await withArchiveLock(async () => {
-        let ev = await EventSetting.findOne({ key: 'main' });
-        if (!ev) ev = new EventSetting({ key: 'main' });
+        let ev = await EventSetting.getMain();
+        if (!ev) ev = await EventSetting.upsertMain({});
         const oldName = ev.eventName;
         // Lưu lịch sử trước, xóa sau. Lưu lỗi thì ném lỗi, sự kiện cũ còn nguyên.
         const archived = await archiveAndClear(req, 'start_new');
-        ev.eventName = name;
-        ev.nameLocked = true;
-        ev.startedAt = new Date();
-        ev.opensAt = opensAt;
-        ev.closesAt = closesAt;
-        ev.endHandledAt = null;
-        ev.archivedId = null;
-        if (guestEnabled !== undefined) ev.guestEnabled = guestEnabled;
-        if (checkInOpen !== undefined) ev.checkInOpen = checkInOpen;
-        // Đổi chế độ xếp chỗ (nhóm <-> từng người): làm trống toàn bộ chỗ đã sắp để quản lý sắp lại từ đầu
         const modeChanged = seatMode !== undefined && seatMode !== ev.seatMode;
-        if (seatMode !== undefined) ev.seatMode = seatMode;
-        await ev.save();
-        if (modeChanged) await Seat.updateMany({}, { $set: { groupId: null, employeeCode: null } });
+        const updates = {
+          eventName: name,
+          nameLocked: true,
+          startedAt: new Date(),
+          opensAt,
+          closesAt,
+          endHandledAt: null,
+          archivedId: null,
+        };
+        if (guestEnabled !== undefined) updates.guestEnabled = guestEnabled;
+        if (checkInOpen !== undefined) updates.checkInOpen = checkInOpen;
+        if (seatMode !== undefined) updates.seatMode = seatMode;
+        const savedEv = await EventSetting.upsertMain(updates);
+        if (modeChanged) await Seat.clearAllAssignments();
         invalidateCachedEvent();
         await audit(
           req,
           'event.start_new',
           `Bắt đầu sự kiện mới "${name}"${modeChanged ? ' (đổi chế độ xếp chỗ, đã làm trống toàn bộ chỗ)' : ''} (giờ ${opensAt.toISOString()} - ${closesAt.toISOString()}; sự kiện trước "${oldName || ''}": ${archived ? `đã lưu lịch sử ${archived.summary.checked} lượt điểm danh` : 'không có ai điểm danh nên không lưu'})`
         );
-        return ev;
+        return savedEv;
       });
-      res.json(event.toJSON());
+      res.json(event);
     } catch (err) {
       next(err);
     }

@@ -22,7 +22,7 @@ export const authController = {
         return res.status(400).json({ message: 'Mã hoặc mật khẩu không đúng.' });
       }
 
-      const staff = await Employee.findOne({ code: trimmedCode }).select('+passwordHash');
+      const staff = await Employee.findByCode(trimmedCode, { includePasswordHash: true });
       if (!staff || (staff.role !== ROLES.ADMIN && staff.role !== ROLES.MANAGER)) {
         await auditFailedLogin(trimmedCode);
         return res.status(400).json({ message: 'Mã hoặc mật khẩu không đúng.' });
@@ -75,7 +75,7 @@ export const authController = {
       const gate = eventGate(await getCachedEvent());
       if (gate) return sendGate(res, gate);
 
-      const employee = await Employee.findOne({ code: trimmedCode });
+      const employee = await Employee.findByCode(trimmedCode);
       if (!employee) {
         return res.status(404).json({ message: 'Không tìm thấy mã nhân viên này. Vui lòng kiểm tra lại.' });
       }
@@ -125,7 +125,7 @@ export const authController = {
   // 3. Đăng nhập khách mời
   async enterAsGuest(req, res, next) {
     try {
-      const event = await EventSetting.findOne({ key: 'main' });
+      const event = await EventSetting.getMain();
       if (event && event.guestEnabled === false) {
         return res.status(403).json({ message: 'Chức năng khách mời hiện đang tắt. Vui lòng liên hệ ban tổ chức.' });
       }
@@ -143,7 +143,7 @@ export const authController = {
         return res.status(400).json({ message: 'Họ và tên tối đa 60 ký tự.' });
       }
 
-      const guestGroup = (await Group.findOne({ id: GUEST_GROUP_ID })) || {
+      const guestGroup = (await Group.findById(GUEST_GROUP_ID)) || {
         id: GUEST_GROUP_ID,
         name: GUEST_GROUP_NAME,
         color: '#475569',
@@ -197,7 +197,7 @@ export const authController = {
       }
 
       // Tìm nhân sự kèm hash mật khẩu
-      const employee = await Employee.findOne({ code: userCode }).select('+passwordHash');
+      const employee = await Employee.findByCode(userCode, { includePasswordHash: true });
       if (!employee || !employee.passwordHash) {
         return res.status(404).json({ message: 'Tài khoản không tồn tại hoặc chưa được thiết lập mật khẩu.' });
       }
@@ -213,9 +213,10 @@ export const authController = {
       }
 
       // Cập nhật mật khẩu mới
-      employee.passwordHash = await bcrypt.hash(newPassword, 10);
-      employee.passwordChangedAt = new Date();
-      await employee.save();
+      await Employee.updateByCode(employee.code, {
+        passwordHash: await bcrypt.hash(newPassword, 10),
+        passwordChangedAt: new Date(),
+      });
 
       // Mọi token cũ (kể cả phiên hiện tại) đã bị thu hồi; cấp token mới để người đổi không bị văng ra
       const token = jwt.sign(

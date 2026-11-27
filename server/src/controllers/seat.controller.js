@@ -3,13 +3,13 @@ import { rowSeatIds, SEAT_ID_REGEX } from '../constants/hall.server.js';
 import { audit } from '../utils/audit.js';
 
 const personalList = async () =>
-  (await Seat.find({ employeeCode: { $ne: null } }).select('seatId employeeCode').lean()).map((s) => ({ seatId: s.seatId, employeeCode: s.employeeCode }));
+  (await Seat.findAll()).filter((s) => s.employeeCode).map((s) => ({ seatId: s.seatId, employeeCode: s.employeeCode }));
 
 export const seatController = {
   // Ghế của CHÍNH người đang đăng nhập (chế độ từng người). Không lộ ghế của người khác.
   async getMine(req, res, next) {
     try {
-      const s = await Seat.findOne({ employeeCode: req.user.code }).select('seatId').lean();
+      const s = await Seat.findByEmployeeCode(req.user.code);
       res.json({ seatId: s?.seatId || null });
     } catch (err) {
       next(err);
@@ -30,14 +30,16 @@ export const seatController = {
     try {
       const code = String(req.body.employeeCode || '').trim().toUpperCase();
       const seatId = req.body.seatId ? String(req.body.seatId).trim() : null;
-      if (!(await Employee.exists({ code }))) return res.status(404).json({ message: `Không có nhân sự mã "${code}".` });
+      if (!(await Employee.findByCode(code))) return res.status(404).json({ message: `Không có nhân sự mã "${code}".` });
       if (seatId) {
         if (!SEAT_ID_REGEX.test(seatId)) return res.status(400).json({ message: 'Mã ghế không hợp lệ.' });
-        const taken = await Seat.findOne({ seatId, employeeCode: { $nin: [null, code] } }).select('employeeCode').lean();
-        if (taken) return res.status(409).json({ message: `Ghế ${seatId} đã dành cho ${taken.employeeCode}. Hãy bỏ gán người đó trước.` });
+        const existingSeat = await Seat.findBySeatId(seatId);
+        if (existingSeat && existingSeat.employeeCode && existingSeat.employeeCode !== code) {
+          return res.status(409).json({ message: `Ghế ${seatId} đã dành cho ${existingSeat.employeeCode}. Hãy bỏ gán người đó trước.` });
+        }
       }
-      await Seat.updateMany({ employeeCode: code }, { $set: { employeeCode: null } });
-      if (seatId) await Seat.updateOne({ seatId }, { $set: { employeeCode: code } });
+      await Seat.clearEmployeeCode(code);
+      if (seatId) await Seat.upsert(seatId, { employeeCode: code });
       await audit(req, 'seats.assign_employee', seatId ? `Gán [${code}] vào ghế ${seatId}` : `Bỏ ghế riêng của [${code}]`);
       res.json(await personalList());
     } catch (err) {
@@ -48,7 +50,7 @@ export const seatController = {
   // Lấy danh sách gán ghế dạng Map: { "1-L-1": "group-id", ... }
   async getAssignments(req, res, next) {
     try {
-      const seats = await Seat.find();
+      const seats = await Seat.findAll();
       const map = {};
       seats.forEach((s) => {
         if (s.groupId) {
@@ -69,19 +71,16 @@ export const seatController = {
         return res.status(400).json({ message: 'Danh sách ghế không hợp lệ.' });
       }
 
-      await Seat.updateMany(
-        { seatId: { $in: seatIds } },
-        { $set: { groupId: groupId || null } }
-      );
+      await Seat.updateManyGroup(seatIds, groupId || null);
 
       let targetGroupName = 'trống';
       if (groupId) {
-        const grp = await Group.findOne({ id: groupId });
+        const grp = await Group.findById(groupId);
         targetGroupName = grp ? `nhóm "${grp.name}"` : 'nhóm';
       }
       await audit(req, 'seats.assign', `Gán ${targetGroupName} cho ${seatIds.length} ghế`);
 
-      const all = await Seat.find();
+      const all = await Seat.findAll();
       const map = {};
       all.forEach((s) => {
         if (s.groupId) map[s.seatId] = s.groupId;
@@ -99,19 +98,16 @@ export const seatController = {
       const allSeats = [];
       rowNumbers.forEach((r) => allSeats.push(...rowSeatIds(r)));
 
-      await Seat.updateMany(
-        { seatId: { $in: allSeats } },
-        { $set: { groupId: groupId || null } }
-      );
+      await Seat.updateManyGroup(allSeats, groupId || null);
 
       let targetGroupName = 'trống';
       if (groupId) {
-        const grp = await Group.findOne({ id: groupId });
+        const grp = await Group.findById(groupId);
         targetGroupName = grp ? `nhóm "${grp.name}"` : 'nhóm';
       }
       await audit(req, 'seats.assign_rows', `Gán ${targetGroupName} cho hàng ${rowNumbers.join(', ')}`);
 
-      const all = await Seat.find();
+      const all = await Seat.findAll();
       const map = {};
       all.forEach((s) => {
         if (s.groupId) map[s.seatId] = s.groupId;

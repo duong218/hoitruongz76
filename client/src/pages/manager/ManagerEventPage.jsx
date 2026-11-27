@@ -94,7 +94,10 @@ export function ManagerEventPage() {
     return { variant: 'success', text: `Đang diễn ra • đến ${short(c)}` };
   })();
 
-  const newTimesOk = !!newOpensAt && !!newClosesAt && newClosesAt > newOpensAt;
+  const pad = (n) => String(n).padStart(2, '0');
+  const nowDate = new Date();
+  const minNow = `${nowDate.getFullYear()}-${pad(nowDate.getMonth() + 1)}-${pad(nowDate.getDate())}T${pad(nowDate.getHours())}:${pad(nowDate.getMinutes())}`;
+  const newTimesOk = !!newOpensAt && !!newClosesAt && newOpensAt >= minNow && newClosesAt > newOpensAt;
 
   const isLocalhost = appUrl.includes('localhost') || appUrl.includes('127.0.0.1');
 
@@ -407,8 +410,8 @@ export function ManagerEventPage() {
                 autoFocus
               />
               <div className="grid sm:grid-cols-2 gap-4">
-                <Input label="Giờ mở" id="new-event-opens-at" type="datetime-local" value={newOpensAt} onChange={(e) => setNewOpensAt(e.target.value)} />
-                <Input label="Giờ đóng" id="new-event-closes-at" type="datetime-local" value={newClosesAt} onChange={(e) => setNewClosesAt(e.target.value)} />
+                <Input label="Giờ mở" id="new-event-opens-at" type="datetime-local" min={minNow} value={newOpensAt} onChange={(e) => setNewOpensAt(e.target.value)} />
+                <Input label="Giờ đóng" id="new-event-closes-at" type="datetime-local" min={newOpensAt || minNow} value={newClosesAt} onChange={(e) => setNewClosesAt(e.target.value)} />
               </div>
               <p className="text-[13px] text-[#64748B] -mt-2">
                 Giờ Việt Nam. Ngoài khung giờ này, nhân viên và khách mời không vào và không điểm danh được. Quản lý vẫn xếp chỗ bình thường.

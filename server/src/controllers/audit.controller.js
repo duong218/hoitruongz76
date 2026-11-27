@@ -1,15 +1,16 @@
 import { AuditLog } from '../models/index.js';
-import { buildAuditQuery } from '../utils/auditQuery.js';
 
 export const auditController = {
-  // Xem nhật ký (mới nhất trước), có lọc theo thao tác / người thực hiện / thời gian và phân trang.
-  // GET /api/audit?action=employee&actor=ADMIN&from=2026-11-01T00:00:00Z&to=...&page=1&limit=50
+  // Xem nhật ký (mới nhất trước), có lọc theo thao tác và phân trang.
   async list(req, res, next) {
     try {
-      const { filter, limit, page, skip } = buildAuditQuery(req.query);
+      const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+      const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
+      const action = req.query.action ? String(req.query.action).trim() : undefined;
+
       const [items, total] = await Promise.all([
-        AuditLog.find(filter).sort({ createdAt: -1, _id: -1 }).skip(skip).limit(limit),
-        AuditLog.countDocuments(filter),
+        AuditLog.findRecent({ action, limit, page }),
+        AuditLog.count({ action }),
       ]);
       res.json({ items, total, page, limit, pages: Math.max(Math.ceil(total / limit), 1) });
     } catch (err) {
