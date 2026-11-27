@@ -26,6 +26,18 @@ const sqlConfig = env.DB_CONNECTION_STRING
 export async function connectDB() {
   try {
     if (pool && pool.connected) return pool;
+
+    if (!env.DB_CONNECTION_STRING) {
+      const masterConfig = { ...sqlConfig, database: 'master' };
+      const masterPool = await new sql.ConnectionPool(masterConfig).connect();
+      const safeDbName = env.DB_NAME.replace(/\]/g, ']]');
+      await masterPool
+        .request()
+        .input('dbName', sql.NVarChar(128), env.DB_NAME)
+        .query(`IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = @dbName) CREATE DATABASE [${safeDbName}]`);
+      await masterPool.close();
+    }
+
     pool = await new sql.ConnectionPool(sqlConfig).connect();
     console.log(`Đã kết nối SQL Server: ${env.DB_NAME} (${env.DB_SERVER}:${env.DB_PORT})`);
     await initSchema(pool);
