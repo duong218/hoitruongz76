@@ -26,12 +26,12 @@ hoitruongz76-main/
 │
 └── server/                   # BACKEND (Node.js, Express, SQL Server - mssql)
     ├── server.js             # Khởi chạy Express Server
-    ├── database.sql          # Script SQL Server khởi tạo DB & 9 bảng
+    ├── sql/database.sql      # Script SQL Server khởi tạo DB & 10 bảng
     ├── .env                  # Cấu hình PORT=5000, DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET
     └── src/
         ├── app.js            # Khai báo middleware (cors, helmet, rate-limit) và routes
         ├── config/           # Kết nối SQL Server (db.js), schema tự động (schema.js) và biến môi trường (env.js)
-        ├── models/           # SQL Server Repositories (Employee, Block, Department, Group, Seat, EventSetting, Attendance, AuditLog, EventArchive)
+        ├── models/           # SQL Server Repositories (Employee, Block, Department, Group, Seat, EventSetting, Attendance, AuditLog, EventArchive, EmployeeChangeLog)
         ├── middleware/       # JWT Auth & phân quyền Roles (auth.js), xử lý lỗi (errorHandler.js)
         ├── routes/           # RESTful API Endpoints (/api/auth, /api/employees, /api/org, /api/groups, /api/seats, /api/event, /api/attendance)
         ├── scripts/          # Lệnh CLI đặt lại mật khẩu Admin (resetAdmin.js)
@@ -54,6 +54,8 @@ hoitruongz76-main/
 | | `PUT /api/employees/:code` | Cập nhật thông tin nhân viên / đặt lại mật khẩu | Admin |
 | | `DELETE /api/employees/:code` | Xóa nhân viên | Admin |
 | | `POST /api/employees/import` | Nhập danh sách nhân viên hàng loạt từ Excel | Admin |
+| | `GET /api/employees/change-logs` | Lấy danh sách thay đổi thông tin nhân viên | Admin, Manager |
+| | `DELETE /api/employees/change-logs` | Đánh dấu đã xem / ẩn cảnh báo thay đổi | Admin, Manager |
 | **Cơ cấu tổ chức** | `GET /api/org/blocks` | Danh sách các Khối | Mọi quyền |
 | | `POST /api/org/blocks` | Thêm Khối (ràng buộc toàn vẹn) | Admin |
 | | `GET /api/org/departments` | Danh sách các Phòng ban | Mọi quyền |
@@ -65,6 +67,7 @@ hoitruongz76-main/
 | | `POST /api/seats/assign-seats` | Gán nhóm cho từng ghế | Manager |
 | | `POST /api/seats/assign-rows` | Gán nhóm cho cả hàng ghế | Manager |
 | **Sự kiện & QR** | `GET /api/event` | Cài đặt sự kiện & mã bảo mật ghế ngồi (token) | Mọi quyền |
+| | `GET /api/event/live-stats` | Thống kê trực tiếp cho màn hình TV `/display` | Công khai |
 | | `PUT /api/event` | Cập nhật cấu hình sự kiện, bật/tắt điểm danh | Manager |
 | **Điểm danh** | `GET /api/attendance` | Lấy danh sách đại biểu đã điểm danh | Nhân viên (xem bản thân), Staff (toàn bộ) |
 | | `POST /api/attendance/checkin` | Quét QR hoặc gõ mã tem với cơ chế chống gian lận | Nhân viên |

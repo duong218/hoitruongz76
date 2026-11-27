@@ -1,6 +1,7 @@
 # 🏛️ HỆ THỐNG QUẢN LÝ CHỖ NGỒI & ĐIỂM DANH HỘI TRƯỜNG Z176
 
 ---Người xây dựng: Phạm Ngọc Dương---
+# Portfolio: https://phamngocduong.vercel.app/ 
 
 > **Ứng dụng Quản lý Sơ đồ Hội trường 200 ghế, Điều phối Chỗ ngồi & Điểm danh Thông minh theo thời gian thực.**  
 > Xây dựng trên nền tảng **Node.js, Express, React.js và SQL Server** đạt chuẩn bảo mật, giao diện tối ưu đa thiết bị (Desktop / Máy tính bảng / Điện thoại).
@@ -43,11 +44,15 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 
 ### 2. Phân hệ Quản lý Vận hành (Manager)
 
-- **Sắp xếp chỗ ngồi trực quan 2D**:
-  - Gán nhóm ghế nhanh theo từng hàng (20 ghế) hoặc chỉnh sửa từng ghế lẻ.
+- **Sắp xếp chỗ ngồi trực quan 2D (2 chế độ: Theo Nhóm & Cố định từng người)**:
+  - **Theo Nhóm**: Gán nhóm ghế nhanh theo từng hàng (20 ghế) hoặc chỉnh sửa từng ghế lẻ.
+  - **Cố định từng người**: Lọc nhanh theo Khối hoặc Phòng ban, gán liên tiếp từng ghế và tìm kiếm nhấp nháy nổi bật vị trí ghế trên sơ đồ.
+  - Tự động cảnh báo cho Quản lý kèm bảng chi tiết (cũ → mới) khi Admin cập nhật tên, phòng ban hoặc khối của nhân viên.
   - Bảng màu nhận diện lên tới 18 màu sắc rõ nét.
   - Thước kẻ chỉ số cột ghế (`10..1` bên Trái, `1..10` bên Phải) gióng thẳng xuống từng ghế giúp điều phối không bao giờ nhầm.
   - Thẻ tiến độ sắp ghế hiển thị tỉ lệ % và số ghế còn trống theo thời gian thực.
+- **Màn hình trình chiếu TV / Máy chiếu (`/display`)**:
+  - Giao diện công khai, vừa khít 1 màn hình ngang 16:9, tự động cập nhật mỗi 5 giây tỷ lệ quân số có mặt (%), sơ đồ 200 ghế và tự làm mờ các ghế đã có người điểm danh.
 - **Quản lý Nhóm hội trường**:
   - Tạo nhanh nhóm ghế 1-click từ Khối có sẵn hoặc tạo nhóm tùy biến.
   - Thiết lập quy định nhóm có bắt buộc điểm danh hay không (VD: Khách mời, VIP miễn điểm danh).
@@ -275,6 +280,7 @@ npm run dev:client
 Mở trình duyệt truy cập:
 
 - **Giao diện Đại biểu / Điểm danh**: [http://localhost:3000/login](http://localhost:3000/login)
+- **Màn hình trình chiếu TV / Máy chiếu**: [http://localhost:3000/display](http://localhost:3000/display)
 - **Cổng Đăng nhập Quản trị & Quản lý**: [http://localhost:3000/quan-tri/login](http://localhost:3000/quan-tri/login)
 
 ---

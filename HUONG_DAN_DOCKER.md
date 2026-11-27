@@ -11,7 +11,7 @@ Cần: **Docker Desktop** (Windows hoặc Mac), tải ở docker.com, cài xong 
    - Hai mật khẩu seed (tối thiểu 8 ký tự).
 3. Chạy: `docker compose up -d --build` (lần đầu mất vài phút).
 4. Nạp dữ liệu mẫu (chỉ lần đầu): `docker compose exec server npm run seed`
-5. Mở trình duyệt vào địa chỉ ở `PUBLIC_URL`.
+5. Mở trình duyệt vào địa chỉ ở `PUBLIC_URL` (màn hình trình chiếu TV mở tại `<PUBLIC_URL>/display`).
 
 Máy khác trong cùng mạng truy cập bằng đúng địa chỉ đó. Nếu không vào được: mở cổng 80 trong tường lửa của máy chủ.
 
