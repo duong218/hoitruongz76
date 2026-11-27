@@ -82,34 +82,39 @@ export function validateImportRow(
     }
   }
 
-  // Phân tích Phòng ban
+  // Phân tích Phòng ban & Khối cùng lúc (kiểm tra cả 2 trước khi return lỗi)
   let matchedDepartment = null;
-  if (departmentName) {
-    matchedDepartment = departments.find(
-      (d) => d.name.toLowerCase() === departmentName.toLowerCase()
-    );
-    if (!matchedDepartment) {
-      return {
-        isValid: false,
-        error: `Phòng ban "${departmentName}" không tồn tại trên hệ thống`,
-        parsed: { code, name, departmentId: null, blockId: null, role },
-      };
-    }
+  let matchedBlock = null;
+  const missingDept = departmentName && !departments.find((d) => d.name.toLowerCase() === departmentName.toLowerCase());
+  const missingBlock = blockName && !blocks.find((b) => b.name.toLowerCase() === blockName.toLowerCase());
+
+  if (missingDept && missingBlock) {
+    return {
+      isValid: false,
+      error: `Phòng ban "${departmentName}" và Khối "${blockName}" không tồn tại trên hệ thống`,
+      parsed: { code, name, departmentId: null, blockId: null, role },
+    };
+  }
+  if (missingDept) {
+    return {
+      isValid: false,
+      error: `Phòng ban "${departmentName}" không tồn tại trên hệ thống`,
+      parsed: { code, name, departmentId: null, blockId: null, role },
+    };
+  }
+  if (missingBlock) {
+    return {
+      isValid: false,
+      error: `Khối "${blockName}" không tồn tại trên hệ thống`,
+      parsed: { code, name, departmentId: null, blockId: null, role },
+    };
   }
 
-  // Phân tích Khối
-  let matchedBlock = null;
+  if (departmentName) {
+    matchedDepartment = departments.find((d) => d.name.toLowerCase() === departmentName.toLowerCase());
+  }
   if (blockName) {
-    matchedBlock = blocks.find(
-      (b) => b.name.toLowerCase() === blockName.toLowerCase()
-    );
-    if (!matchedBlock) {
-      return {
-        isValid: false,
-        error: `Khối "${blockName}" không tồn tại trên hệ thống`,
-        parsed: { code, name, departmentId: matchedDepartment?.id || null, blockId: null, role },
-      };
-    }
+    matchedBlock = blocks.find((b) => b.name.toLowerCase() === blockName.toLowerCase());
   } else if (matchedDepartment) {
     // Nếu bỏ trống khối, tự điền theo Khối mặc định của phòng ban
     matchedBlock = blocks.find((b) => b.id === matchedDepartment.blockId) || null;
@@ -163,7 +168,9 @@ export function revalidateRows(rows, existingCodes = [], blocks = [], department
 
 /**
  * Phòng ban / Khối ghi trong file nhưng chưa có trên hệ thống.
- * Chỉ cho tạo mới khi thiếu ĐÚNG MỘT trong hai (cái còn lại phải có sẵn). Thiếu cả hai thì vẫn là lỗi.
+ * - Thiếu chỉ Phòng ban: cho tạo phòng ban (Khối đã có sẵn).
+ * - Thiếu chỉ Khối: cho tạo Khối.
+ * - Thiếu cả hai: cho tạo Khối trước; sau khi Khối được tạo, revalidate sẽ thấy chỉ còn thiếu Phòng ban và cho tạo tiếp.
  * @returns {{ createDept: boolean, createBlock: boolean }}
  */
 export function findMissingOrg(row, blocks = [], departments = []) {
@@ -174,7 +181,7 @@ export function findMissingOrg(row, blocks = [], departments = []) {
   const missingBlock = !!b && !has(blocks, b);
   return {
     createDept: missingDept && !!b && !missingBlock, // phòng ban mới, thuộc Khối đã có
-    createBlock: missingBlock && !!d && !missingDept, // Khối mới, phòng ban đã có
+    createBlock: missingBlock && !!b,                 // Khối mới (cho tạo kể cả khi thiếu cả phòng ban, tạo khối trước rồi tạo phòng ban sau)
   };
 }
 

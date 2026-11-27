@@ -139,10 +139,8 @@ export function PersonalSeating() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-6 items-start">
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">
-          <div className="hidden lg:block overflow-x-auto rounded-xl">
-            <div className="min-w-[760px]">
-              <HallMap seatGroups={seatGroups} mode="assign" selectedRows={selRows} onToggleRow={toggleRow} groups={mapGroups} onSeatClick={pick} selectedSeatId={sel} renderSeatTip={renderTip} />
-            </div>
+          <div className="hidden lg:block rounded-xl">
+            <HallMap seatGroups={seatGroups} mode="assign" selectedRows={selRows} onToggleRow={toggleRow} groups={mapGroups} onSeatClick={pick} selectedSeatId={sel} renderSeatTip={renderTip} />
           </div>
           <div className="lg:hidden">
             <SeatPickerMobile seatGroups={seatGroups} colorOf={colorOf} ownerOf={ownerOf} nameOf={nameOf} attended={attended} sel={sel} onPick={pick} selRows={selRows} onToggleRow={toggleRow} />

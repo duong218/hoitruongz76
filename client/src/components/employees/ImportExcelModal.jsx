@@ -292,7 +292,9 @@ export function ImportExcelModal({
                             <span className="font-semibold text-[#B91C1C]">Lỗi: {r.error}</span>
                             {(r.createDept || r.createBlock) && (
                               <span className="block text-[13px] text-[#B45309]">
-                                Nếu là {r.createDept ? 'phòng ban' : 'Khối'} mới, bấm dấu + để tạo.
+                                {r.createDept && r.createBlock
+                                  ? 'Thiếu cả Phòng ban và Khối. Bấm + ở Khối để tạo trước, rồi tạo Phòng ban sau.'
+                                  : `Nếu là ${r.createDept ? 'phòng ban' : 'Khối'} mới, bấm dấu + để tạo.`}
                               </span>
                             )}
                           </>
