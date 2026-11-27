@@ -95,7 +95,7 @@ Hệ thống được thiết kế đặc thù cho **Hội trường Z176** vớ
 ### Phân hệ Server Backend (`server/`)
 
 - **Core**: Node.js (>=20), Express 5.x (ES Module).
-- **Cơ sở dữ liệu**: MongoDB với Mongoose 9.x ODM.
+- **Cơ sở dữ liệu**: Microsoft SQL Server với thư viện `mssql` (Parameterized Queries).
 - **Bảo mật & Kiểm soát**:
   - **JWT (JSON Web Token)**: Xác thực phiên đăng nhập không trạng thái (stateless).
   - **Bcryptjs**: Băm mật khẩu quản trị chuẩn một chiều an toàn.
@@ -204,7 +204,7 @@ Hội trường gồm tổng cộng **200 chỗ ngồi**:
 ### 1. Yêu cầu môi trường
 
 - **Node.js**: Phiên bản 20.x trở lên.
-- **MongoDB**: Phiên bản 6.x trở lên (đang chạy tại máy local hoặc MongoDB Atlas).
+- **Microsoft SQL Server**: Phiên bản 2019 / 2022 trở lên (chạy tại máy local hoặc qua Docker).
 - Trình quản lý gói: `npm`.
 
 ### 2. Cài đặt Dependencies
@@ -229,7 +229,13 @@ Kiểm tra file `server/.env`:
 
 ```env
 PORT=5000
-MONGO_URI=mongodb://127.0.0.1:27017/hoitruongz76
+DB_SERVER=localhost
+DB_PORT=1433
+DB_NAME=hoitruongz76
+DB_USER=sa
+DB_PASSWORD=your_sql_server_password
+DB_ENCRYPT=false
+DB_TRUST_SERVER_CERTIFICATE=true
 CLIENT_ORIGIN=http://localhost:3000
 JWT_SECRET=your_super_secret_jwt_key_here
 SEED_ADMIN_PASSWORD=your_initial_admin_password
@@ -244,7 +250,7 @@ VITE_API_URL=/api
 
 ### 4. Khởi tạo dữ liệu ban đầu (Seed Database)
 
-Nạp cấu trúc hội trường 200 ghế, các khối, phòng ban và tài khoản ban đầu vào MongoDB:
+Nạp cấu trúc hội trường 200 ghế, các khối, phòng ban và tài khoản ban đầu vào SQL Server (database và các bảng sẽ được tự động tạo khi chạy):
 
 ```bash
 # Nạp dữ liệu ban đầu (chỉ nạp một lần khi cơ sở dữ liệu còn trống)

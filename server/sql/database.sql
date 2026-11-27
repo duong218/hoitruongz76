@@ -136,3 +136,17 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_EventArchives_archivedAt' AND object_id = OBJECT_ID('EventArchives'))
   CREATE INDEX IX_EventArchives_archivedAt ON EventArchives(archivedAt DESC);
 GO
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'EmployeeChangeLogs')
+CREATE TABLE EmployeeChangeLogs (
+  id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+  employeeCode NVARCHAR(50) NOT NULL,
+  oldName NVARCHAR(200) NULL,
+  newName NVARCHAR(200) NULL,
+  oldDept NVARCHAR(200) NULL,
+  newDept NVARCHAR(200) NULL,
+  oldBlock NVARCHAR(200) NULL,
+  newBlock NVARCHAR(200) NULL,
+  changedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
+);
+GO

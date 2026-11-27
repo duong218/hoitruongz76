@@ -92,8 +92,8 @@ hoitruongz76-main/
 
 ## 4. Cách chạy hệ thống đồng thời
 
-### Bước 1: Khởi động MongoDB
-Đảm bảo dịch vụ MongoDB đang chạy (mặc định tại `mongodb://127.0.0.1:27017`).
+### Bước 1: Khởi động SQL Server
+Đảm bảo dịch vụ Microsoft SQL Server đang chạy và đã cấu hình thông tin kết nối (`DB_SERVER`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`) trong `server/.env`. Database và các bảng sẽ được tự động tạo khi server khởi động.
 
 ### Bước 2: Nạp dữ liệu khởi tạo (Chạy lần đầu)
 Mở terminal tại thư mục gốc:
