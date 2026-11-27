@@ -3,6 +3,7 @@ import { env } from './src/config/env.js';
 import { connectDB, disconnectDB } from './src/config/db.js';
 import { archiveIfEnded } from './src/utils/archive.js';
 import { closeStreams } from './src/utils/seatEvents.js';
+import { startCleanupScheduler } from './src/utils/cleanup.js';
 
 async function start() {
   try {
@@ -18,6 +19,7 @@ async function start() {
 
   // Hết giờ đóng thì tự lưu lịch sử. ponytail: bộ đếm trong tiến trình, chạy nhiều bản server thì cần khóa trong DB.
   archiveIfEnded();
+  startCleanupScheduler();
   const timer = setInterval(archiveIfEnded, 30 * 1000);
 
   const shutdown = async (signal) => {

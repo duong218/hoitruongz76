@@ -12,6 +12,7 @@ import { findDuplicateSeats, recordNotes } from '../../utils/attendanceInsights.
 import { useToast } from '../../context/ToastContext.jsx';
 import { useConfirm } from '../../context/ConfirmContext.jsx';
 import { resolveGroup } from '../../utils/resolveGroup.js';
+import { ROLES } from '../../constants/roles.js';
 import { seatBadgeText, seatLabel } from '../../utils/seatLabel.js';
 import { GroupBadge } from '../../components/ui/GroupBadge.jsx';
 import { Badge } from '../../components/ui/Badge.jsx';
@@ -96,7 +97,7 @@ export function AttendancePage() {
     employees.forEach((emp) => {
       const g = resolveGroup(emp, groups);
       if (!g) {
-        unassigned++;
+        if (emp.role === ROLES.EMPLOYEE) unassigned++;
       } else if (g.checkInRequired) {
         required.push(emp);
       }
