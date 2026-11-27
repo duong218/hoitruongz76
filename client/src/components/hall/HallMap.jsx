@@ -361,7 +361,7 @@ export function HallMap({
                     seatNumber={n}
                     fill={mode === 'view' && sId === mySeatId ? MY_SEAT_COLOR : fill}
                     stroke={mode === 'view' && sId === mySeatId ? MY_SEAT_STROKE : stroke}
-                    dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
+                    dim={!!occupiedSeats?.has(sId) && sId !== mySeatId && (mode !== 'view' || gId === highlightGroupId)}
                     onClick={onSeatClick ? () => onSeatClick(sId) : undefined}
                     title={seatTitles?.[sId]}
                     onEnter={enter(sId)}
@@ -400,7 +400,7 @@ export function HallMap({
                     seatNumber={n}
                     fill={mode === 'view' && sId === mySeatId ? MY_SEAT_COLOR : fill}
                     stroke={mode === 'view' && sId === mySeatId ? MY_SEAT_STROKE : stroke}
-                    dim={mode === 'view' && gId === highlightGroupId && !!occupiedSeats?.has(sId) && sId !== mySeatId}
+                    dim={!!occupiedSeats?.has(sId) && sId !== mySeatId && (mode !== 'view' || gId === highlightGroupId)}
                     onClick={onSeatClick ? () => onSeatClick(sId) : undefined}
                     title={seatTitles?.[sId]}
                     onEnter={enter(sId)}

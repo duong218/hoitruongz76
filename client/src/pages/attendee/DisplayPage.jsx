@@ -110,6 +110,7 @@ export function DisplayPage() {
             mode="manage"
             seatGroups={displaySeatGroups}
             groups={groups}
+            occupiedSeats={new Set(stats.occupiedSeats || [])}
             className="h-full w-full flex items-center justify-center [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:max-w-full"
           />
         </div>
