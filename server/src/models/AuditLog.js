@@ -16,29 +16,57 @@ export const AuditLog = {
     return res.recordset[0];
   },
 
-  async findRecent({ action, limit = 50, page = 1 } = {}) {
+  async findRecent({ action, actor, from, to, limit = 50, page = 1 } = {}) {
     const req = getPool()
       .request()
       .input('offset', sql.Int, (page - 1) * limit)
       .input('limit', sql.Int, limit);
-    const where = action ? 'WHERE action = @action' : '';
-    if (action) req.input('action', sql.NVarChar(100), action);
+    const conditions = [];
+    if (action) {
+      conditions.push('action LIKE @action');
+      req.input('action', sql.NVarChar(100), `%${action}%`);
+    }
+    if (actor) {
+      conditions.push('actorCode LIKE @actor');
+      req.input('actor', sql.NVarChar(100), `%${actor}%`);
+    }
+    if (from) {
+      conditions.push('createdAt >= @from');
+      req.input('from', sql.DateTime2, from);
+    }
+    if (to) {
+      conditions.push('createdAt <= @to');
+      req.input('to', sql.DateTime2, to);
+    }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const res = await req.query(
       `SELECT id, action, actorCode, actorRole, detail, createdAt
        FROM AuditLogs ${where}
-       ORDER BY createdAt DESC
+       ORDER BY createdAt DESC, id DESC
        OFFSET @offset ROWS FETCH NEXT @limit ROWS ONLY`
     );
     return res.recordset;
   },
 
-  async count({ action, since } = {}) {
+  async count({ action, actor, from, to, since } = {}) {
     const req = getPool().request();
     const conditions = [];
     if (action) {
-      conditions.push('action = @action');
-      req.input('action', sql.NVarChar(100), action);
+      conditions.push('action LIKE @action');
+      req.input('action', sql.NVarChar(100), `%${action}%`);
+    }
+    if (actor) {
+      conditions.push('actorCode LIKE @actor');
+      req.input('actor', sql.NVarChar(100), `%${actor}%`);
+    }
+    if (from) {
+      conditions.push('createdAt >= @from');
+      req.input('from', sql.DateTime2, from);
+    }
+    if (to) {
+      conditions.push('createdAt <= @to');
+      req.input('to', sql.DateTime2, to);
     }
     if (since) {
       conditions.push('createdAt >= @since');

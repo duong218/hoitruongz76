@@ -92,7 +92,7 @@ export function ImportExcelModal({
 
   const handleExecuteImport = async () => {
     // Chỉ nhập khi tất cả dòng đều hợp lệ
-    if (validRows.length === 0 || invalidRows.length > 0) return;
+    if (validRows.length === 0) return;
     try {
       setImporting(true);
       const rowsToImport = validRows.map((r) => r.parsed);
@@ -322,9 +322,9 @@ export function ImportExcelModal({
           <Button variant="secondary" onClick={handleClose} disabled={importing}>
             Đóng
           </Button>
-          {rows.length > 0 && invalidRows.length === 0 && (
+          {validRows.length > 0 && (
             <Button variant="primary" onClick={handleExecuteImport} disabled={importing} loading={importing}>
-              {`Nhập ${validRows.length} người`}
+              {invalidRows.length > 0 ? `Nhập ${validRows.length} người hợp lệ` : `Nhập ${validRows.length} người`}
             </Button>
           )}
         </div>
