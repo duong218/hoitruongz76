@@ -3,7 +3,7 @@
 ---Người xây dựng: Phạm Ngọc Dương---
 
 > **Ứng dụng Quản lý Sơ đồ Hội trường 200 ghế, Điều phối Chỗ ngồi & Điểm danh Thông minh theo thời gian thực.**  
-> Xây dựng trên nền tảng **MERN Stack** (MongoDB, Express, React, Node.js) đạt chuẩn bảo mật, giao diện tối ưu đa thiết bị (Desktop / Máy tính bảng / Điện thoại).
+> Xây dựng trên nền tảng **Node.js, Express, React.js và SQL Server** đạt chuẩn bảo mật, giao diện tối ưu đa thiết bị (Desktop / Máy tính bảng / Điện thoại).
 
 ---
 

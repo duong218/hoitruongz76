@@ -1,17 +1,28 @@
 services:
-  mongo:
-    image: mongo:7
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
     restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "1433:1433"
     volumes:
-      - mongo-data:/data/db # dữ liệu nằm ở đây, tắt/xóa container không mất
+      - mssql-data:/var/opt/mssql # dữ liệu SQL Server nằm ở đây, tắt/xóa container không mất
 
   server:
     build: ./server
     restart: unless-stopped
-    depends_on: [mongo]
+    depends_on: [mssql]
     environment:
       PORT: 5000
-      MONGO_URI: mongodb://mongo:27017/hoitruongz76
+      DB_SERVER: mssql
+      DB_PORT: 1433
+      DB_NAME: ${DB_NAME:-hoitruongz76}
+      DB_USER: ${DB_USER:-sa}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_ENCRYPT: "false"
+      DB_TRUST_SERVER_CERTIFICATE: "true"
       CLIENT_ORIGIN: ${PUBLIC_URL}
       JWT_SECRET: ${JWT_SECRET}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD}
@@ -30,5 +41,5 @@ services:
       - caddy-data:/data # giữ chứng chỉ HTTPS
 
 volumes:
-  mongo-data:
+  mssql-data:
   caddy-data:

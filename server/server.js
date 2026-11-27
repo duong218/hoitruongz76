@@ -8,8 +8,8 @@ async function start() {
   try {
     await connectDB();
   } catch (dbErr) {
-    console.error('⚠️ [CẢNH BÁO MONGODB]:', dbErr.message);
-    console.log('👉 Server vẫn sẽ chạy để phục vụ health-check và các API (khi MongoDB sẵn sàng sẽ kết nối lại).');
+    console.error('⚠️ [CẢNH BÁO SQL SERVER]:', dbErr.message);
+    console.log('👉 Server vẫn sẽ chạy để phục vụ health-check và các API (khi SQL Server sẵn sàng sẽ kết nối lại).');
   }
 
   const server = app.listen(env.PORT, () => {

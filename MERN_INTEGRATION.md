@@ -1,10 +1,10 @@
-# BÁO CÁO CẤU TRÚC VÀ TÍCH HỢP MERN STACK HOÀN CHỈNH
+# BÁO CÁO CẤU TRÚC VÀ TÍCH HỢP HỆ THỐNG (NODE.JS + EXPRESS + REACT.JS + SQL SERVER)
 
-Hệ thống đã được thiết lập để **Frontend (ReactJS Vite) và Backend (Node.js/Express + MongoDB) chạy cùng nhau đồng bộ và an toàn**.
+Hệ thống đã được thiết lập để **Frontend (ReactJS Vite) và Backend (Node.js/Express + SQL Server) chạy cùng nhau đồng bộ và an toàn**.
 
 ---
 
-## 1. Kiến trúc hệ sinh thái MERN
+## 1. Kiến trúc hệ thống
 
 ```text
 hoitruongz76-main/
@@ -24,17 +24,18 @@ hoitruongz76-main/
 │   │   │   └── attendanceService.js
 │   └── vite.config.js        # Cấu hình Proxy /api -> http://localhost:5000
 │
-└── server/                   # BACKEND (Node.js, Express, MongoDB Mongoose)
+└── server/                   # BACKEND (Node.js, Express, SQL Server - mssql)
     ├── server.js             # Khởi chạy Express Server
-    ├── .env                  # Cấu hình PORT=5000, MONGO_URI, JWT_SECRET, mật khẩu seed
+    ├── database.sql          # Script SQL Server khởi tạo DB & 9 bảng
+    ├── .env                  # Cấu hình PORT=5000, DB_SERVER, DB_NAME, DB_USER, DB_PASSWORD, JWT_SECRET
     └── src/
         ├── app.js            # Khai báo middleware (cors, helmet, rate-limit) và routes
-        ├── config/           # Kết nối MongoDB (db.js) và biến môi trường (env.js)
-        ├── models/           # Mongoose Models (Employee, Block, Department, Group, Seat, EventSetting, Attendance, Audit)
+        ├── config/           # Kết nối SQL Server (db.js), schema tự động (schema.js) và biến môi trường (env.js)
+        ├── models/           # SQL Server Repositories (Employee, Block, Department, Group, Seat, EventSetting, Attendance, AuditLog, EventArchive)
         ├── middleware/       # JWT Auth & phân quyền Roles (auth.js), xử lý lỗi (errorHandler.js)
         ├── routes/           # RESTful API Endpoints (/api/auth, /api/employees, /api/org, /api/groups, /api/seats, /api/event, /api/attendance)
         ├── scripts/          # Lệnh CLI đặt lại mật khẩu Admin (resetAdmin.js)
-        └── seed/             # Nạp dữ liệu cấu trúc ban đầu vào MongoDB
+        └── seed/             # Nạp dữ liệu cấu trúc ban đầu vào SQL Server
 ```
 
 ---

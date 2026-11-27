@@ -6,6 +6,7 @@ Cần: **Docker Desktop** (Windows hoặc Mac), tải ở docker.com, cài xong 
 1. Giải nén dự án, mở terminal trong thư mục có file `docker-compose.yml`.
 2. Sao chép `.env.example` thành `.env`, mở ra điền:
    - `PUBLIC_URL`: địa chỉ máy chạy, ví dụ `http://192.168.1.10` (xem IP bằng `ipconfig` trên Windows, `ifconfig` trên Mac).
+   - `DB_PASSWORD`: mật khẩu SQL Server (tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt).
    - `JWT_SECRET`: chuỗi dài ngẫu nhiên.
    - Hai mật khẩu seed (tối thiểu 8 ký tự).
 3. Chạy: `docker compose up -d --build` (lần đầu mất vài phút).
