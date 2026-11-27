@@ -122,7 +122,7 @@ hoitruongz76/
 │   │   │   ├── audit/          # Bộ lọc & danh sách nhật ký hoạt động
 │   │   │   ├── employees/      # Form thêm/sửa, bảng nhân viên, import Excel
 │   │   │   ├── groups/         # Modal tạo nhóm ghế (chế độ nhanh & tùy biến)
-│   │   │   ├── hall/           # HallMap 2D, Seat SVG, Thước đo, Lối đi giữa
+│   │   │   ├── hall/           # HallMap 2D, Seat SVG, PersonalSeating, EmployeeChangeNotice
 │   │   │   ├── ChangePasswordModal.jsx # Modal tự đổi mật khẩu an toàn
 │   │   │   └── ui/             # Select (chống tràn), Button, Modal, Badge, Toast
 │   │   ├── constants/          # Quy chuẩn 200 ghế, bảng 18 màu, vai trò
@@ -131,26 +131,28 @@ hoitruongz76/
 │   │   ├── layouts/            # AdminLayout (Staff) & AttendeeLayout (Mobile)
 │   │   ├── pages/
 │   │   │   ├── admin/          # Dashboard, Quản lý Nhân sự, Cơ cấu, Audit, Sao lưu
-│   │   │   ├── attendee/       # Đăng nhập tra cứu, Xem ghế & Quét điểm danh
+│   │   │   ├── attendee/       # Đăng nhập tra cứu, Xem ghế, Quét điểm danh, Màn hình TV (/display)
 │   │   │   ├── auth/           # Đăng nhập bảo mật cho Admin / Manager
-│   │   │   └── manager/        # Sắp chỗ 2D, Nhóm ghế, Giám sát Điểm danh, In tem QR
+│   │   │   └── manager/        # Sắp chỗ 2D, Nhóm ghế, Giám sát Điểm danh, Sự kiện & QR, Lịch sử
 │   │   ├── services/           # Axios API services kết nối Backend
-│   │   └── utils/              # Định dạng nhãn ghế, kiểm tra check-in, CSS in ấn
+│   │   └── utils/              # Định dạng nhãn ghế, kiểm tra check-in, Excel, CSS in ấn
 │   └── package.json
 │
-├── server/                     # Máy chủ API Backend (Node.js + Express + MongoDB)
+├── server/                     # Máy chủ API Backend (Node.js + Express + SQL Server)
+│   ├── sql/
+│   │   └── database.sql        # Script T-SQL khởi tạo DB & 10 bảng cho SSMS
 │   ├── src/
-│   │   ├── config/             # Kết nối MongoDB, kiểm tra biến môi trường .env
+│   │   ├── config/             # Kết nối SQL Server (db.js), tạo bảng tự động (schema.js), env.js
 │   │   ├── constants/          # Hằng số hội trường, định nghĩa phân quyền Roles
-│   │   ├── controllers/        # Attendance, Auth, Employee, Event, Group, Org, Seat
+│   │   ├── controllers/        # Attendance, Auth, Employee, Event, Group, Org, Seat, Audit, History
 │   │   ├── middleware/         # Xác thực JWT, phân quyền Role, bắt lỗi tập trung
-│   │   ├── models/             # Mongoose Schemas (Seat, Employee, Attendance, Audit,...)
+│   │   ├── models/             # SQL Server Repositories (Employee, Block, Department, Group, Seat, EventSetting, Attendance, AuditLog, EventArchive, EmployeeChangeLog)
 │   │   ├── routes/             # Định tuyến RESTful API (/api/*)
 │   │   ├── scripts/            # Script khôi phục tài khoản Admin (resetAdmin.js)
 │   │   ├── seed/               # Script tạo dữ liệu mẫu ban đầu (seed.js)
-│   │   └── utils/              # Bộ sinh mã token 6 ký tự ngẫu nhiên, ghi audit
-│   ├── server.js               # Khởi chạy Express server
-│   ├── .env                    # Cấu hình cổng, chuỗi kết nối MongoDB, Secret Key
+│   │   └── utils/              # Bộ sinh token 6 ký tự, ghi audit, lưu trữ lịch sử, dọn dữ liệu quá 2 năm (cleanup.js)
+│   ├── server.js               # Khởi chạy Express server & lịch dọn dữ liệu
+│   ├── .env                    # Cấu hình cổng, thông số kết nối SQL Server (DB_*), Secret Key
 │   └── package.json
 │
 ├── structure/                  # Tài liệu phân tích kỹ thuật chi tiết
